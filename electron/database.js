@@ -1,0 +1,186 @@
+import Database from 'better-sqlite3';
+import { app } from 'electron';
+import path from 'path';
+
+let db = null;
+
+export function initDatabase() {
+	const userDataPath = app.getPath('userData');
+	const dbPath = path.join(userDataPath, 'database.sqlite');
+
+	db = new Database(dbPath);
+	db.pragma('journal_mode = WAL');
+
+	// Create settings table
+	db.exec(`
+		CREATE TABLE IF NOT EXISTS settings (
+			key TEXT PRIMARY KEY,
+			value TEXT NOT NULL,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)
+	`);
+
+	// Create transcription sessions table
+	db.exec(`
+		CREATE TABLE IF NOT EXISTS transcription_sessions (
+			id TEXT PRIMARY KEY,
+			name TEXT,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			duration_seconds INTEGER DEFAULT 0,
+			word_count INTEGER DEFAULT 0,
+			subtitle_count INTEGER DEFAULT 0,
+			status TEXT DEFAULT 'active'
+		)
+	`);
+
+	// Create transcripts table (stores the actual text and subtitles)
+	db.exec(`
+		CREATE TABLE IF NOT EXISTS transcripts (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			session_id TEXT NOT NULL,
+			segment_index INTEGER NOT NULL,
+			text TEXT NOT NULL,
+			srt_text TEXT,
+			start_time REAL,
+			end_time REAL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (session_id) REFERENCES transcription_sessions(id)
+		)
+	`);
+
+	// Create index for faster queries
+	db.exec(`
+		CREATE INDEX IF NOT EXISTS idx_transcripts_session
+		ON transcripts(session_id, segment_index)
+	`);
+
+	console.log('Database initialized at:', dbPath);
+	return db;
+}
+
+export function getDatabase() {
+	if (!db) {
+		throw new Error('Database not initialized. Call initDatabase() first.');
+	}
+	return db;
+}
+
+export function closeDatabase() {
+	if (db) {
+		db.close();
+		db = null;
+	}
+}
+
+// Database operations
+export const dbOperations = {
+	// Settings operations
+	getSetting: (key) => {
+		const stmt = db.prepare('SELECT value FROM settings WHERE key = ?');
+		const row = stmt.get(key);
+		return row ? row.value : null;
+	},
+
+	setSetting: (key, value) => {
+		const stmt = db.prepare(`
+			INSERT INTO settings (key, value)
+			VALUES (?, ?)
+			ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = CURRENT_TIMESTAMP
+		`);
+		stmt.run(key, value, value);
+	},
+
+	getAllSettings: () => {
+		const stmt = db.prepare('SELECT key, value FROM settings');
+		return stmt.all();
+	},
+
+	// Transcription session operations
+	createSession: (id, name) => {
+		const stmt = db.prepare(`
+			INSERT INTO transcription_sessions (id, name)
+			VALUES (?, ?)
+		`);
+		stmt.run(id, name);
+		return id;
+	},
+
+	updateSession: (id, data) => {
+		const fields = [];
+		const values = [];
+
+		if (data.name !== undefined) {
+			fields.push('name = ?');
+			values.push(data.name);
+		}
+		if (data.duration_seconds !== undefined) {
+			fields.push('duration_seconds = ?');
+			values.push(data.duration_seconds);
+		}
+		if (data.word_count !== undefined) {
+			fields.push('word_count = ?');
+			values.push(data.word_count);
+		}
+		if (data.subtitle_count !== undefined) {
+			fields.push('subtitle_count = ?');
+			values.push(data.subtitle_count);
+		}
+		if (data.status !== undefined) {
+			fields.push('status = ?');
+			values.push(data.status);
+		}
+
+		if (fields.length > 0) {
+			fields.push('updated_at = CURRENT_TIMESTAMP');
+			values.push(id);
+			const stmt = db.prepare(`
+				UPDATE transcription_sessions
+				SET ${fields.join(', ')}
+				WHERE id = ?
+			`);
+			stmt.run(...values);
+		}
+	},
+
+	getSession: (id) => {
+		const stmt = db.prepare('SELECT * FROM transcription_sessions WHERE id = ?');
+		return stmt.get(id);
+	},
+
+	getAllSessions: () => {
+		const stmt = db.prepare('SELECT * FROM transcription_sessions ORDER BY created_at DESC');
+		return stmt.all();
+	},
+
+	deleteSession: (id) => {
+		// Delete transcripts first
+		const deleteTranscripts = db.prepare('DELETE FROM transcripts WHERE session_id = ?');
+		deleteTranscripts.run(id);
+
+		// Then delete session
+		const deleteSession = db.prepare('DELETE FROM transcription_sessions WHERE id = ?');
+		deleteSession.run(id);
+	},
+
+	// Transcript operations
+	addTranscript: (sessionId, segmentIndex, text, srtText, startTime, endTime) => {
+		const stmt = db.prepare(`
+			INSERT INTO transcripts (session_id, segment_index, text, srt_text, start_time, end_time)
+			VALUES (?, ?, ?, ?, ?, ?)
+		`);
+		const result = stmt.run(sessionId, segmentIndex, text, srtText, startTime, endTime);
+		return result.lastInsertRowid;
+	},
+
+	getSessionTranscripts: (sessionId) => {
+		const stmt = db.prepare('SELECT * FROM transcripts WHERE session_id = ? ORDER BY segment_index');
+		return stmt.all(sessionId);
+	},
+
+	getSessionTranscriptsCount: (sessionId) => {
+		const stmt = db.prepare('SELECT COUNT(*) as count FROM transcripts WHERE session_id = ?');
+		const row = stmt.get(sessionId);
+		return row ? row.count : 0;
+	}
+};

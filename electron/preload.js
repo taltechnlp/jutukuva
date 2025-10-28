@@ -1,0 +1,49 @@
+import { contextBridge, ipcRenderer } from 'electron';
+
+// Expose protected methods that allow the renderer process to use
+// the ipcRenderer without exposing the entire object
+contextBridge.exposeInMainWorld('electron', {
+	send: (channel, data) => {
+		const validChannels = [];
+		if (validChannels.includes(channel)) {
+			ipcRenderer.send(channel, data);
+		}
+	},
+	receive: (channel, func) => {
+		const validChannels = [];
+		if (validChannels.includes(channel)) {
+			ipcRenderer.on(channel, (event, ...args) => func(...args));
+		}
+	}
+});
+
+// Expose SQLite API
+contextBridge.exposeInMainWorld('db', {
+	// Settings
+	getSetting: (key) => ipcRenderer.invoke('db:getSetting', key),
+	setSetting: (key, value) => ipcRenderer.invoke('db:setSetting', key, value),
+	getAllSettings: () => ipcRenderer.invoke('db:getAllSettings'),
+
+	// Transcription sessions
+	createSession: (id, name) => ipcRenderer.invoke('db:createSession', id, name),
+	updateSession: (id, data) => ipcRenderer.invoke('db:updateSession', id, data),
+	getSession: (id) => ipcRenderer.invoke('db:getSession', id),
+	getAllSessions: () => ipcRenderer.invoke('db:getAllSessions'),
+	deleteSession: (id) => ipcRenderer.invoke('db:deleteSession', id),
+
+	// Transcripts
+	addTranscript: (sessionId, segmentIndex, text, srtText, startTime, endTime) =>
+		ipcRenderer.invoke('db:addTranscript', sessionId, segmentIndex, text, srtText, startTime, endTime),
+	getSessionTranscripts: (sessionId) => ipcRenderer.invoke('db:getSessionTranscripts', sessionId)
+});
+
+// Expose Broadcast API
+contextBridge.exposeInMainWorld('broadcast', {
+	start: (port) => ipcRenderer.invoke('broadcast:start', port),
+	stop: () => ipcRenderer.invoke('broadcast:stop'),
+	subtitle: (subtitle) => ipcRenderer.invoke('broadcast:subtitle', subtitle),
+	sessionStart: (sessionInfo) => ipcRenderer.invoke('broadcast:sessionStart', sessionInfo),
+	sessionEnd: () => ipcRenderer.invoke('broadcast:sessionEnd'),
+	status: () => ipcRenderer.invoke('broadcast:status'),
+	clientCount: () => ipcRenderer.invoke('broadcast:clientCount')
+});
