@@ -6,6 +6,7 @@
 	import * as ort from 'onnxruntime-web';
 	import { SpeechEditor, SubtitlePreview } from '$lib/components/prosemirror-speech';
 	import type { SubtitleSegment, Word } from '$lib/components/prosemirror-speech/utils/types';
+	import { AudioSourceManager, type AudioSourceType, type AudioDevice } from '$lib/audioSourceManager';
 
 	// Configure ONNX Runtime to use WASM only (disable WebGPU to avoid warnings)
 	if (browser) {
@@ -31,6 +32,15 @@
 	let vad: MicVAD | null = null;
 	let isVadActive = $state(false);
 	let isSpeaking = $state(false);
+
+	// Audio source management
+	let audioSourceManager = $state<AudioSourceManager | null>(null);
+	let audioSourceType = $state<AudioSourceType>('microphone');
+	let selectedDeviceId = $state<string | null>(null);
+	let availableAudioDevices = $state<AudioDevice[]>([]);
+	let systemAudioAvailable = $state(false);
+	let isAudioSourceSwitching = $state(false);
+	let customAudioStream: MediaStream | null = null;
 
 	// Pre-speech circular buffer
 	const PRE_SPEECH_BUFFER_MS = 300; // 300ms pre-speech buffer
@@ -131,12 +141,131 @@
 		// TODO: Send subtitle to streaming endpoint or WebSocket
 	}
 
+	// Audio source management functions
+	async function loadAudioDevices() {
+		if (!audioSourceManager) return;
+		try {
+			availableAudioDevices = await audioSourceManager.enumerateAudioDevices();
+			console.log('[AUDIO] Found', availableAudioDevices.length, 'audio devices');
+		} catch (error) {
+			console.error('[AUDIO] Failed to enumerate devices:', error);
+		}
+	}
+
+	async function getAudioStream(): Promise<MediaStream> {
+		if (!audioSourceManager) {
+			throw new Error('AudioSourceManager not initialized');
+		}
+
+		// If we have a custom stream from source switching, use it
+		if (customAudioStream) {
+			return customAudioStream;
+		}
+
+		// Otherwise get stream based on selected source type
+		if (audioSourceType === 'system') {
+			return await audioSourceManager.getSystemAudioStream(selectedDeviceId);
+		} else {
+			return await audioSourceManager.getMicrophoneStream(selectedDeviceId);
+		}
+	}
+
+	async function switchAudioSource(newType: AudioSourceType, deviceId: string | null = null) {
+		if (!audioSourceManager || isAudioSourceSwitching) return;
+
+		console.log(`[AUDIO] Switching to ${newType}`, deviceId);
+		isAudioSourceSwitching = true;
+		vadError = '';
+
+		try {
+			// If recording, need to restart VAD
+			if (isRecording) {
+				console.log('[AUDIO] Recording active, restarting with new source...');
+
+				// Stop current recording
+				await stopRecording();
+
+				// Update source
+				audioSourceType = newType;
+				selectedDeviceId = deviceId;
+
+				// Clear custom stream so getAudioStream will fetch new one
+				if (customAudioStream) {
+					customAudioStream.getTracks().forEach(track => track.stop());
+					customAudioStream = null;
+				}
+
+				// Wait for cleanup
+				await new Promise(r => setTimeout(r, 300));
+
+				// Restart with new source
+				await startRecording();
+			} else {
+				// Just update the selection for next recording
+				audioSourceType = newType;
+				selectedDeviceId = deviceId;
+
+				// Clear any cached stream
+				if (customAudioStream) {
+					customAudioStream.getTracks().forEach(track => track.stop());
+					customAudioStream = null;
+				}
+			}
+
+			// Save preference
+			if (window.electronAPI) {
+				await window.electronAPI.setSetting('audio_source_type', newType);
+				if (deviceId) {
+					await window.electronAPI.setSetting('audio_device_id', deviceId);
+				}
+			}
+
+			console.log(`[AUDIO] ✓ Switched to ${newType}`);
+		} catch (error: any) {
+			console.error('[AUDIO] Failed to switch source:', error);
+			vadError = `Failed to switch audio source: ${error.message}`;
+		} finally {
+			isAudioSourceSwitching = false;
+		}
+	}
+
 	// Initialize VAD separately
 	async function initializeVAD() {
 		console.log('[INIT-VAD] Initializing VAD...');
 		isWasmLoading = true;
 
+		// Initialize audio source manager
+		audioSourceManager = new AudioSourceManager();
+		await audioSourceManager.initialize();
+
+		// Check system audio availability
+		systemAudioAvailable = await audioSourceManager.checkSystemAudioSupport();
+		console.log('[INIT-VAD] System audio available:', systemAudioAvailable);
+
+		// Load available audio devices
+		await loadAudioDevices();
+
+		// Fall back to microphone if system audio is selected but not available
+		if (audioSourceType === 'system' && !systemAudioAvailable) {
+			console.warn('[INIT-VAD] System audio selected but not available, falling back to microphone');
+			audioSourceType = 'microphone';
+			vadError = 'System audio not available. Please follow the setup instructions below or use microphone.';
+		}
+
+		// Get custom audio stream based on selected source
+		try {
+			customAudioStream = await getAudioStream();
+			console.log('[INIT-VAD] Got audio stream:', customAudioStream.getAudioTracks()[0].label);
+		} catch (error: any) {
+			console.error('[INIT-VAD] Failed to get audio stream:', error);
+			vadError = `Failed to get audio stream: ${error.message}`;
+			isWasmLoading = false;
+			return;
+		}
+
 		vad = await MicVAD.new({
+			// Provide pre-existing stream
+			stream: customAudioStream,
 			// Speech detection thresholds
 			positiveSpeechThreshold: 0.5,  // Lowered from 0.6 for better sensitivity
 			negativeSpeechThreshold: 0.35, // Lowered from 0.4
@@ -811,8 +940,23 @@
 	}
 
 	// Initialize on component mount
-	onMount(() => {
-		initializeSystem();
+	onMount(async () => {
+		await initializeSystem();
+
+		// Restore saved audio preferences
+		if (window.electronAPI) {
+			const savedType = await window.electronAPI.getSetting('audio_source_type');
+			const savedDeviceId = await window.electronAPI.getSetting('audio_device_id');
+
+			if (savedType) {
+				audioSourceType = savedType as AudioSourceType;
+				console.log('[AUDIO] Restored audio source type:', audioSourceType);
+			}
+			if (savedDeviceId) {
+				selectedDeviceId = savedDeviceId;
+				console.log('[AUDIO] Restored device ID:', selectedDeviceId);
+			}
+		}
 	});
 
 	// Cleanup on component destroy
@@ -976,6 +1120,72 @@
 			</div>
 
 			<h2 class="card-title mb-6">Eesti keele kõnetuvastus</h2>
+
+			<!-- Audio Source Selector -->
+			<div class="w-full max-w-md mb-6">
+				<div class="form-control">
+					<label class="label">
+						<span class="label-text font-semibold">Audio Source</span>
+					</label>
+					<select
+						class="select select-bordered w-full"
+						bind:value={audioSourceType}
+						onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
+						disabled={isAudioSourceSwitching || !isWasmReady}
+					>
+						<option value="microphone">🎤 Microphone</option>
+						{#if systemAudioAvailable}
+							<option value="system">🔊 System Audio</option>
+						{/if}
+					</select>
+				</div>
+
+				<!-- Device Selector (if multiple devices available) -->
+				{#if availableAudioDevices.length > 1}
+					<div class="form-control mt-2">
+						<label class="label">
+							<span class="label-text font-semibold">Device</span>
+						</label>
+						<select
+							class="select select-bordered w-full"
+							bind:value={selectedDeviceId}
+							onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
+							disabled={isAudioSourceSwitching || !isWasmReady}
+						>
+							<option value={null}>Default</option>
+							{#each availableAudioDevices as device}
+								<option value={device.deviceId}>{device.label}</option>
+							{/each}
+						</select>
+					</div>
+				{/if}
+
+				<!-- Switching indicator -->
+				{#if isAudioSourceSwitching}
+					<div class="alert alert-info mt-2">
+						<span class="loading loading-spinner loading-sm"></span>
+						<span>Switching audio source...</span>
+					</div>
+				{/if}
+
+				<!-- Platform-specific setup guide -->
+				{#if audioSourceType === 'system' && !systemAudioAvailable && audioSourceManager}
+					{@const setupInstructions = audioSourceManager.getSetupInstructions()}
+					<div class="alert alert-warning mt-4">
+						<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+						</svg>
+						<div class="flex flex-col gap-2 w-full">
+							<h3 class="font-bold">{setupInstructions.title}</h3>
+							<ol class="list-decimal list-inside space-y-1 text-sm">
+								{#each setupInstructions.steps as step}
+									<li>{step}</li>
+								{/each}
+							</ol>
+						</div>
+					</div>
+				{/if}
+			</div>
 
 			<div class="flex flex-col items-center justify-center gap-6">
 				<!-- Recording Button -->

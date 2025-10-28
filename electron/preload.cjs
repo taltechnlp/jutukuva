@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+const { contextBridge, ipcRenderer } = require('electron');
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
@@ -46,4 +46,12 @@ contextBridge.exposeInMainWorld('broadcast', {
 	sessionEnd: () => ipcRenderer.invoke('broadcast:sessionEnd'),
 	status: () => ipcRenderer.invoke('broadcast:status'),
 	clientCount: () => ipcRenderer.invoke('broadcast:clientCount')
+});
+
+// Expose Audio/System API
+contextBridge.exposeInMainWorld('electronAPI', {
+	getDesktopSources: () => ipcRenderer.invoke('audio:getDesktopSources'),
+	getPlatform: () => ipcRenderer.invoke('audio:getPlatform'),
+	setSetting: (key, value) => ipcRenderer.invoke('db:setSetting', key, value),
+	getSetting: (key) => ipcRenderer.invoke('db:getSetting', key)
 });

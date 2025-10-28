@@ -93,6 +93,18 @@ declare global {
 			}>;
 			clientCount: () => Promise<number>;
 		};
+		electronAPI: {
+			getDesktopSources: () => Promise<
+				Array<{
+					id: string;
+					name: string;
+					thumbnail: null;
+				}>
+			>;
+			getPlatform: () => Promise<string>;
+			setSetting: (key: string, value: string) => Promise<void>;
+			getSetting: (key: string) => Promise<string | null>;
+		};
 	}
 }
 

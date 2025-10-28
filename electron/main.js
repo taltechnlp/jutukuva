@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, desktopCapturer } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { initDatabase, closeDatabase, dbOperations } from './database.js';
@@ -21,7 +21,7 @@ function createWindow() {
 		width: 1200,
 		height: 800,
 		webPreferences: {
-			preload: path.join(__dirname, 'preload.js'),
+			preload: path.join(__dirname, 'preload.cjs'),
 			contextIsolation: true,
 			nodeIntegration: false,
 			sandbox: false
@@ -124,6 +124,28 @@ app.whenReady().then(() => {
 
 	ipcMain.handle('broadcast:clientCount', async () => {
 		return getConnectedClientsCount();
+	});
+
+	// Set up IPC handlers for audio source management
+	ipcMain.handle('audio:getDesktopSources', async () => {
+		try {
+			const sources = await desktopCapturer.getSources({
+				types: ['screen', 'window'],
+				thumbnailSize: { width: 0, height: 0 }
+			});
+			return sources.map((source) => ({
+				id: source.id,
+				name: source.name,
+				thumbnail: null // Don't need thumbnails for audio
+			}));
+		} catch (error) {
+			console.error('Error getting desktop sources:', error);
+			return [];
+		}
+	});
+
+	ipcMain.handle('audio:getPlatform', async () => {
+		return process.platform;
 	});
 
 	createWindow();
