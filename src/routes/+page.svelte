@@ -145,8 +145,19 @@
 	async function loadAudioDevices() {
 		if (!audioSourceManager) return;
 		try {
-			availableAudioDevices = await audioSourceManager.enumerateAudioDevices();
-			console.log('[AUDIO] Found', availableAudioDevices.length, 'audio devices');
+			// Request permission first to get device labels
+			try {
+				const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+				stream.getTracks().forEach((track) => track.stop());
+			} catch (e) {
+				console.warn('[AUDIO] Could not get permission for device enumeration:', e);
+			}
+
+			// Enumerate devices filtered by current source type
+			availableAudioDevices = await audioSourceManager.enumerateAudioDevices(audioSourceType);
+			console.log(
+				`[AUDIO] Found ${availableAudioDevices.length} ${audioSourceType} device(s)`
+			);
 		} catch (error) {
 			console.error('[AUDIO] Failed to enumerate devices:', error);
 		}
@@ -178,6 +189,8 @@
 		vadError = '';
 
 		try {
+			const oldType = audioSourceType;
+
 			// If recording, need to restart VAD
 			if (isRecording) {
 				console.log('[AUDIO] Recording active, restarting with new source...');
@@ -187,27 +200,41 @@
 
 				// Update source
 				audioSourceType = newType;
-				selectedDeviceId = deviceId;
+
+				// Reload device list if switching source type
+				if (oldType !== newType) {
+					await loadAudioDevices();
+					selectedDeviceId = null; // Reset device selection when switching types
+				} else {
+					selectedDeviceId = deviceId;
+				}
 
 				// Clear custom stream so getAudioStream will fetch new one
 				if (customAudioStream) {
-					customAudioStream.getTracks().forEach(track => track.stop());
+					customAudioStream.getTracks().forEach((track) => track.stop());
 					customAudioStream = null;
 				}
 
 				// Wait for cleanup
-				await new Promise(r => setTimeout(r, 300));
+				await new Promise((r) => setTimeout(r, 300));
 
 				// Restart with new source
 				await startRecording();
 			} else {
 				// Just update the selection for next recording
 				audioSourceType = newType;
-				selectedDeviceId = deviceId;
+
+				// Reload device list if switching source type
+				if (oldType !== newType) {
+					await loadAudioDevices();
+					selectedDeviceId = null; // Reset device selection when switching types
+				} else {
+					selectedDeviceId = deviceId;
+				}
 
 				// Clear any cached stream
 				if (customAudioStream) {
-					customAudioStream.getTracks().forEach(track => track.stop());
+					customAudioStream.getTracks().forEach((track) => track.stop());
 					customAudioStream = null;
 				}
 			}

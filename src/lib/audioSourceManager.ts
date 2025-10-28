@@ -73,16 +73,33 @@ export class AudioSourceManager {
 
 	/**
 	 * Enumerate all audio input devices
+	 * @param sourceType Optional filter: 'microphone' returns only mics, 'system' returns only monitors
 	 */
-	async enumerateAudioDevices(): Promise<AudioDevice[]> {
+	async enumerateAudioDevices(sourceType?: AudioSourceType): Promise<AudioDevice[]> {
 		const devices = await navigator.mediaDevices.enumerateDevices();
-		return devices
+		const allAudioInputs = devices
 			.filter((d) => d.kind === 'audioinput')
 			.map((d) => ({
 				deviceId: d.deviceId,
 				label: d.label || `Device ${d.deviceId.slice(0, 8)}`,
 				kind: d.kind as 'audioinput'
 			}));
+
+		// If no source type specified, return all devices
+		if (!sourceType) {
+			return allAudioInputs;
+		}
+
+		// Filter based on source type
+		if (sourceType === 'system') {
+			// Return only loopback/monitor devices
+			return this.findLoopbackDevices(allAudioInputs);
+		} else {
+			// Return only non-loopback devices (microphones)
+			const loopbackDevices = this.findLoopbackDevices(allAudioInputs);
+			const loopbackIds = new Set(loopbackDevices.map((d) => d.deviceId));
+			return allAudioInputs.filter((d) => !loopbackIds.has(d.deviceId));
+		}
 	}
 
 	/**
@@ -90,7 +107,9 @@ export class AudioSourceManager {
 	 */
 	findLoopbackDevices(devices: AudioDevice[]): AudioDevice[] {
 		const loopbackPatterns = [
-			/Monitor/i, // Linux PulseAudio/PipeWire
+			/Monitor of/i, // PulseAudio/PipeWire explicit format
+			/Monitor/i, // Generic monitor
+			/\.monitor$/i, // PulseAudio suffix format
 			/Stereo Mix/i, // Windows
 			/Wave Out/i, // Windows alternative
 			/CABLE Output/i, // VB-Cable (Windows)
@@ -99,9 +118,15 @@ export class AudioSourceManager {
 			/Aggregate/i // macOS Aggregate device
 		];
 
-		return devices.filter((device) =>
-			loopbackPatterns.some((pattern) => pattern.test(device.label))
-		);
+		const monitors = devices.filter((device) => {
+			const matches = loopbackPatterns.some((pattern) => pattern.test(device.label));
+			if (matches) {
+				console.log('[AudioSourceManager] Detected monitor device:', device.label);
+			}
+			return matches;
+		});
+
+		return monitors;
 	}
 
 	/**
