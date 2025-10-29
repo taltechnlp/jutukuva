@@ -1024,7 +1024,7 @@
 </svelte:head>
 
 <div class="bg-base-100">
-	<div class="container mx-auto px-4 py-8 max-w-4xl">
+	<div class="container mx-auto px-4 py-8 max-w-4xl xl:max-w-7xl">
 	<!-- Header -->
 	<div class="mb-8">
 		<h1 class="text-4xl font-bold mb-4">Kirjutustõlk</h1>
