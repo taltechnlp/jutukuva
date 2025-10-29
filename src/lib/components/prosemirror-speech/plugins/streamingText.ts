@@ -14,6 +14,7 @@ export interface StreamingTextState {
 	pendingText: string;
 	currentTime: number;
 	committedText: string; // Plain text that's been inserted (for deduplication)
+	shouldCreateNewParagraph: boolean; // Flag to create new paragraph on next text
 }
 
 export const streamingTextKey = new PluginKey<StreamingTextState>('streamingText');
@@ -40,6 +41,12 @@ function insertStreamingText(
 
 	const schema = state.schema;
 	const doc = tr.doc;
+
+	// Check if we should create a new paragraph (after VAD speech end)
+	const pluginState = streamingTextKey.getState(state);
+	const shouldCreateNewParagraph = pluginState?.shouldCreateNewParagraph || false;
+
+	console.log('[STREAMING-PLUGIN] shouldCreateNewParagraph:', shouldCreateNewParagraph);
 
 	// Extract committedText from APPROVED words in document
 	// This ensures we only skip words that have actually been approved
@@ -68,8 +75,27 @@ function insertStreamingText(
 
 	console.log('[STREAMING-PLUGIN] Found paragraph:', { lastParaPos, paraSize: lastPara?.content.size });
 
-	// If no paragraph found, create one
-	if (!lastPara) {
+	// Create new paragraph if flagged OR if no paragraph found
+	if (shouldCreateNewParagraph && lastPara) {
+		// Check if last paragraph has any content
+		let hasContent = false;
+		tr.doc.nodesBetween(lastParaPos + 1, lastParaPos + lastPara.nodeSize - 1, (node) => {
+			if (node.isText && node.text && node.text.trim().length > 0) {
+				hasContent = true;
+				return false;
+			}
+		});
+
+		if (hasContent) {
+			console.log('[STREAMING-PLUGIN] Creating new paragraph after speech end');
+			const newPara = schema.nodes.paragraph.create();
+			// Insert after the last paragraph
+			tr.insert(lastParaPos + lastPara.nodeSize, newPara);
+			// Update lastPara reference
+			lastParaPos = lastParaPos + lastPara.nodeSize;
+			lastPara = newPara;
+		}
+	} else if (!lastPara) {
 		console.log('[STREAMING] No paragraph found, creating one');
 		const newPara = schema.nodes.paragraph.create();
 		tr.insert(1, newPara); // Insert after doc node opening
@@ -270,11 +296,22 @@ export function streamingTextPlugin() {
 					buffer: [],
 					pendingText: '',
 					currentTime: 0,
-					committedText: ''
+					committedText: '',
+					shouldCreateNewParagraph: false
 				};
 			},
 
 			apply(tr, value): StreamingTextState {
+				// Handle VAD speech end signal
+				const vadSpeechEnd = tr.getMeta('vadSpeechEnd');
+				if (vadSpeechEnd) {
+					console.log('[STREAMING-PLUGIN] VAD speech end detected, flagging new paragraph creation');
+					return {
+						...value,
+						shouldCreateNewParagraph: true
+					};
+				}
+
 				// Handle streaming text meta
 				const streamingEvent = tr.getMeta('insertStreamingText') as
 					| StreamingTextEvent
@@ -284,21 +321,23 @@ export function streamingTextPlugin() {
 					const { text, isFinal } = streamingEvent;
 
 					if (isFinal) {
-						// Final text, clear buffer
+						// Final text, clear buffer and reset new paragraph flag
 						// committedText is derived from document, no need to reset
 						return {
 							...value,
 							buffer: [],
 							pendingText: '',
 							currentTime: streamingEvent.end || value.currentTime,
-							committedText: '' // Clear for safety
+							committedText: '', // Clear for safety
+							shouldCreateNewParagraph: false // Reset after use
 						};
 					} else {
-						// Partial text, add to buffer
+						// Partial text, add to buffer and reset new paragraph flag
 						return {
 							...value,
 							pendingText: text,
-							currentTime: streamingEvent.end || value.currentTime
+							currentTime: streamingEvent.end || value.currentTime,
+							shouldCreateNewParagraph: false // Reset after use
 						};
 					}
 				}
@@ -346,5 +385,20 @@ export function insertStreamingTextCommand(
 	const tr = state.tr;
 	tr.setMeta('insertStreamingText', event);
 	dispatch(tr);
+	return true;
+}
+
+/**
+ * Helper: Signal VAD speech end to create new paragraph on next text
+ */
+export function signalVadSpeechEndCommand(
+	state: EditorState,
+	dispatch: (tr: Transaction) => void
+): boolean {
+	const tr = state.tr;
+	tr.setMeta('vadSpeechEnd', true);
+	tr.setMeta('addToHistory', false); // Don't add to undo history
+	dispatch(tr);
+	console.log('[STREAMING-PLUGIN] VAD speech end signal dispatched');
 	return true;
 }
