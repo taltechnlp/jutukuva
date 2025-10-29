@@ -14,6 +14,7 @@ import { approveWordAtPosition } from './wordApproval';
 export interface AutoConfirmState {
 	config: AutoConfirmConfig;
 	wordTimers: Map<string, NodeJS.Timeout>; // wordId -> timer
+	editorView: EditorView | null; // Store reference for timer callbacks
 }
 
 export const autoConfirmKey = new PluginKey<AutoConfirmState>('autoConfirm');
@@ -21,8 +22,8 @@ export const autoConfirmKey = new PluginKey<AutoConfirmState>('autoConfirm');
 /**
  * Create auto-confirm plugin
  *
- * Schedules timers for all non-approved words
- * Words can be deleted/recreated by ASR, timers gracefully handle missing words
+ * Schedules timers immediately when words appear (in appendTransaction)
+ * Timers are scheduled synchronously with document changes for immediate auto-confirm
  */
 export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: true, timeoutSeconds: 5 }) {
 	return new Plugin<AutoConfirmState>({
@@ -32,12 +33,13 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 			init(): AutoConfirmState {
 				return {
 					config: initialConfig,
-					wordTimers: new Map()
+					wordTimers: new Map(),
+					editorView: null
 				};
 			},
 
 			apply(tr, value): AutoConfirmState {
-				let { config, wordTimers } = value;
+				let { config, wordTimers, editorView } = value;
 
 				// Update config if changed
 				const newConfig = tr.getMeta('updateAutoConfirm');
@@ -77,84 +79,109 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 
 				return {
 					config,
-					wordTimers
+					wordTimers,
+					editorView
 				};
 			}
 		},
 
+		// Schedule timers immediately when words appear in document
+		appendTransaction(transactions, oldState, newState) {
+			const pluginState = autoConfirmKey.getState(newState);
+			console.log('[AUTO-CONFIRM] appendTransaction called, pluginState:', !!pluginState, 'enabled:', pluginState?.config.enabled, 'editorView:', !!pluginState?.editorView);
+
+			if (!pluginState || !pluginState.config.enabled || !pluginState.editorView) {
+				console.log('[AUTO-CONFIRM] Skipping - missing requirements');
+				return null;
+			}
+
+			// Only schedule timers if document changed
+			const docChanged = transactions.some(tr => tr.docChanged);
+			console.log('[AUTO-CONFIRM] docChanged:', docChanged);
+			if (!docChanged) {
+				return null;
+			}
+
+			// Find all non-approved words and schedule timers if not already scheduled
+			let scheduledCount = 0;
+			newState.doc.descendants((node, pos) => {
+				if (node.isText && node.marks.length > 0) {
+					const wordMark = node.marks.find((mark) => mark.type.name === 'word');
+
+					// Schedule timers for all non-approved words
+					if (wordMark && !wordMark.attrs.approved) {
+						const wordId = wordMark.attrs.id;
+
+						// If this word doesn't have a timer yet, schedule one
+						if (!pluginState.wordTimers.has(wordId)) {
+						scheduledCount++;
+							const timeout = setTimeout(() => {
+								// Find word by ID and approve it
+								const currentState = pluginState.editorView!.state;
+								let wordPos: number | null = null;
+
+								currentState.doc.descendants((n, p) => {
+									if (n.isText && n.marks.length > 0) {
+										const mark = n.marks.find((m) => m.type.name === 'word' && m.attrs.id === wordId);
+										if (mark && !mark.attrs.approved) {
+											wordPos = p;
+											return false; // Stop searching
+										}
+									}
+								});
+
+								if (wordPos !== null) {
+									approveWordAtPosition(currentState, pluginState.editorView!.dispatch, wordPos);
+
+									// Check if this was the last pending word
+									setTimeout(() => {
+										const latestState = pluginState.editorView!.state;
+										let hasPendingWords = false;
+
+										latestState.doc.descendants((n) => {
+											if (n.isText && n.marks.length > 0) {
+												const wMark = n.marks.find((m) => m.type.name === 'word');
+												const pMark = n.marks.find((m) => m.type.name === 'pending');
+												if (wMark && pMark && !wMark.attrs.approved) {
+													hasPendingWords = true;
+													return false;
+												}
+											}
+										});
+
+										if (!hasPendingWords) {
+											const tr = latestState.tr;
+											tr.setMeta('allWordsApproved', true);
+											pluginState.editorView!.dispatch(tr);
+										}
+									}, 100);
+								}
+
+								// Clean up timer
+								pluginState.wordTimers.delete(wordId);
+							}, pluginState.config.timeoutSeconds * 1000);
+
+							pluginState.wordTimers.set(wordId, timeout);
+						}
+					}
+				}
+			});
+
+			console.log('[AUTO-CONFIRM] Scheduled', scheduledCount, 'new timers');
+			return null; // Don't create additional transactions
+		},
+
 		view(editorView: EditorView) {
+			// Store editor view reference for timer callbacks
+			const pluginState = autoConfirmKey.getState(editorView.state);
+			if (pluginState) {
+				pluginState.editorView = editorView;
+			}
+
 			return {
 				update(view, prevState) {
-					const pluginState = autoConfirmKey.getState(view.state);
-					if (!pluginState || !pluginState.config.enabled) {
-						return;
-					}
-
-					// Schedule timers for all non-approved words on doc changes
-					if (view.state.doc !== prevState.doc) {
-						// Find all non-approved words that don't have timers yet
-						view.state.doc.descendants((node, pos) => {
-							if (node.isText && node.marks.length > 0) {
-								const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-
-								// Schedule timers for all non-approved words
-								if (wordMark && !wordMark.attrs.approved) {
-									const wordId = wordMark.attrs.id;
-
-									// If this word doesn't have a timer yet, schedule one
-									if (!pluginState.wordTimers.has(wordId)) {
-										const timeout = setTimeout(() => {
-											// Find word by ID and approve it
-											const currentState = view.state;
-											let wordPos: number | null = null;
-
-											currentState.doc.descendants((n, p) => {
-												if (n.isText && n.marks.length > 0) {
-													const mark = n.marks.find((m) => m.type.name === 'word' && m.attrs.id === wordId);
-													if (mark && !mark.attrs.approved) {
-														wordPos = p;
-														return false; // Stop searching
-													}
-												}
-											});
-
-											if (wordPos !== null) {
-												approveWordAtPosition(currentState, view.dispatch, wordPos);
-
-												// Check if this was the last pending word
-												setTimeout(() => {
-													const latestState = view.state;
-													let hasPendingWords = false;
-
-													latestState.doc.descendants((n) => {
-														if (n.isText && n.marks.length > 0) {
-															const wMark = n.marks.find((m) => m.type.name === 'word');
-															const pMark = n.marks.find((m) => m.type.name === 'pending');
-															if (wMark && pMark && !wMark.attrs.approved) {
-																hasPendingWords = true;
-																return false;
-															}
-														}
-													});
-
-													if (!hasPendingWords) {
-														const tr = latestState.tr;
-														tr.setMeta('allWordsApproved', true);
-														view.dispatch(tr);
-													}
-												}, 100);
-											}
-
-											// Clean up timer
-											pluginState.wordTimers.delete(wordId);
-										}, pluginState.config.timeoutSeconds * 1000);
-
-										pluginState.wordTimers.set(wordId, timeout);
-									}
-								}
-							}
-						});
-					}
+					// Timer scheduling is now handled in appendTransaction for immediate scheduling
+					// This hook is kept for any future view-specific updates
 				},
 
 				destroy() {
