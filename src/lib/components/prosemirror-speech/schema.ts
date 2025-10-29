@@ -31,7 +31,6 @@ export const speechSchema = new Schema({
 				return [
 					'p',
 					{
-						class: 'subtitle-segment',
 						'data-segment-index': node.attrs.segmentIndex,
 						'data-start': node.attrs.segmentStartTime,
 						'data-end': node.attrs.segmentEndTime
