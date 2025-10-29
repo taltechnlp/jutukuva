@@ -1295,7 +1295,7 @@
 <!-- Speech Editor and Subtitle Preview -->
 <div class="flex flex-col xl:flex-row gap-6 mb-6">
 	<!-- Speech Editor -->
-	<div class="flex-1 min-w-[500px]">
+	<div class="xl:flex-[2] flex-1 min-w-[500px]">
 		<SpeechEditor
 			bind:this={speechEditor}
 			config={{
@@ -1308,7 +1308,7 @@
 	</div>
 
 	<!-- Subtitle Preview -->
-	<div class="flex-1 min-w-[500px]">
+	<div class="xl:flex-[1] flex-1 min-w-[500px]">
 		<SubtitlePreview
 			segments={subtitleSegments}
 			currentSegmentIndex={subtitleSegments.length - 1}
