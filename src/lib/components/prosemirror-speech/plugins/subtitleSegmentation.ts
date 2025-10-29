@@ -215,36 +215,11 @@ export function subtitleSegmentationPlugin(onSegmentComplete?: (segment: Subtitl
 						const segmentIndex = pluginState.segments.length + 1;
 						const segment = wordsToSegment(approvedWords, segmentIndex);
 						tr.setMeta('segmentComplete', segment);
-
-						// Clear the approved words by splitting the paragraph
-						// Create a new paragraph after the last approved word
-						let lastApprovedPos = 0;
-						lastPara.descendants((node, pos) => {
-							if (node.isText) {
-								const wordMark = node.marks.find((m) => m.type.name === 'word');
-								if (wordMark && wordMark.attrs.id === approvedWords[approvedWords.length - 1].id) {
-									lastApprovedPos = pos + node.nodeSize;
-									return false;
-								}
-							}
-						});
-
-						if (lastApprovedPos > 0) {
-							// Calculate absolute position in document
-							let paraPos = 0;
-							for (let i = 0; i < lastParaIndex; i++) {
-								paraPos += newState.doc.child(i).nodeSize;
-							}
-
-							// Split paragraph after last approved word
-							const absolutePos = paraPos + lastApprovedPos + 1;
-							const $pos = tr.doc.resolve(absolutePos);
-							if ($pos.parent.type.name === 'paragraph') {
-								tr.split($pos.pos);
-							}
-						}
-
 						modified = true;
+
+						// NOTE: Paragraph splitting removed - no longer create new paragraphs
+						// when words are confirmed. All text stays in one paragraph to avoid
+						// jumping and maintain simpler document structure.
 					}
 				}
 
@@ -283,58 +258,12 @@ export function subtitleSegmentationPlugin(onSegmentComplete?: (segment: Subtitl
 				return null;
 			}
 
-			// Check if we should split the last paragraph
-			const lastParaIndex = newState.doc.childCount - 1;
-			if (lastParaIndex >= 0) {
-				const result = shouldSplitParagraph(newState.doc, lastParaIndex);
+			// NOTE: Automatic paragraph splitting based on subtitle rules removed
+			// No longer split paragraphs automatically. All text stays in one paragraph.
 
-				if (result.shouldSplit && result.splitPos !== undefined) {
-					// Calculate paragraph position
-					let paraPos = 0;
-					for (let i = 0; i < lastParaIndex; i++) {
-						paraPos += newState.doc.child(i).nodeSize;
-					}
-
-					// Extract words from completed segment
-					const para = newState.doc.child(lastParaIndex);
-					const words = extractWordsFromParagraph(para, paraPos);
-
-					// Split the words at the split position
-					let splitWordIndex = 0;
-					let charCount = 0;
-					for (let i = 0; i < words.length; i++) {
-						charCount += words[i].text.length;
-						if (charCount >= result.splitPos) {
-							splitWordIndex = i + 1;
-							break;
-						}
-					}
-
-					const completedWords = words.slice(0, splitWordIndex);
-
-					// ONLY split if we have approved words in the segment
-					// This prevents infinite splitting during streaming (pending) text
-					const hasApprovedWords = completedWords.some((w) => w.approved);
-
-					if (hasApprovedWords) {
-						// Create subtitle segment
-						if (completedWords.length > 0 && completedWords[0].approved) {
-							const pluginState = subtitleSegmentationKey.getState(newState);
-							const segmentIndex = pluginState ? pluginState.segments.length + 1 : 1;
-
-							const segment = wordsToSegment(completedWords, segmentIndex);
-							tr.setMeta('segmentComplete', segment);
-						}
-
-						// Perform the split
-						splitParagraphAt(tr, paraPos + 1, result.splitPos);
-						modified = true;
-					}
-				}
-			}
-
-			// After normal splitting, check if recording ended and we have unemitted approved words
+			// Check if recording ended and we have unemitted approved words
 			const pluginState = subtitleSegmentationKey.getState(newState);
+			const lastParaIndex = newState.doc.childCount - 1;
 			if (pluginState && pluginState.recordingEnded && lastParaIndex >= 0) {
 				// Count total approved words across ALL paragraphs
 				let totalApprovedWords = 0;
