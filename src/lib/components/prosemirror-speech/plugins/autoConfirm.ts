@@ -13,7 +13,7 @@ import { approveWordAtPosition } from './wordApproval';
 
 export interface AutoConfirmState {
 	config: AutoConfirmConfig;
-	pendingWords: Map<string, { wordId: string; timeout: NodeJS.Timeout }>;
+	pendingWords: Map<string, { wordId: string; position: number; timeout: NodeJS.Timeout }>;
 	isStreamingActive: boolean;
 }
 
@@ -67,16 +67,17 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 					isStreamingActive = false;
 				}
 
-				// Clean up approved words and non-existent words from pending timers
+				// Map positions across document changes and clean up approved words
 				if (tr.docChanged) {
 					const approvedWords = new Set<string>();
-					const existingWords = new Set<string>();
+					const currentWordPositions = new Map<string, number>();
 
-					newState.doc.descendants((node) => {
+					// Find all words and their current positions
+					newState.doc.descendants((node, pos) => {
 						if (node.isText && node.marks.length > 0) {
 							const wordMark = node.marks.find((mark) => mark.type.name === 'word');
 							if (wordMark) {
-								existingWords.add(wordMark.attrs.id);
+								currentWordPositions.set(wordMark.attrs.id, pos);
 								if (wordMark.attrs.approved) {
 									approvedWords.add(wordMark.attrs.id);
 								}
@@ -84,13 +85,29 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 						}
 					});
 
-					// Clear timers for approved words or words that no longer exist
+					// Update positions and clear approved words
+					const newPendingWords = new Map<string, { wordId: string; position: number; timeout: NodeJS.Timeout }>();
+
 					pendingWords.forEach((pending, wordId) => {
-						if (approvedWords.has(wordId) || !existingWords.has(wordId)) {
+						if (approvedWords.has(wordId)) {
+							// Clear timer for approved words
 							clearTimeout(pending.timeout);
-							pendingWords.delete(wordId);
+						} else {
+							// Update position using transaction mapping
+							const currentPos = currentWordPositions.get(wordId);
+							if (currentPos !== undefined) {
+								newPendingWords.set(wordId, {
+									...pending,
+									position: currentPos
+								});
+							} else {
+								// Word no longer exists, but keep timer (will fail gracefully when it fires)
+								newPendingWords.set(wordId, pending);
+							}
 						}
 					});
+
+					pendingWords = newPendingWords;
 				}
 
 				return {
@@ -131,27 +148,42 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 
 									if (!pluginState.pendingWords.has(wordId)) {
 										// Schedule auto-confirm
-										console.log('[AUTO-CONFIRM] Scheduling timer for word:', wordId, 'text:', node.text);
+										console.log('[AUTO-CONFIRM] Scheduling timer for word:', wordId, 'text:', node.text, 'position:', pos);
 										const timeout = setTimeout(() => {
 											// Auto-approve this word
 											const currentState = view.state;
 											const currentPluginState = autoConfirmKey.getState(currentState);
 
 											if (currentPluginState) {
-												// Check if word still exists
-												let wordPos: number | null = null;
-												let wordStillExists = false;
+												// Get current position from plugin state
+												const pendingWord = currentPluginState.pendingWords.get(wordId);
+												let wordPos: number | null = pendingWord?.position ?? null;
 
-												currentState.doc.descendants((n, p) => {
-													if (n.isText && n.marks.find((m) => m.type.name === 'word' && m.attrs.id === wordId)) {
-														wordPos = p;
-														wordStillExists = true;
-														return false;
+												// Double-check word still exists at tracked position
+												let wordStillExists = false;
+												if (wordPos !== null) {
+													const nodeAtPos = currentState.doc.nodeAt(wordPos);
+													if (nodeAtPos && nodeAtPos.isText) {
+														const mark = nodeAtPos.marks.find((m) => m.type.name === 'word' && m.attrs.id === wordId);
+														if (mark) {
+															wordStillExists = true;
+														}
 													}
-												});
+												}
+
+												// Fallback: search for word if not found at tracked position
+												if (!wordStillExists) {
+													currentState.doc.descendants((n, p) => {
+														if (n.isText && n.marks.find((m) => m.type.name === 'word' && m.attrs.id === wordId)) {
+															wordPos = p;
+															wordStillExists = true;
+															return false;
+														}
+													});
+												}
 
 												if (wordStillExists && wordPos !== null) {
-													console.log('[AUTO-CONFIRM] Timer fired, approving word:', wordId);
+													console.log('[AUTO-CONFIRM] Timer fired, approving word:', wordId, 'at position:', wordPos);
 													approveWordAtPosition(currentState, view.dispatch, wordPos);
 
 													// Check if this was the last pending word - if so, trigger final segment emission
@@ -184,7 +216,7 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 											}
 										}, pluginState.config.timeoutSeconds * 1000);
 
-										pluginState.pendingWords.set(wordId, { wordId, timeout });
+										pluginState.pendingWords.set(wordId, { wordId, position: pos, timeout });
 									}
 								}
 							}
