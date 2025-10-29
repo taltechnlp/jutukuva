@@ -268,6 +268,13 @@ function insertStreamingText(
 	console.log('[STREAMING-PLUGIN] Inserted', insertedWords, 'words and', insertedSpaces, 'spaces');
 	console.log('[STREAMING-PLUGIN] Final doc size:', tr.doc.content.size);
 
+	// Reset the shouldCreateNewParagraph flag after processing
+	// We set this in the transaction meta so the plugin state can clear it
+	if (shouldCreateNewParagraph) {
+		tr.setMeta('clearNewParagraphFlag', true);
+		console.log('[STREAMING-PLUGIN] Clearing shouldCreateNewParagraph flag');
+	}
+
 	// Mark transaction to not add to history
 	tr.setMeta('addToHistory', false);
 
@@ -302,6 +309,16 @@ export function streamingTextPlugin() {
 			},
 
 			apply(tr, value): StreamingTextState {
+				// Handle clearing the new paragraph flag (after it's been used)
+				const clearNewParagraphFlag = tr.getMeta('clearNewParagraphFlag');
+				if (clearNewParagraphFlag) {
+					console.log('[STREAMING-PLUGIN] Clearing shouldCreateNewParagraph flag');
+					return {
+						...value,
+						shouldCreateNewParagraph: false
+					};
+				}
+
 				// Handle VAD speech end signal
 				const vadSpeechEnd = tr.getMeta('vadSpeechEnd');
 				if (vadSpeechEnd) {
@@ -321,23 +338,25 @@ export function streamingTextPlugin() {
 					const { text, isFinal } = streamingEvent;
 
 					if (isFinal) {
-						// Final text, clear buffer and reset new paragraph flag
+						// Final text, clear buffer
+						// Note: Don't reset shouldCreateNewParagraph here - it needs to persist
+						// until insertStreamingText() actually processes it
 						// committedText is derived from document, no need to reset
 						return {
 							...value,
 							buffer: [],
 							pendingText: '',
 							currentTime: streamingEvent.end || value.currentTime,
-							committedText: '', // Clear for safety
-							shouldCreateNewParagraph: false // Reset after use
+							committedText: '' // Clear for safety
 						};
 					} else {
-						// Partial text, add to buffer and reset new paragraph flag
+						// Partial text, add to buffer
+						// Note: Don't reset shouldCreateNewParagraph here - it needs to persist
+						// until insertStreamingText() actually processes it
 						return {
 							...value,
 							pendingText: text,
-							currentTime: streamingEvent.end || value.currentTime,
-							shouldCreateNewParagraph: false // Reset after use
+							currentTime: streamingEvent.end || value.currentTime
 						};
 					}
 				}
