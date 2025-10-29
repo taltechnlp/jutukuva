@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { _ } from 'svelte-i18n';
 	import { EditorState } from 'prosemirror-state';
 	import { EditorView } from 'prosemirror-view';
 	import { history } from 'prosemirror-history';
 	import { speechSchema } from './schema';
 	import { wordApprovalPlugin, wordApprovalKey } from './plugins/wordApproval';
-	import { keyboardShortcutsPlugin, textInputPlugin } from './plugins/keyboardShortcuts';
-	import { streamingTextPlugin, insertStreamingTextCommand, signalVadSpeechEndCommand } from './plugins/streamingText';
+	import { keyboardShortcutsPlugin } from './plugins/keyboardShortcuts';
+	import { streamingTextPlugin, insertStreamingTextCommand } from './plugins/streamingText';
 	import { subtitleSegmentationPlugin, subtitleSegmentationKey } from './plugins/subtitleSegmentation';
 	import { autoConfirmPlugin, autoConfirmKey, updateAutoConfirmConfig } from './plugins/autoConfirm';
 	import type { EditorConfig, StreamingTextEvent, SubtitleSegment, Word, AutoConfirmConfig } from './utils/types';
@@ -44,7 +43,6 @@
 			plugins: [
 				history(),
 				wordApprovalPlugin(handleWordApproved, 'word'),
-				textInputPlugin(),
 				keyboardShortcutsPlugin(),
 				streamingTextPlugin(),
 				subtitleSegmentationPlugin(handleSegmentComplete),
@@ -201,20 +199,6 @@
 		}, enhancedEvent);
 	}
 
-	// Public API: Signal VAD speech end (to create new paragraph on next text)
-	export function signalVadSpeechEnd() {
-		console.log('[EDITOR] signalVadSpeechEnd called');
-
-		if (!editorView) {
-			console.error('[EDITOR] No editorView available!');
-			return;
-		}
-
-		signalVadSpeechEndCommand(editorView.state, (tr) => {
-			editorView?.dispatch(tr);
-		});
-	}
-
 	// Public API: Get current state
 	export function getState() {
 		return {
@@ -270,11 +254,11 @@
 				type="checkbox"
 				checked={autoScroll}
 				onchange={handleAutoScrollChange}
-				aria-label={$_('dictate.autoScroll')}
+				aria-label="Enable auto-scroll"
 			/>
-			<span>{$_('dictate.autoScroll')}</span>
+			<span>Auto-scroll</span>
 		</label>
-		<span class="word-count">{approvedCount} / {wordCount} {$_('dictate.wordsApproved')}</span>
+		<span class="word-count">{approvedCount} / {wordCount} words approved</span>
 	</div>
 </div>
 
