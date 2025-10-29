@@ -1094,9 +1094,8 @@
 	{/if}
 
 	<!-- Recording Controls -->
-	<div class="card bg-base-200 shadow-xl mb-6">
-		<div class="card-body">
-			<h2 class="card-title mb-6">Eesti keele kõnetuvastus</h2>
+	<div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 2rem; margin-bottom: 1.5rem;">
+		<h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem;">Eesti keele kõnetuvastus</h2>
 
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
 				<!-- Left Column: Status and Controls -->
@@ -1289,7 +1288,6 @@
 					{/if}
 				</div>
 			</div>
-		</div>
 	</div>
 
 <!-- Speech Editor and Subtitle Preview -->
