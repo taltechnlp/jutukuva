@@ -1094,10 +1094,18 @@
 	{/if}
 
 	<!-- Recording Controls -->
-	<div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 2rem; margin-bottom: 1.5rem;">
-		<h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem;">Eesti keele kõnetuvastus</h2>
+	<div style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; margin-bottom: 1.5rem;">
+		<!-- Header -->
+		<div style="padding: 12px 16px; background-color: #fafafa; border-bottom: 1px solid #ddd;">
+			<h2 style="font-size: 16px; font-weight: 600; margin: 0; color: #424242;">Eesti keele kõnetuvastus</h2>
+		</div>
 
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+		<!-- Body -->
+		<div style="padding: 2rem;">
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-8" style="position: relative;">
+				<!-- Column Divider (only visible on desktop) -->
+				<div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: #e0e0e0; display: none;" class="md:block"></div>
+
 				<!-- Left Column: Status and Controls -->
 				<div class="flex flex-col gap-4">
 					<!-- Status Display -->
@@ -1171,7 +1179,8 @@
 							<span class="label-text font-semibold">Audio Source</span>
 						</label>
 						<select
-							class="select select-bordered w-full"
+							class="select w-full"
+							style="border: 1px solid #ddd; border-radius: 6px; background-color: white; padding: 8px 12px; font-size: 14px;"
 							bind:value={audioSourceType}
 							onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
 							disabled={isAudioSourceSwitching || !isWasmReady}
@@ -1194,7 +1203,8 @@
 								</span>
 							</label>
 							<select
-								class="select select-bordered w-full"
+								class="select w-full"
+								style="border: 1px solid #ddd; border-radius: 6px; background-color: white; padding: 8px 12px; font-size: 14px;"
 								bind:value={selectedDeviceId}
 								onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
 								disabled={isAudioSourceSwitching || !isWasmReady}
@@ -1288,6 +1298,7 @@
 					{/if}
 				</div>
 			</div>
+		</div>
 	</div>
 
 <!-- Speech Editor and Subtitle Preview -->
