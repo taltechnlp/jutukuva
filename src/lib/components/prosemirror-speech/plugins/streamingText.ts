@@ -31,14 +31,6 @@ function insertStreamingText(
 	endTime?: number,
 	isFinal?: boolean
 ): Transaction {
-	console.log('[STREAMING-PLUGIN] insertStreamingText called:', {
-		text: text.substring(0, 50),
-		startTime,
-		endTime,
-		isFinal,
-		docSize: tr.doc.content.size
-	});
-
 	const schema = state.schema;
 	let doc = tr.doc;
 
@@ -54,16 +46,13 @@ function insertStreamingText(
 		}
 	});
 
-	console.log('[STREAMING-PLUGIN] Found paragraph:', { lastParaPos, paraSize: lastPara?.content.size });
 
 	// Check if we should create a new paragraph (after VAD speech end)
 	const pluginState = streamingTextKey.getState(state);
 	const shouldCreateNewParagraph = pluginState?.createNewParagraphOnNextText;
 
-	console.log('[STREAMING-PLUGIN] shouldCreateNewParagraph:', shouldCreateNewParagraph);
 
 	if (shouldCreateNewParagraph && lastPara && lastPara.content.size > 0) {
-		console.log('[STREAMING-PLUGIN] Creating new paragraph after speech pause');
 		const newPara = schema.nodes.paragraph.create();
 		const insertPos = lastParaPos + lastPara.nodeSize;
 		tr.insert(insertPos, newPara);
@@ -84,7 +73,6 @@ function insertStreamingText(
 		lastParaPos = newLastParaPos;
 		lastPara = newLastPara;
 
-		console.log('[STREAMING-PLUGIN] New paragraph created at pos:', lastParaPos, 'size:', lastPara?.content.size);
 
 		// Clear the flag by setting meta
 		tr.setMeta('clearNewParagraphFlag', true);
@@ -108,11 +96,9 @@ function insertStreamingText(
 			}
 		}
 	});
-	console.log('[STREAMING-PLUGIN] Committed text:', committedText.substring(0, 50));
 
 	// If no paragraph found, create one
 	if (!lastPara) {
-		console.log('[STREAMING] No paragraph found, creating one');
 		const newPara = schema.nodes.paragraph.create();
 		tr.insert(1, newPara); // Insert after doc node opening
 		lastParaPos = 1;
@@ -126,8 +112,6 @@ function insertStreamingText(
 	const committedWords = committedText.trim().split(/\s+/).filter(w => w.length > 0);
 	const incomingWords = text.trim().split(/\s+/).filter(w => w.length > 0);
 
-	console.log('[STREAMING-PLUGIN] Committed words:', committedWords.length, ':', committedWords.slice(0, 10).join(' '));
-	console.log('[STREAMING-PLUGIN] Incoming words:', incomingWords.length, ':', incomingWords.slice(0, 10).join(' '));
 
 	// Find how many words at the start match (common prefix)
 	let commonPrefixLength = 0;
@@ -139,8 +123,6 @@ function insertStreamingText(
 		}
 	}
 
-	console.log('[STREAMING-PLUGIN] Common prefix:', commonPrefixLength, 'words');
-	console.log('[STREAMING-PLUGIN] Will insert:', incomingWords.length - commonPrefixLength, 'new words');
 
 	// Extract pending words from last paragraph (for ID reuse)
 	// Use ARRAY to preserve order and handle duplicate words correctly
@@ -160,7 +142,6 @@ function insertStreamingText(
 		}
 	});
 
-	console.log('[STREAMING-PLUGIN] Found', pendingWords.length, 'pending words in last paragraph:', pendingWords.map(w => w.text).slice(0, 10).join(' '));
 
 	// Find range of pending content to delete
 	let firstPendingPos: number | null = null;
@@ -180,7 +161,6 @@ function insertStreamingText(
 
 	// Delete all pending content in one operation
 	if (firstPendingPos !== null && lastPendingPos !== null) {
-		console.log('[STREAMING-PLUGIN] Deleting pending content from', firstPendingPos, 'to', lastPendingPos);
 		tr.delete(firstPendingPos, lastPendingPos);
 
 		// Update doc reference after deletion
@@ -195,18 +175,15 @@ function insertStreamingText(
 				lastParaPos = pos;
 			}
 		});
-		console.log('[STREAMING-PLUGIN] After deletion, lastPara at:', lastParaPos, 'size:', lastPara?.content.size);
 	}
 
 	// Insert position is at the end of the last paragraph
 	const insertPos = lastParaPos + 1 + (lastPara?.content.size || 0);
 
-	console.log('[STREAMING-PLUGIN] Insert position:', insertPos);
 
 	// Split text into words (preserve spacing for accurate timing)
 	const textParts = text.split(/(\s+)/);
 
-	console.log('[STREAMING-PLUGIN] Split into', textParts.length, 'parts (words + spaces)');
 
 	// Calculate timing info
 	let currentPos = insertPos;
@@ -230,7 +207,6 @@ function insertStreamingText(
 			// Check if this word is part of the common prefix (already committed)
 			if (incomingWordIndex < commonPrefixLength) {
 				// Skip this word - it's already in committedText
-				console.log('[STREAMING-PLUGIN] Skipping word', incomingWordIndex, '(already committed):', part);
 				incomingWordIndex++;
 				charPosition += part.length;
 				continue;
@@ -248,9 +224,7 @@ function insertStreamingText(
 			const wordId = pendingWord?.id || uuidv4();
 
 			if (pendingWord) {
-				console.log('[STREAMING-PLUGIN] Reusing ID from position', pendingWordIndex, 'for word "' + part.trim() + '":', wordId);
 			} else {
-				console.log('[STREAMING-PLUGIN] Creating new ID for word "' + part.trim() + '" at position', pendingWordIndex, ':', wordId);
 			}
 
 			// Create word mark
@@ -286,8 +260,6 @@ function insertStreamingText(
 		charPosition += part.length;
 	}
 
-	console.log('[STREAMING-PLUGIN] Inserted', insertedWords, 'words and', insertedSpaces, 'spaces');
-	console.log('[STREAMING-PLUGIN] Final doc size:', tr.doc.content.size);
 
 	// Mark transaction to not add to history
 	tr.setMeta('addToHistory', false);
@@ -296,9 +268,7 @@ function insertStreamingText(
 	// This allows auto-confirm to start scheduling timers when final text arrives
 	if (!isFinal) {
 		tr.setMeta('streamingText', true);
-		console.log('[STREAMING-PLUGIN] Marked as streaming (non-final)');
 	} else {
-		console.log('[STREAMING-PLUGIN] NOT marked as streaming (final text)');
 	}
 
 	return tr;
@@ -325,7 +295,6 @@ export function streamingTextPlugin() {
 			apply(tr, value): StreamingTextState {
 				// Handle VAD speech end - set flag to create new paragraph
 				if (tr.getMeta('vadSpeechEnd')) {
-					console.log('[STREAMING-PLUGIN] VAD speech end - will create new paragraph on next text');
 					return {
 						...value,
 						createNewParagraphOnNextText: true
