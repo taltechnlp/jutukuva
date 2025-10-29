@@ -81,10 +81,13 @@ function insertStreamingText(
 		const insertPos = lastParaPos + lastPara.nodeSize;
 		tr.insert(insertPos, newPara);
 
+		// Update doc reference to the modified document
+		doc = tr.doc;
+
 		// Re-find the new paragraph in the updated document
 		let newLastParaPos = 0;
 		let newLastPara: any = null;
-		tr.doc.descendants((node, pos) => {
+		doc.descendants((node, pos) => {
 			if (node.type.name === 'paragraph') {
 				newLastPara = node;
 				newLastParaPos = pos;
