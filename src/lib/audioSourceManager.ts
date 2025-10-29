@@ -11,7 +11,7 @@ export type AudioSourceType = 'microphone' | 'system';
 export interface AudioDevice {
 	deviceId: string;
 	label: string;
-	kind: 'audioinput' | 'audiooutput';
+	kind: 'audioinput' | 'audiooutput' | 'desktop';
 }
 
 export class AudioSourceManager {
@@ -79,6 +79,7 @@ export class AudioSourceManager {
 		const devices = await navigator.mediaDevices.enumerateDevices();
 		const allAudioInputs = devices
 			.filter((d) => d.kind === 'audioinput')
+			.filter((d) => d.deviceId !== 'default' && d.deviceId !== '') // Filter out default device duplicates
 			.map((d) => ({
 				deviceId: d.deviceId,
 				label: d.label || `Device ${d.deviceId.slice(0, 8)}`,
@@ -92,8 +93,18 @@ export class AudioSourceManager {
 
 		// Filter based on source type
 		if (sourceType === 'system') {
-			// Return only loopback/monitor devices
-			return this.findLoopbackDevices(allAudioInputs);
+			// On Linux, prefer desktop sources over monitor devices for consistency
+			// Desktop sources allow selecting specific windows/screens and are more reliable
+			if (this.platform === 'linux' && window.electronAPI) {
+				const desktopSources = await this.getDesktopSourcesAsDevices();
+				if (desktopSources.length > 0) {
+					return desktopSources;
+				}
+			}
+
+			// Fall back to loopback/monitor devices on other platforms or if desktop sources not available
+			const loopbackDevices = this.findLoopbackDevices(allAudioInputs);
+			return loopbackDevices;
 		} else {
 			// Return only non-loopback devices (microphones)
 			const loopbackDevices = this.findLoopbackDevices(allAudioInputs);
@@ -127,6 +138,27 @@ export class AudioSourceManager {
 		});
 
 		return monitors;
+	}
+
+	/**
+	 * Get desktop sources as audio devices (for Linux desktopCapturer)
+	 */
+	private async getDesktopSourcesAsDevices(): Promise<AudioDevice[]> {
+		if (!window.electronAPI) {
+			return [];
+		}
+
+		try {
+			const sources = await window.electronAPI.getDesktopSources();
+			return sources.map((source: any) => ({
+				deviceId: source.id,
+				label: source.name,
+				kind: 'desktop' as const
+			}));
+		} catch (error) {
+			console.error('[AudioSourceManager] Error getting desktop sources:', error);
+			return [];
+		}
 	}
 
 	/**
@@ -174,22 +206,27 @@ export class AudioSourceManager {
 	 * Get Linux system audio (PulseAudio/PipeWire monitor)
 	 */
 	private async getLinuxSystemAudio(deviceId: string | null): Promise<MediaStream> {
-		// If specific device provided, use it
+		// If specific device provided, check if it's a desktop source or monitor device
 		if (deviceId) {
-			return await this.getLoopbackStream(deviceId);
+			// Desktop source IDs start with 'screen:' or 'window:'
+			if (deviceId.startsWith('screen:') || deviceId.startsWith('window:')) {
+				return await this.getDesktopCapturerAudio(deviceId);
+			} else {
+				return await this.getLoopbackStream(deviceId);
+			}
 		}
 
 		// Find monitor device
 		const devices = await this.enumerateAudioDevices();
 		const monitor = devices.find((d) => /Monitor/i.test(d.label));
 
-		if (!monitor) {
-			throw new Error(
-				'No monitor device found. Please check that PulseAudio/PipeWire is running and monitor sources are available.'
-			);
+		if (monitor) {
+			return await this.getLoopbackStream(monitor.deviceId);
 		}
 
-		return await this.getLoopbackStream(monitor.deviceId);
+		// Fall back to desktopCapturer if no monitor device found
+		console.log('[AudioSourceManager] No monitor device found, using desktopCapturer');
+		return await this.getDesktopCapturerAudio(null);
 	}
 
 	/**
@@ -211,7 +248,7 @@ export class AudioSourceManager {
 
 		// Fall back to desktopCapturer
 		console.log('[AudioSourceManager] Stereo Mix not found, using desktopCapturer');
-		return await this.getDesktopCapturerAudio();
+		return await this.getDesktopCapturerAudio(null);
 	}
 
 	/**
@@ -255,8 +292,9 @@ export class AudioSourceManager {
 
 	/**
 	 * Get audio using Electron's desktopCapturer API
+	 * @param sourceId Optional specific source ID to use
 	 */
-	private async getDesktopCapturerAudio(): Promise<MediaStream> {
+	private async getDesktopCapturerAudio(sourceId: string | null = null): Promise<MediaStream> {
 		if (!window.electronAPI) {
 			throw new Error('desktopCapturer not available (not running in Electron)');
 		}
@@ -268,23 +306,38 @@ export class AudioSourceManager {
 			throw new Error('No desktop sources available for capture');
 		}
 
-		// Use first source (user should select in production)
-		const sourceId = sources[0].id;
+		// Use provided sourceId or first source
+		let selectedSourceId = sourceId;
+		let sourceName = 'Unknown';
 
-		console.log('[AudioSourceManager] Using desktop source:', sources[0].name);
+		if (sourceId) {
+			const source = sources.find((s: any) => s.id === sourceId);
+			if (source) {
+				sourceName = source.name;
+			} else {
+				console.warn('[AudioSourceManager] Requested source not found, using first available');
+				selectedSourceId = sources[0].id;
+				sourceName = sources[0].name;
+			}
+		} else {
+			selectedSourceId = sources[0].id;
+			sourceName = sources[0].name;
+		}
+
+		console.log('[AudioSourceManager] Using desktop source:', sourceName);
 
 		// Request screen capture with audio
 		const stream = await navigator.mediaDevices.getUserMedia({
 			audio: {
 				mandatory: {
 					chromeMediaSource: 'desktop',
-					chromeMediaSourceId: sourceId
+					chromeMediaSourceId: selectedSourceId
 				}
 			} as any,
 			video: {
 				mandatory: {
 					chromeMediaSource: 'desktop',
-					chromeMediaSourceId: sourceId,
+					chromeMediaSourceId: selectedSourceId,
 					maxWidth: 1,
 					maxHeight: 1
 				}
