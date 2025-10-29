@@ -32,6 +32,8 @@
 	let vad: MicVAD | null = null;
 	let isVadActive = $state(false);
 	let isSpeaking = $state(false);
+	let lastSpeechEndTime: number | null = null;
+	let speechEndTimer: NodeJS.Timeout | null = null;
 
 	// Audio source management
 	let audioSourceManager = $state<AudioSourceManager | null>(null);
@@ -360,10 +362,24 @@
 				if (DEBUG_VAD) console.log('🔇 [VAD] Speech ended, audio length:', audio.length);
 				isSpeaking = false;
 
-				// Signal to editor to create new paragraph on next text
-				if (speechEditor && isRecording) {
-					speechEditor.signalVadSpeechEnd();
+				// Clear any existing timer
+				if (speechEndTimer) {
+					clearTimeout(speechEndTimer);
 				}
+
+				// Only signal new paragraph after a significant pause (3 seconds)
+				// This prevents creating paragraphs on short breaths/hesitations
+				lastSpeechEndTime = Date.now();
+				speechEndTimer = setTimeout(() => {
+					// Check if speech hasn't resumed in the last 3 seconds
+					if (speechEditor && isRecording && lastSpeechEndTime) {
+						const timeSinceSpeechEnd = Date.now() - lastSpeechEndTime;
+						if (timeSinceSpeechEnd >= 3000) {
+							console.log('[VAD] Significant pause detected (3s+), signaling new paragraph');
+							speechEditor.signalVadSpeechEnd();
+						}
+					}
+				}, 3000);
 
 				// Note: We don't send utterance_end anymore
 				// - For streaming models (ET/EN): Sessions should stay open across pauses
