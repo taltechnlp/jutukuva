@@ -351,6 +351,13 @@
 				if (DEBUG_VAD) console.log('🎤 [VAD] Speech started - sending pre-speech buffer');
 				isSpeaking = true;
 
+				// Clear the speech end timer since speech resumed
+				if (speechEndTimer) {
+					clearTimeout(speechEndTimer);
+					speechEndTimer = null;
+				}
+				lastSpeechEndTime = null;
+
 				// Send pre-speech buffer first
 				for (const bufferedFrame of audioBuffer) {
 					sendAudio(bufferedFrame);
