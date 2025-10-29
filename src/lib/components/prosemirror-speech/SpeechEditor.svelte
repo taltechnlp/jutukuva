@@ -65,11 +65,14 @@
 				if (autoScroll && transaction.docChanged && editorElement) {
 					requestAnimationFrame(() => {
 						if (editorElement) {
-							// Scroll to the bottom of the editor element
+							// Keep the bottom of the editor visible as content is added
 							const rect = editorElement.getBoundingClientRect();
-							const isNearBottom = rect.bottom - window.innerHeight < 200;
-							if (isNearBottom || rect.bottom > window.innerHeight) {
-								editorElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+							const viewportHeight = window.innerHeight;
+
+							// If bottom of editor is below viewport, scroll to keep it visible
+							if (rect.bottom > viewportHeight) {
+								const scrollAmount = rect.bottom - viewportHeight + 50; // 50px padding from bottom
+								window.scrollBy({ top: scrollAmount, behavior: 'smooth' });
 							}
 						}
 					});
