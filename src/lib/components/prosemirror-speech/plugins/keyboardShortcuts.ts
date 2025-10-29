@@ -10,9 +10,7 @@ import type { Command } from 'prosemirror-state';
 import { TextSelection } from 'prosemirror-state';
 import {
 	wordApprovalKey,
-	approveWordCommand,
-	approveSentenceCommand,
-	approveParagraphCommand
+	approveUpToCurrentWordCommand
 } from './wordApproval';
 
 /**
@@ -109,47 +107,6 @@ const prevWordCommand: Command = (state, dispatch) => {
 };
 
 /**
- * Toggle approval mode
- */
-const toggleApprovalModeCommand: Command = (state, dispatch) => {
-	const pluginState = wordApprovalKey.getState(state);
-	if (!pluginState) return false;
-
-	if (dispatch) {
-		const modes: Array<'word' | 'sentence' | 'paragraph'> = ['word', 'sentence', 'paragraph'];
-		const currentIndex = modes.indexOf(pluginState.approvalMode);
-		const nextMode = modes[(currentIndex + 1) % modes.length];
-
-		const tr = state.tr;
-		tr.setMeta('setApprovalMode', nextMode);
-		dispatch(tr);
-
-		console.log(`Approval mode: ${nextMode}`);
-	}
-
-	return true;
-};
-
-/**
- * Approve based on current mode
- */
-const approveCommand: Command = (state, dispatch) => {
-	const pluginState = wordApprovalKey.getState(state);
-	if (!pluginState) return false;
-
-	switch (pluginState.approvalMode) {
-		case 'word':
-			return approveWordCommand(state, dispatch);
-		case 'sentence':
-			return approveSentenceCommand(state, dispatch);
-		case 'paragraph':
-			return approveParagraphCommand(state, dispatch);
-		default:
-			return false;
-	}
-};
-
-/**
  * Create keyboard shortcuts plugin
  */
 export function keyboardShortcutsPlugin() {
@@ -160,19 +117,13 @@ export function keyboardShortcutsPlugin() {
 		ArrowRight: nextWordCommand,
 		ArrowLeft: prevWordCommand,
 
-		// Approval
-		Enter: approveCommand,
-		Space: approveCommand,
-		'Shift-Enter': approveSentenceCommand,
-		'Ctrl-Enter': approveParagraphCommand,
+		// Approval - Enter confirms everything from start up to and including current word
+		Enter: approveUpToCurrentWordCommand,
 
 		// Undo/Redo
 		'Mod-z': undo,
 		'Mod-y': redo,
 		'Mod-Shift-z': redo,
-
-		// Mode toggle
-		'Ctrl-e': toggleApprovalModeCommand,
 
 		// Escape: would cancel edit / revert word (implement in future)
 		Escape: (state, dispatch) => {

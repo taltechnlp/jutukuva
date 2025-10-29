@@ -18,6 +18,17 @@
 		onAutoConfirmChange?: (config: AutoConfirmConfig) => void;
 	} = $props();
 
+	// Keyboard shortcuts modal state
+	let showShortcutsModal = $state(false);
+
+	function openShortcutsModal() {
+		showShortcutsModal = true;
+	}
+
+	function closeShortcutsModal() {
+		showShortcutsModal = false;
+	}
+
 	// Auto-confirm handlers
 	function toggleAutoConfirm() {
 		onAutoConfirmChange({
@@ -105,6 +116,7 @@
 	<div class="toolbar-group">
 		<button
 			class="toolbar-button"
+			onclick={openShortcutsModal}
 			title="Keyboard shortcuts"
 			aria-label="Keyboard shortcuts"
 		>
@@ -115,6 +127,80 @@
 		</button>
 	</div>
 </div>
+
+<!-- Keyboard Shortcuts Modal -->
+{#if showShortcutsModal}
+	<dialog class="modal modal-open">
+		<div class="modal-box max-w-2xl">
+			<h3 class="text-lg font-bold mb-4">Keyboard Shortcuts</h3>
+
+			<div class="overflow-x-auto">
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Action</th>
+							<th>Shortcut</th>
+						</tr>
+					</thead>
+					<tbody>
+						<!-- Navigation -->
+						<tr class="bg-base-200">
+							<td colspan="2" class="font-semibold">Navigation</td>
+						</tr>
+						<tr>
+							<td>Navigate to next word</td>
+							<td>
+								<kbd class="kbd kbd-sm">Tab</kbd> or <kbd class="kbd kbd-sm">→</kbd>
+							</td>
+						</tr>
+						<tr>
+							<td>Navigate to previous word</td>
+							<td>
+								<kbd class="kbd kbd-sm">Shift</kbd> + <kbd class="kbd kbd-sm">Tab</kbd> or <kbd class="kbd kbd-sm">←</kbd>
+							</td>
+						</tr>
+
+						<!-- Approval -->
+						<tr class="bg-base-200">
+							<td colspan="2" class="font-semibold">Approval</td>
+						</tr>
+						<tr>
+							<td>Approve all words up to current word</td>
+							<td>
+								<kbd class="kbd kbd-sm">Enter</kbd>
+							</td>
+						</tr>
+
+						<!-- Editing -->
+						<tr class="bg-base-200">
+							<td colspan="2" class="font-semibold">Editing</td>
+						</tr>
+						<tr>
+							<td>Undo</td>
+							<td>
+								<kbd class="kbd kbd-sm">Ctrl</kbd> + <kbd class="kbd kbd-sm">Z</kbd>
+							</td>
+						</tr>
+						<tr>
+							<td>Redo</td>
+							<td>
+								<kbd class="kbd kbd-sm">Ctrl</kbd> + <kbd class="kbd kbd-sm">Y</kbd> or
+								<kbd class="kbd kbd-sm">Ctrl</kbd> + <kbd class="kbd kbd-sm">Shift</kbd> + <kbd class="kbd kbd-sm">Z</kbd>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+
+			<div class="modal-action">
+				<button class="btn" onclick={closeShortcutsModal}>Close</button>
+			</div>
+		</div>
+		<form method="dialog" class="modal-backdrop" onclick={closeShortcutsModal}>
+			<button type="button">close</button>
+		</form>
+	</dialog>
+{/if}
 
 <style>
 	.toolbar {
