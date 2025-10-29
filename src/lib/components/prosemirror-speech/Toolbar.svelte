@@ -86,7 +86,7 @@
 
 	<!-- Mode Selector -->
 	<div class="toolbar-group">
-		<label class="toolbar-label">Approval Mode:</label>
+		<label class="toolbar-label">Mode:</label>
 		<button
 			class="mode-button"
 			onclick={cycleMode}
@@ -170,7 +170,8 @@
 	.toolbar {
 		display: flex;
 		align-items: center;
-		gap: 16px;
+		flex-wrap: wrap;
+		gap: 12px;
 		padding: 12px 16px;
 		background-color: #fafafa;
 		border-bottom: 1px solid #ddd;
@@ -179,7 +180,7 @@
 	.toolbar-group {
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		gap: 6px;
 	}
 
 	.toolbar-button {
@@ -240,7 +241,8 @@
 
 	.progress-group {
 		flex: 1;
-		max-width: 200px;
+		max-width: 150px;
+		min-width: 100px;
 	}
 
 	.progress-bar {
@@ -268,7 +270,7 @@
 
 	.auto-confirm-group {
 		border-left: 1px solid #ddd;
-		padding-left: 16px;
+		padding-left: 12px;
 	}
 
 	.toolbar-toggle {
