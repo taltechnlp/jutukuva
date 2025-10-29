@@ -13,11 +13,10 @@
 	} = $props();
 
 	let containerElement: HTMLDivElement;
-	let autoScroll = $state(true);
 
 	// Auto-scroll to current segment (using $effect instead of afterUpdate)
 	$effect(() => {
-		if (autoScroll && containerElement && currentSegmentIndex >= 0) {
+		if (containerElement && currentSegmentIndex >= 0) {
 			const activeElement = containerElement.querySelector('.segment.active');
 			if (activeElement) {
 				activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -56,10 +55,6 @@
 	<div class="preview-header">
 		<h3 class="preview-title">Subtitle Preview ({segments.length})</h3>
 		<div class="preview-actions">
-			<label class="auto-scroll-toggle">
-				<input type="checkbox" bind:checked={autoScroll} />
-				<span>Auto-scroll</span>
-			</label>
 			<button
 				class="action-button"
 				onclick={copyToClipboard}
@@ -150,19 +145,6 @@
 		display: flex;
 		align-items: center;
 		gap: 8px;
-	}
-
-	.auto-scroll-toggle {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		font-size: 13px;
-		color: #666;
-		cursor: pointer;
-	}
-
-	.auto-scroll-toggle input {
-		cursor: pointer;
 	}
 
 	.action-button {

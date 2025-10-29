@@ -1094,206 +1094,208 @@
 	{/if}
 
 	<!-- Recording Controls -->
-	<div class="card bg-base-200 shadow-xl mb-6 relative">
+	<div class="card bg-base-200 shadow-xl mb-6">
 		<div class="card-body">
-			<!-- Status Badge - Top Right (Connection Status or VAD Status) -->
-			<div class="absolute top-4 right-4">
-				{#if isRecording}
-					<!-- VAD Status when recording -->
-					<div class="badge gap-2 p-3" class:badge-info={!isSpeaking} class:badge-success={isSpeaking}>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-4 w-4"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-							/>
-						</svg>
-						{#if isSpeaking}
-							<span>{$_('dictate.speakingDetected')}</span>
-						{:else}
-							<span>{$_('dictate.listeningForSpeech')}</span>
-						{/if}
-					</div>
-				{:else if isWasmLoading || !isWasmReady}
-					<!-- Connection status when not recording -->
-					<div class="badge badge-info gap-2 p-3">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-4 w-4 animate-spin"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-							/>
-						</svg>
-						<span>{initializationStatus}</span>
-					</div>
-				{:else if isWasmReady && isConnected}
-					<div class="badge badge-success gap-2 p-3">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-4 w-4"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-							/>
-						</svg>
-						<span>{initializationStatus}</span>
-					</div>
-				{/if}
-			</div>
-
 			<h2 class="card-title mb-6">Eesti keele kõnetuvastus</h2>
 
-			<!-- Audio Source Selector -->
-			<div class="w-full max-w-md mb-6">
-				<div class="form-control">
-					<label class="label">
-						<span class="label-text font-semibold">Audio Source</span>
-					</label>
-					<select
-						class="select select-bordered w-full"
-						bind:value={audioSourceType}
-						onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
-						disabled={isAudioSourceSwitching || !isWasmReady}
-					>
-						<option value="microphone">🎤 Microphone</option>
-						{#if systemAudioAvailable}
-							<option value="system">🔊 System Audio</option>
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+				<!-- Left Column: Status and Controls -->
+				<div class="flex flex-col gap-4">
+					<!-- Status Display -->
+					<div class="mb-2">
+						{#if isRecording}
+							<!-- VAD Status when recording -->
+							<div class="badge gap-2 p-3" class:badge-info={!isSpeaking} class:badge-success={isSpeaking}>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="h-4 w-4"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+									/>
+								</svg>
+								{#if isSpeaking}
+									<span>{$_('dictate.speakingDetected')}</span>
+								{:else}
+									<span>{$_('dictate.listeningForSpeech')}</span>
+								{/if}
+							</div>
+						{:else if isWasmLoading || !isWasmReady}
+							<!-- Connection status when not recording -->
+							<div class="badge badge-info gap-2 p-3">
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="h-4 w-4 animate-spin"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+									/>
+								</svg>
+								<span>{initializationStatus}</span>
+							</div>
+						{:else if isWasmReady && isConnected}
+							<div class="badge badge-success gap-2 p-3">
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="h-4 w-4"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+									/>
+								</svg>
+								<span>{initializationStatus}</span>
+							</div>
 						{/if}
-					</select>
-				</div>
+					</div>
 
-				<!-- Device Selector (if devices available or system audio mode) -->
-				{#if availableAudioDevices.length > 0 || audioSourceType === 'system'}
-					<div class="form-control mt-2">
+					<!-- Audio Source Selector -->
+					<div class="form-control">
 						<label class="label">
-							<span class="label-text font-semibold">
-								{audioSourceType === 'system' && availableAudioDevices.some(d => d.kind === 'desktop')
-									? 'Capture Source'
-									: 'Device'}
-							</span>
+							<span class="label-text font-semibold">Audio Source</span>
 						</label>
 						<select
 							class="select select-bordered w-full"
-							bind:value={selectedDeviceId}
+							bind:value={audioSourceType}
 							onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
 							disabled={isAudioSourceSwitching || !isWasmReady}
 						>
-							<option value={null}>Default</option>
-							{#each availableAudioDevices as device}
-								<option value={device.deviceId}>{device.label}</option>
-							{/each}
+							<option value="microphone">🎤 Microphone</option>
+							{#if systemAudioAvailable}
+								<option value="system">🔊 System Audio</option>
+							{/if}
 						</select>
 					</div>
-				{/if}
 
-				<!-- Switching indicator -->
-				{#if isAudioSourceSwitching}
-					<div class="alert alert-info mt-2">
-						<span class="loading loading-spinner loading-sm"></span>
-						<span>Switching audio source...</span>
-					</div>
-				{/if}
-
-				<!-- Platform-specific setup guide -->
-				{#if audioSourceType === 'system' && !systemAudioAvailable && audioSourceManager}
-					{@const setupInstructions = audioSourceManager.getSetupInstructions()}
-					<div class="alert alert-warning mt-4">
-						<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-						</svg>
-						<div class="flex flex-col gap-2 w-full">
-							<h3 class="font-bold">{setupInstructions.title}</h3>
-							<ol class="list-decimal list-inside space-y-1 text-sm">
-								{#each setupInstructions.steps as step}
-									<li>{step}</li>
+					<!-- Device Selector (if devices available or system audio mode) -->
+					{#if availableAudioDevices.length > 0 || audioSourceType === 'system'}
+						<div class="form-control">
+							<label class="label">
+								<span class="label-text font-semibold">
+									{audioSourceType === 'system' && availableAudioDevices.some(d => d.kind === 'desktop')
+										? 'Capture Source'
+										: 'Device'}
+								</span>
+							</label>
+							<select
+								class="select select-bordered w-full"
+								bind:value={selectedDeviceId}
+								onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
+								disabled={isAudioSourceSwitching || !isWasmReady}
+							>
+								<option value={null}>Default</option>
+								{#each availableAudioDevices as device}
+									<option value={device.deviceId}>{device.label}</option>
 								{/each}
-							</ol>
+							</select>
 						</div>
-					</div>
-				{/if}
-			</div>
+					{/if}
 
-			<div class="flex flex-col items-center justify-center gap-6">
-				<!-- Recording Button -->
-				{#if !isRecording}
-					<div class="flex flex-col items-center gap-3">
-						<button
-							class="btn btn-circle btn-primary w-24 h-24 hover:scale-105 transition-transform shadow-lg"
-							onclick={startRecording}
-							disabled={!isWasmReady || !isConnected}
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								class="h-12 w-12"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-								/>
-							</svg>
-						</button>
-						<span class="text-base font-semibold">{$_('dictate.startRecording')}</span>
-					</div>
-				{:else}
-					<div class="flex flex-col items-center gap-3">
-						<button class="btn btn-circle btn-error w-24 h-24 animate-pulse shadow-lg" onclick={stopRecording}>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								class="h-12 w-12"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-								/>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
-								/>
-							</svg>
-						</button>
-						<span class="text-base font-semibold">{$_('dictate.stopRecording')}</span>
-					</div>
-				{/if}
-			</div>
+					<!-- Switching indicator -->
+					{#if isAudioSourceSwitching}
+						<div class="alert alert-info">
+							<span class="loading loading-spinner loading-sm"></span>
+							<span>Switching audio source...</span>
+						</div>
+					{/if}
 
+					<!-- Platform-specific setup guide -->
+					{#if audioSourceType === 'system' && !systemAudioAvailable && audioSourceManager}
+						{@const setupInstructions = audioSourceManager.getSetupInstructions()}
+						<div class="alert alert-warning">
+							<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+							</svg>
+							<div class="flex flex-col gap-2 w-full">
+								<h3 class="font-bold">{setupInstructions.title}</h3>
+								<ol class="list-decimal list-inside space-y-1 text-sm">
+									{#each setupInstructions.steps as step}
+										<li>{step}</li>
+									{/each}
+								</ol>
+							</div>
+						</div>
+					{/if}
+				</div>
+
+				<!-- Right Column: Recording Button -->
+				<div class="flex flex-col items-center justify-center">
+					{#if !isRecording}
+						<div class="flex flex-col items-center gap-3">
+							<button
+								class="btn btn-circle btn-primary w-32 h-32 hover:scale-105 transition-transform shadow-lg"
+								onclick={startRecording}
+								disabled={!isWasmReady || !isConnected}
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="h-16 w-16"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+									/>
+								</svg>
+							</button>
+							<span class="text-lg font-semibold">{$_('dictate.startRecording')}</span>
+						</div>
+					{:else}
+						<div class="flex flex-col items-center gap-3">
+							<button class="btn btn-circle btn-error w-32 h-32 animate-pulse shadow-lg" onclick={stopRecording}>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="h-16 w-16"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+									/>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
+									/>
+								</svg>
+							</button>
+							<span class="text-lg font-semibold">{$_('dictate.stopRecording')}</span>
+						</div>
+					{/if}
+				</div>
+			</div>
+		</div>
 	</div>
-</div>
 
 <!-- Speech Editor and Subtitle Preview -->
-<div class="grid grid-cols-1 lg:grid-cols-7 gap-6 mb-6">
-	<!-- Speech Editor (70% width on desktop) -->
-	<div class="lg:col-span-5">
+<div class="flex flex-col xl:flex-row gap-6 mb-6">
+	<!-- Speech Editor -->
+	<div class="flex-1 min-w-[500px]">
 		<SpeechEditor
 			bind:this={speechEditor}
 			config={{
@@ -1305,8 +1307,8 @@
 		/>
 	</div>
 
-	<!-- Subtitle Preview (30% width on desktop) -->
-	<div class="lg:col-span-2">
+	<!-- Subtitle Preview -->
+	<div class="flex-1 min-w-[500px]">
 		<SubtitlePreview
 			segments={subtitleSegments}
 			currentSegmentIndex={subtitleSegments.length - 1}

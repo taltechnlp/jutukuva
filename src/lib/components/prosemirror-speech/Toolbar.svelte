@@ -7,19 +7,23 @@
 		wordCount = 0,
 		approvedCount = 0,
 		autoConfirmConfig = { enabled: true, timeoutSeconds: 5 },
+		autoScroll = true,
 		onUndo = () => {},
 		onRedo = () => {},
 		onAutoConfirmChange = (config: AutoConfirmConfig) => {},
-		onModeChange = (mode: ApprovalMode) => {}
+		onModeChange = (mode: ApprovalMode) => {},
+		onAutoScrollChange = (enabled: boolean) => {}
 	}: {
 		currentMode?: ApprovalMode;
 		wordCount?: number;
 		approvedCount?: number;
 		autoConfirmConfig?: AutoConfirmConfig;
+		autoScroll?: boolean;
 		onUndo?: () => void;
 		onRedo?: () => void;
 		onAutoConfirmChange?: (config: AutoConfirmConfig) => void;
 		onModeChange?: (mode: ApprovalMode) => void;
+		onAutoScrollChange?: (enabled: boolean) => void;
 	} = $props();
 
 	// Mode options
@@ -29,6 +33,11 @@
 		const currentIndex = modes.indexOf(currentMode);
 		const nextMode = modes[(currentIndex + 1) % modes.length];
 		onModeChange(nextMode);
+	}
+
+	// Auto-scroll handler
+	function toggleAutoScroll() {
+		onAutoScrollChange(!autoScroll);
 	}
 
 	// Auto-confirm handlers
@@ -88,6 +97,19 @@
 				<polyline points="6 9 12 15 18 9" />
 			</svg>
 		</button>
+	</div>
+
+	<!-- Auto-Scroll Toggle -->
+	<div class="toolbar-group">
+		<label class="toolbar-toggle">
+			<input
+				type="checkbox"
+				checked={autoScroll}
+				onchange={toggleAutoScroll}
+				aria-label="Enable auto-scroll"
+			/>
+			<span>Auto-scroll</span>
+		</label>
 	</div>
 
 	<!-- Auto-Confirm Settings -->
@@ -247,6 +269,20 @@
 	.auto-confirm-group {
 		border-left: 1px solid #ddd;
 		padding-left: 16px;
+	}
+
+	.toolbar-toggle {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 13px;
+		color: #666;
+		cursor: pointer;
+		user-select: none;
+	}
+
+	.toolbar-toggle input {
+		cursor: pointer;
 	}
 
 	.auto-confirm-toggle {
