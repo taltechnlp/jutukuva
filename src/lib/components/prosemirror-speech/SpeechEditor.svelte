@@ -6,7 +6,7 @@
 	import { speechSchema } from './schema';
 	import { wordApprovalPlugin, wordApprovalKey } from './plugins/wordApproval';
 	import { keyboardShortcutsPlugin } from './plugins/keyboardShortcuts';
-	import { streamingTextPlugin, insertStreamingTextCommand } from './plugins/streamingText';
+	import { streamingTextPlugin, insertStreamingTextCommand, signalVadSpeechEndCommand } from './plugins/streamingText';
 	import { subtitleSegmentationPlugin, subtitleSegmentationKey } from './plugins/subtitleSegmentation';
 	import { autoConfirmPlugin, autoConfirmKey, updateAutoConfirmConfig } from './plugins/autoConfirm';
 	import type { EditorConfig, StreamingTextEvent, SubtitleSegment, Word, AutoConfirmConfig } from './utils/types';
@@ -197,6 +197,15 @@
 		insertStreamingTextCommand(editorView.state, (tr) => {
 			editorView?.dispatch(tr);
 		}, enhancedEvent);
+	}
+
+	// Public API: Signal VAD speech end (to create new paragraph on next text)
+	export function signalVadSpeechEnd() {
+		if (!editorView) return;
+
+		signalVadSpeechEndCommand(editorView.state, (tr) => {
+			editorView?.dispatch(tr);
+		});
 	}
 
 	// Public API: Get current state

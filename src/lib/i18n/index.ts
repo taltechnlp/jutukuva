@@ -1,5 +1,5 @@
 import { addMessages } from 'svelte-i18n';
-import { init, getLocaleFromNavigator } from 'svelte-i18n';
+import { init } from 'svelte-i18n';
 import en from './en.json';
 import et from './et.json';
 import fi from './fi.json';
@@ -10,6 +10,6 @@ addMessages('fi', fi);
 
 init({
 	fallbackLocale: 'et',
-	initialLocale: getLocaleFromNavigator()
+	initialLocale: 'et'
 });
 export const uiLanguages = ['et', 'en', 'fi'];

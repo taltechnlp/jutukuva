@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { _ } from 'svelte-i18n';
 	import type { AutoConfirmConfig } from './utils/types';
 
 	// Props
@@ -80,9 +81,9 @@
 				type="checkbox"
 				checked={autoConfirmConfig.enabled}
 				onchange={toggleAutoConfirm}
-				aria-label="Enable auto-confirm"
+				aria-label={$_('dictate.autoConfirm')}
 			/>
-			<span>Auto-confirm</span>
+			<span>{$_('dictate.autoConfirm')}</span>
 		</label>
 		{#if autoConfirmConfig.enabled}
 			<select
