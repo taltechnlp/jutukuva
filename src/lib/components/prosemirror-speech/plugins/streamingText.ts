@@ -13,15 +13,16 @@ export interface StreamingTextState {
 	buffer: string[];
 	pendingText: string;
 	currentTime: number;
-	committedText: string; // Plain text that's been inserted (for deduplication)
+	previousIncomingText: string; // Previous ASR result for final-word detection
 	createNewParagraphOnNextText: boolean; // Set when VAD detects speech end
 }
 
 export const streamingTextKey = new PluginKey<StreamingTextState>('streamingText');
 
 /**
- * Insert streaming text as pending words
- * For streaming models: REPLACES pending content (full hypothesis)
+ * Insert streaming text with final-word detection
+ * Words that appear in both previous and current ASR results are marked as "final"
+ * Final words are IMMUTABLE - never modified or deleted
  */
 function insertStreamingText(
 	tr: Transaction,
@@ -38,7 +39,6 @@ function insertStreamingText(
 	let lastPara: any = null;
 	let lastParaPos = 0;
 
-	// Traverse all children to find the last paragraph
 	doc.descendants((node, pos) => {
 		if (node.type.name === 'paragraph') {
 			lastPara = node;
@@ -46,137 +46,26 @@ function insertStreamingText(
 		}
 	});
 
-
 	// Check if we should create a new paragraph (after VAD speech end)
 	const pluginState = streamingTextKey.getState(state);
 	const shouldCreateNewParagraph = pluginState?.createNewParagraphOnNextText;
 
+	// Get previous ASR result for final-word detection
+	// IMPORTANT: Check this BEFORE creating new paragraph
+	// Use empty string if we're about to create a new paragraph (don't compare across paragraphs)
+	const previousIncomingText = shouldCreateNewParagraph ? '' : (pluginState?.previousIncomingText || '');
+
+	console.log('[FINAL-WORD] shouldCreateNewParagraph:', shouldCreateNewParagraph, 'previousIncomingText:', previousIncomingText.substring(0, 50));
 
 	if (shouldCreateNewParagraph && lastPara && lastPara.content.size > 0) {
 		const newPara = schema.nodes.paragraph.create();
 		const insertPos = lastParaPos + lastPara.nodeSize;
 		tr.insert(insertPos, newPara);
 
-		// Update doc reference to the modified document
+		// Update doc reference
 		doc = tr.doc;
 
-		// Re-find the new paragraph in the updated document
-		let newLastParaPos = 0;
-		let newLastPara: any = null;
-		doc.descendants((node, pos) => {
-			if (node.type.name === 'paragraph') {
-				newLastPara = node;
-				newLastParaPos = pos;
-			}
-		});
-
-		lastParaPos = newLastParaPos;
-		lastPara = newLastPara;
-
-
-		// Clear the flag by setting meta
-		tr.setMeta('clearNewParagraphFlag', true);
-	}
-
-	// Extract committedText AFTER potentially creating new paragraph:
-	// - ALL approved words from entire document
-	// - ALL pending words from previous paragraphs (not including last paragraph)
-	// This allows streaming replacement in the last paragraph while preventing
-	// duplication from previous paragraphs after speech pauses
-	let committedText = '';
-	doc.descendants((node, pos) => {
-		if (node.isText && node.marks.length > 0) {
-			const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-			if (wordMark && node.text && node.text.trim().length > 0) {
-				// Include if approved, OR if pending but not in last paragraph
-				const inLastParagraph = lastPara && pos >= lastParaPos && pos < lastParaPos + lastPara.nodeSize;
-				if (wordMark.attrs.approved || !inLastParagraph) {
-					committedText += (committedText ? ' ' : '') + node.text.trim();
-				}
-			}
-		}
-	});
-
-	// If no paragraph found, create one
-	if (!lastPara) {
-		const newPara = schema.nodes.paragraph.create();
-		tr.insert(1, newPara); // Insert after doc node opening
-		lastParaPos = 1;
-		lastPara = newPara;
-	}
-
-	// SIMPLE DEDUPLICATION: Compare incoming text with committed text (plain strings)
-	// This is what the ASR actually sends - no need for complex document scanning
-
-	// Split both texts into words for comparison
-	const committedWords = committedText.trim().split(/\s+/).filter(w => w.length > 0);
-	const incomingWords = text.trim().split(/\s+/).filter(w => w.length > 0);
-
-	// Debug logging for paragraph creation deduplication issues
-	if (shouldCreateNewParagraph) {
-		console.log('[DEDUP] After new paragraph creation:');
-		console.log('[DEDUP] Committed:', committedWords.length, 'words:', committedWords.slice(0, 20).join(' '));
-		console.log('[DEDUP] Incoming:', incomingWords.length, 'words:', incomingWords.slice(0, 20).join(' '));
-	}
-
-	// Find how many words at the start match (common prefix)
-	let commonPrefixLength = 0;
-	for (let i = 0; i < Math.min(committedWords.length, incomingWords.length); i++) {
-		if (committedWords[i] === incomingWords[i]) {
-			commonPrefixLength++;
-		} else {
-			break;
-		}
-	}
-
-	if (shouldCreateNewParagraph) {
-		console.log('[DEDUP] Common prefix:', commonPrefixLength, 'words');
-		console.log('[DEDUP] Will insert:', incomingWords.length - commonPrefixLength, 'new words');
-	}
-
-	// Extract pending words from last paragraph (for ID reuse)
-	// Use ARRAY to preserve order and handle duplicate words correctly
-	const paraStart = lastParaPos + 1;
-	const paraEnd = lastParaPos + lastPara.nodeSize - 1;
-	const pendingWords: Array<{text: string, id: string}> = [];
-
-	doc.nodesBetween(paraStart, paraEnd, (node, pos) => {
-		if (node.isText && node.marks.length > 0) {
-			const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-			if (wordMark && !wordMark.attrs.approved && node.text && node.text.trim().length > 0) {
-				pendingWords.push({
-					text: node.text.trim(),
-					id: wordMark.attrs.id
-				});
-			}
-		}
-	});
-
-
-	// Find range of pending content to delete
-	let firstPendingPos: number | null = null;
-	let lastPendingPos: number | null = null;
-
-	doc.nodesBetween(paraStart, paraEnd, (node, pos) => {
-		if (node.isText && node.marks.length > 0) {
-			const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-			if (wordMark && !wordMark.attrs.approved) {
-				if (firstPendingPos === null) {
-					firstPendingPos = pos;
-				}
-				lastPendingPos = pos + node.nodeSize;
-			}
-		}
-	});
-
-	// Delete all pending content in one operation
-	if (firstPendingPos !== null && lastPendingPos !== null) {
-		tr.delete(firstPendingPos, lastPendingPos);
-
-		// Update doc reference after deletion
-		doc = tr.doc;
-
-		// Re-find the last paragraph after deletion
+		// Re-find the new paragraph
 		lastPara = null;
 		lastParaPos = 0;
 		doc.descendants((node, pos) => {
@@ -185,100 +74,281 @@ function insertStreamingText(
 				lastParaPos = pos;
 			}
 		});
+
+		tr.setMeta('clearNewParagraphFlag', true);
 	}
 
-	// Insert position is at the end of the last paragraph
-	const insertPos = lastParaPos + 1 + (lastPara?.content.size || 0);
+	// If no paragraph found, create one
+	if (!lastPara) {
+		const newPara = schema.nodes.paragraph.create();
+		tr.insert(1, newPara);
+		lastParaPos = 1;
+		lastPara = newPara;
+		doc = tr.doc;
+	}
 
+	// CRITICAL: When creating a new paragraph, deduplicate incoming text against ALL previous paragraphs
+	// ASR buffer doesn't clear when recording continues, so it includes text from previous paragraphs
+	let filteredText = text;
+	if (shouldCreateNewParagraph) {
+		const wordsFromPreviousParagraphs = new Set<string>();
 
-	// Split text into words (preserve spacing for accurate timing)
-	const textParts = text.split(/(\s+)/);
-
-
-	// Calculate timing info
-	let currentPos = insertPos;
-	let wordStartTime = startTime || 0;
-	const totalDuration = (endTime || 0) - (startTime || 0);
-	const timePerChar = text.length > 0 ? totalDuration / text.length : 0;
-
-	let insertedWords = 0;
-	let insertedSpaces = 0;
-	let incomingWordIndex = 0; // Track position in incoming word list
-
-	// Track cumulative character position for timing calculations
-	let charPosition = 0;
-
-	for (const part of textParts) {
-		if (part.length === 0) continue;
-
-		const isWord = part.trim().length > 0;
-
-		if (isWord) {
-			// Check if this word is part of the common prefix (already committed)
-			if (incomingWordIndex < commonPrefixLength) {
-				// Skip this word - it's already in committedText
-				incomingWordIndex++;
-				charPosition += part.length;
-				continue;
+		// Collect all words from all previous paragraphs
+		doc.descendants((node, pos) => {
+			// Only scan paragraphs before the current (last) one
+			if (pos < lastParaPos) {
+				if (node.isText && node.marks.length > 0) {
+					const wordMark = node.marks.find((mark) => mark.type.name === 'word');
+					if (wordMark && node.text && node.text.trim().length > 0) {
+						wordsFromPreviousParagraphs.add(node.text.trim());
+					}
+				}
 			}
+		});
 
-			// This is a NEW word that needs to be inserted
-			// Calculate word timing based on character position
-			const wordStartTimeCalc = (startTime || 0) + charPosition * timePerChar;
-			const wordEndTimeCalc = wordStartTimeCalc + part.length * timePerChar;
+		// Filter incoming text to remove words that exist in previous paragraphs
+		const incomingWordsList = text.trim().split(/\s+/).filter(w => w.length > 0);
+		const filteredWordsList = incomingWordsList.filter(word => !wordsFromPreviousParagraphs.has(word));
+		filteredText = filteredWordsList.join(' ');
 
-			// Try to reuse ID from pending words (position-based lookup)
-			// Map incoming word position (after common prefix) to pending word array index
-			const pendingWordIndex = incomingWordIndex - commonPrefixLength;
-			const pendingWord = pendingWords[pendingWordIndex];
-			const wordId = pendingWord?.id || uuidv4();
+		console.log('[FINAL-WORD] New paragraph - filtered out', incomingWordsList.length - filteredWordsList.length, 'words from previous paragraphs');
+		console.log('[FINAL-WORD] Original text length:', text.length, 'Filtered text length:', filteredText.length);
+	}
 
-			if (pendingWord) {
-			} else {
-			}
+	// Split both into word lists (use filtered text if we created a new paragraph)
+	const previousWords = new Set(previousIncomingText.trim().split(/\s+/).filter(w => w.length > 0));
+	const incomingWords = filteredText.trim().split(/\s+/).filter(w => w.length > 0);
+	const incomingWordsSet = new Set(incomingWords);
 
-			// Create word mark
-			const wordMark = schema.marks.word.create({
-				id: wordId,
-				start: wordStartTimeCalc,
-				end: wordEndTimeCalc,
-				approved: false
-			});
+	// Common words = words appearing in BOTH previous and current results
+	// These words are stable and should be marked as final
+	const commonWords = new Set<string>();
+	for (const word of incomingWords) {
+		if (previousWords.has(word)) {
+			commonWords.add(word);
+		}
+	}
 
-			// Create pending mark for visual styling
-			const pendingMark = schema.marks.pending.create();
+	console.log('[FINAL-WORD] Previous:', previousIncomingText);
+	console.log('[FINAL-WORD] Incoming (filtered):', filteredText);
+	console.log('[FINAL-WORD] Common words:', Array.from(commonWords));
 
-			// Create text node with marks
-			const textNode = schema.text(part, [wordMark, pendingMark]);
+	const paraStart = lastParaPos + 1;
+	const paraEnd = lastParaPos + lastPara.nodeSize - 1;
 
-			// Insert the text node
-			tr.insert(currentPos, textNode);
-			currentPos += part.length;
-			insertedWords++;
-			incomingWordIndex++;
-		} else {
-			// Only insert space if we're past the common prefix
-			if (incomingWordIndex >= commonPrefixLength) {
-				// Insert whitespace without marks
-				const textNode = schema.text(part);
-				tr.insert(currentPos, textNode);
-				currentPos += part.length;
-				insertedSpaces++;
+	// Collect all words in the last paragraph
+	const existingWords: Array<{
+		text: string;
+		id: string;
+		pos: number;
+		nodeSize: number;
+		final: boolean;
+		approved: boolean;
+	}> = [];
+
+	doc.nodesBetween(paraStart, paraEnd, (node, pos) => {
+		if (node.isText && node.marks.length > 0) {
+			const wordMark = node.marks.find((mark) => mark.type.name === 'word');
+			if (wordMark && node.text && node.text.trim().length > 0) {
+				existingWords.push({
+					text: node.text.trim(),
+					id: wordMark.attrs.id,
+					pos: pos,
+					nodeSize: node.nodeSize,
+					final: wordMark.attrs.final,
+					approved: wordMark.attrs.approved
+				});
 			}
 		}
+	});
 
-		charPosition += part.length;
+	// Track words that became final (for auto-confirm notification)
+	const wordsBecameFinal: string[] = [];
+
+	// Step 1: Mark non-final words as final if they're in commonWords
+	// NEVER touch approved or already-final words
+	for (const word of existingWords) {
+		if (!word.approved && !word.final && commonWords.has(word.text)) {
+			// Update this word to final=true
+			const node = doc.nodeAt(word.pos);
+			if (node && node.isText) {
+				const wordMark = node.marks.find((m) => m.type.name === 'word');
+				if (wordMark) {
+					// Create new word mark with final=true
+					const newWordMark = schema.marks.word.create({
+						...wordMark.attrs,
+						final: true
+					});
+
+					// Replace marks on this text node
+					const otherMarks = node.marks.filter((m) => m.type.name !== 'word');
+					tr.removeMark(word.pos, word.pos + node.nodeSize, schema.marks.word);
+					tr.addMark(word.pos, word.pos + node.nodeSize, newWordMark);
+
+					// Restore other marks
+					for (const mark of otherMarks) {
+						tr.addMark(word.pos, word.pos + node.nodeSize, mark);
+					}
+
+					wordsBecameFinal.push(wordMark.attrs.id);
+					console.log('[FINAL-WORD] Marked as final:', word.text);
+				}
+			}
+		}
 	}
 
+	// Emit wordBecameFinal meta for auto-confirm to pick up
+	if (wordsBecameFinal.length > 0) {
+		tr.setMeta('wordsBecameFinal', wordsBecameFinal);
+	}
+
+	// Update doc reference after marking
+	doc = tr.doc;
+
+	// Re-collect existing words with updated state
+	const updatedExistingWords: Array<{
+		text: string;
+		id: string;
+		pos: number;
+		nodeSize: number;
+		final: boolean;
+		approved: boolean;
+	}> = [];
+
+	doc.nodesBetween(paraStart, paraEnd, (node, pos) => {
+		if (node.isText && node.marks.length > 0) {
+			const wordMark = node.marks.find((mark) => mark.type.name === 'word');
+			if (wordMark && node.text && node.text.trim().length > 0) {
+				updatedExistingWords.push({
+					text: node.text.trim(),
+					id: wordMark.attrs.id,
+					pos: pos,
+					nodeSize: node.nodeSize,
+					final: wordMark.attrs.final,
+					approved: wordMark.attrs.approved
+				});
+			}
+		}
+	});
+
+	// Step 2: Delete ALL non-final, non-approved words
+	// NEVER delete final or approved words (immutable!)
+	// Non-final words are unstable - ASR may correct them, so delete and re-insert
+	const wordsToDelete: Array<{ pos: number; nodeSize: number }> = [];
+
+	for (const word of updatedExistingWords) {
+		if (!word.approved && !word.final) {
+			wordsToDelete.push({ pos: word.pos, nodeSize: word.nodeSize });
+			console.log('[FINAL-WORD] Deleting non-final word:', word.text);
+		}
+	}
+
+	// Delete in reverse order to preserve positions
+	wordsToDelete.sort((a, b) => b.pos - a.pos);
+	for (const { pos, nodeSize } of wordsToDelete) {
+		tr.delete(pos, pos + nodeSize);
+	}
+
+	// Update doc reference after deletion
+	doc = tr.doc;
+
+	// Re-find last paragraph after deletion
+	lastPara = null;
+	lastParaPos = 0;
+	doc.descendants((node, pos) => {
+		if (node.type.name === 'paragraph') {
+			lastPara = node;
+			lastParaPos = pos;
+		}
+	});
+
+	// Step 3: Collect final/approved words to avoid duplicating them
+	const finalAndApprovedWords = new Set<string>();
+	doc.nodesBetween(lastParaPos + 1, lastParaPos + lastPara.nodeSize - 1, (node) => {
+		if (node.isText && node.marks.length > 0) {
+			const wordMark = node.marks.find((mark) => mark.type.name === 'word');
+			if (wordMark && (wordMark.attrs.final || wordMark.attrs.approved) && node.text && node.text.trim().length > 0) {
+				finalAndApprovedWords.add(node.text.trim());
+			}
+		}
+	});
+
+	console.log('[FINAL-WORD] Final/approved words in paragraph:', finalAndApprovedWords.size);
+	console.log('[FINAL-WORD] Will insert', incomingWords.filter(w => !finalAndApprovedWords.has(w)).length, 'new words');
+
+	// Step 4: Insert new words
+	const insertPos = lastParaPos + 1 + (lastPara?.content.size || 0);
+	let currentPos = insertPos;
+
+	// Calculate timing info
+	const totalDuration = (endTime || 0) - (startTime || 0);
+	const timePerChar = filteredText.length > 0 ? totalDuration / filteredText.length : 0;
+	let charPosition = 0;
+
+	// Track if we need to add space before next word
+	let needsSpace = finalAndApprovedWords.size > 0;
+
+	for (let i = 0; i < incomingWords.length; i++) {
+		const word = incomingWords[i];
+
+		// Skip words that are already final or approved (immutable!)
+		if (finalAndApprovedWords.has(word)) {
+			charPosition += word.length + 1; // +1 for space
+			continue;
+		}
+
+		// Add space before word if needed
+		if (needsSpace) {
+			const spaceNode = schema.text(' ');
+			tr.insert(currentPos, spaceNode);
+			currentPos += 1;
+		}
+		needsSpace = true;
+
+		// Calculate word timing
+		const wordStartTime = (startTime || 0) + charPosition * timePerChar;
+		const wordEndTime = wordStartTime + word.length * timePerChar;
+
+		// Generate new ID for this word
+		const wordId = uuidv4();
+
+		// Determine if this word should be final
+		const shouldBeFinal = commonWords.has(word);
+
+		// Create word mark
+		const wordMark = schema.marks.word.create({
+			id: wordId,
+			start: wordStartTime,
+			end: wordEndTime,
+			approved: false,
+			final: shouldBeFinal
+		});
+
+		// Add pending mark for non-approved words
+		const pendingMark = schema.marks.pending.create();
+
+		// Create text node with marks
+		const textNode = schema.text(word, [wordMark, pendingMark]);
+		tr.insert(currentPos, textNode);
+		currentPos += word.length;
+
+		console.log('[FINAL-WORD] Inserted word:', word, 'final:', shouldBeFinal);
+
+		// If word is final on insertion, notify auto-confirm
+		if (shouldBeFinal) {
+			const existingList = tr.getMeta('wordsBecameFinal') || [];
+			tr.setMeta('wordsBecameFinal', [...existingList, wordId]);
+		}
+
+		charPosition += word.length + 1; // +1 for space
+	}
 
 	// Mark transaction to not add to history
 	tr.setMeta('addToHistory', false);
 
 	// Only mark as streaming if this is NOT final text
-	// This allows auto-confirm to start scheduling timers when final text arrives
 	if (!isFinal) {
 		tr.setMeta('streamingText', true);
-	} else {
 	}
 
 	return tr;
@@ -297,24 +367,27 @@ export function streamingTextPlugin() {
 					buffer: [],
 					pendingText: '',
 					currentTime: 0,
-					committedText: '',
+					previousIncomingText: '',
 					createNewParagraphOnNextText: false
 				};
 			},
 
 			apply(tr, value): StreamingTextState {
+				let newValue = value;
+
 				// Handle VAD speech end - set flag to create new paragraph
 				if (tr.getMeta('vadSpeechEnd')) {
-					return {
-						...value,
+					newValue = {
+						...newValue,
 						createNewParagraphOnNextText: true
 					};
 				}
 
 				// Clear the flag after it's been used
+				// DON'T reset previousIncomingText here - it will be handled by the ternary in insertStreamingText()
 				if (tr.getMeta('clearNewParagraphFlag')) {
-					return {
-						...value,
+					newValue = {
+						...newValue,
 						createNewParagraphOnNextText: false
 					};
 				}
@@ -327,27 +400,18 @@ export function streamingTextPlugin() {
 				if (streamingEvent) {
 					const { text, isFinal } = streamingEvent;
 
-					if (isFinal) {
-						// Final text, clear buffer
-						// committedText is derived from document, no need to reset
-						return {
-							...value,
-							buffer: [],
-							pendingText: '',
-							currentTime: streamingEvent.end || value.currentTime,
-							committedText: '' // Clear for safety
-						};
-					} else {
-						// Partial text, add to buffer
-						return {
-							...value,
-							pendingText: text,
-							currentTime: streamingEvent.end || value.currentTime
-						};
-					}
+					// Update previousIncomingText with incoming text
+					// This is used for final-word detection on next update
+					newValue = {
+						...newValue,
+						buffer: isFinal ? [] : newValue.buffer,
+						pendingText: isFinal ? '' : text,
+						currentTime: streamingEvent.end || newValue.currentTime,
+						previousIncomingText: text // Always update to incoming text
+					};
 				}
 
-				return value;
+				return newValue;
 			}
 		},
 
@@ -362,9 +426,12 @@ export function streamingTextPlugin() {
 					| undefined;
 
 				if (streamingEvent && streamingEvent.text) {
+					// CRITICAL: Use oldState for deduplication, NOT newState
+					// newState already has committedText updated to incoming text (from apply())
+					// which would make all words appear as duplicates
 					insertStreamingText(
 						tr,
-						newState,
+						oldState,  // Use OLD state to get previous committedText
 						streamingEvent.text,
 						streamingEvent.start,
 						streamingEvent.end,

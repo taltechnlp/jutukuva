@@ -42,7 +42,7 @@
 			]),
 			plugins: [
 				history(),
-				wordApprovalPlugin(handleWordApproved, 'word'),
+				wordApprovalPlugin(handleWordApproved),
 				keyboardShortcutsPlugin(),
 				streamingTextPlugin(),
 				subtitleSegmentationPlugin(handleSegmentComplete),
@@ -213,9 +213,23 @@
 		return {
 			segments,
 			wordCount,
-			approvedCount,
-			currentMode
+			approvedCount
 		};
+	}
+
+	// Public API: Check if editor has content (for resume detection)
+	export function hasContent(): boolean {
+		if (!editorView) return false;
+
+		// Check if there's any text content in the document
+		let hasText = false;
+		editorView.state.doc.descendants((node) => {
+			if (node.isText && node.text && node.text.trim().length > 0) {
+				hasText = true;
+				return false; // Stop traversal
+			}
+		});
+		return hasText;
 	}
 
 	// Public API: Undo
@@ -295,14 +309,26 @@
 		min-height: 1.6em;
 	}
 
-	.speech-editor :global(.word-pending) {
-		background-color: rgba(255, 235, 59, 0.2);
+	.speech-editor :global(.word-final) {
+		border-bottom: 2px solid rgba(76, 175, 80, 0.6); /* Solid green underline - stable, will auto-confirm */
+		padding: 2px 0;
+		cursor: pointer;
+	}
+
+	.speech-editor :global(.word-non-final) {
+		border-bottom: 2px dashed rgba(255, 152, 0, 0.8); /* Dashed orange underline - unstable, may change */
 		padding: 2px 0;
 		cursor: pointer;
 	}
 
 	.speech-editor :global(.word-approved) {
 		padding: 2px 0;
+	}
+
+	.speech-editor :global(.word-active) {
+		background-color: rgba(33, 150, 243, 0.3); /* Blue highlight for arrow key selection */
+		padding: 2px 4px;
+		border-radius: 3px;
 	}
 
 	.speech-editor :global(.word-state-pending) {

@@ -39,7 +39,8 @@ function extractWordsFromParagraph(para: Node, startPos: number): Word[] {
 					text: node.text || '',
 					start: wordMark.attrs.start,
 					end: wordMark.attrs.end,
-					approved: wordMark.attrs.approved
+					approved: wordMark.attrs.approved,
+					final: wordMark.attrs.final
 				});
 			}
 		}

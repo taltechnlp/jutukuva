@@ -8,6 +8,7 @@ export type Word = {
 	start: number; // timestamp in seconds
 	end: number; // timestamp in seconds
 	approved: boolean;
+	final: boolean; // true when word appears in 2+ consecutive ASR results
 };
 
 export type SubtitleSegment = {

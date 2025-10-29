@@ -133,7 +133,6 @@
 
 	// Handle word approved
 	function handleWordApproved(word: Word) {
-		console.log('[WORD] Approved:', word);
 	}
 
 	// Handle subtitle segment emitted
@@ -376,14 +375,15 @@
 
 				// Only signal new paragraph after a significant pause (3 seconds)
 				// This prevents creating paragraphs on short breaths/hesitations
+				// DISABLED: Causes issues with ASR buffer deduplication across paragraphs
 				lastSpeechEndTime = Date.now();
 				speechEndTimer = setTimeout(() => {
 					// Check if speech hasn't resumed in the last 3 seconds
 					if (speechEditor && isRecording && lastSpeechEndTime) {
 						const timeSinceSpeechEnd = Date.now() - lastSpeechEndTime;
 						if (timeSinceSpeechEnd >= 3000) {
-							console.log('[VAD] Significant pause detected (3s+), signaling new paragraph');
-							speechEditor.signalVadSpeechEnd();
+							// console.log('[VAD] Significant pause detected (3s+), signaling new paragraph');
+							// speechEditor.signalVadSpeechEnd();
 						}
 					}
 				}, 3000);
@@ -880,6 +880,13 @@
 
 			// Start timing tracking for word timestamps
 			speechEditor?.startTiming();
+
+			// Signal new paragraph if resuming recording (editor has content from previous session)
+			// This is safe because startRecording sends a 'start' message that clears ASR buffer
+			if (speechEditor?.hasContent()) {
+				console.log('[START] Resuming recording - creating new paragraph');
+				speechEditor.signalVadSpeechEnd();
+			}
 
 			// Verify microphone is working by checking if we have an audio stream
 			// MicVAD stores the stream internally, but we can check via callbacks
