@@ -42,18 +42,18 @@ function insertStreamingText(
 	const schema = state.schema;
 	let doc = tr.doc;
 
-	// Extract committedText from APPROVED words in document
-	// This ensures we only skip words that have actually been approved
+	// Extract committedText from ALL words in document (both approved and pending)
+	// This prevents duplication when creating new paragraphs after speech pauses
 	let committedText = '';
 	doc.descendants((node) => {
 		if (node.isText && node.marks.length > 0) {
 			const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-			if (wordMark && wordMark.attrs.approved && node.text && node.text.trim().length > 0) {
+			if (wordMark && node.text && node.text.trim().length > 0) {
 				committedText += (committedText ? ' ' : '') + node.text.trim();
 			}
 		}
 	});
-	console.log('[STREAMING-PLUGIN] Committed (approved) text:', committedText.substring(0, 50));
+	console.log('[STREAMING-PLUGIN] Committed text (all words):', committedText.substring(0, 50));
 
 	// Find the last paragraph by traversing from the end
 	let lastPara: any = null;
