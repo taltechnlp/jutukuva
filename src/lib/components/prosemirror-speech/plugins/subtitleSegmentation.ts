@@ -217,11 +217,11 @@ export function subtitleSegmentationPlugin(onSegmentComplete?: (segment: Subtitl
 					const approvedTextLength = unemittedApprovedWords.reduce((sum, w) => sum + w.text.length, 0);
 					const approvedWordCount = unemittedApprovedWords.length;
 
-					// Emit segment if we have enough approved content (more aggressive for real-time)
-					// Criteria: 40+ chars OR 8+ words OR sentence ending
+					// Emit segment more frequently since we're not splitting paragraphs
+					// Criteria: 30+ chars OR 5+ words OR sentence ending OR any approved words if recording ended
 					const shouldEmit =
-						approvedTextLength >= 40 ||
-						approvedWordCount >= 8 ||
+						approvedTextLength >= 30 ||
+						approvedWordCount >= 5 ||
 						(unemittedApprovedWords.length > 0 && /[.!?]$/.test(unemittedApprovedWords[unemittedApprovedWords.length - 1].text.trim()));
 
 					if (shouldEmit) {
@@ -277,29 +277,33 @@ export function subtitleSegmentationPlugin(onSegmentComplete?: (segment: Subtitl
 			// NOTE: Automatic paragraph splitting based on subtitle rules removed
 			// No longer split paragraphs automatically. All text stays in one paragraph.
 
-			// Check if recording ended and we have unemitted approved words
-			const pluginState = subtitleSegmentationKey.getState(newState);
-			const lastParaIndex = newState.doc.childCount - 1;
-			if (pluginState && pluginState.recordingEnded && lastParaIndex >= 0) {
-				// Get all approved words from the last paragraph that haven't been emitted
-				const lastPara = newState.doc.child(lastParaIndex);
-				const allWords = extractWordsFromParagraph(lastPara, 0);
-				const unemittedApprovedWords = allWords.filter(
-					(w) => w.approved && !pluginState.emittedWordIds.has(w.id)
-				);
+			// Check if recording ended signal was just sent (not on every transaction)
+			const recordingEndedSignal = transactions.some((t) => t.getMeta('recordingEnded'));
+			if (recordingEndedSignal) {
+				const pluginState = subtitleSegmentationKey.getState(newState);
+				const lastParaIndex = newState.doc.childCount - 1;
 
-				console.log('[SUBTITLE-SEGMENTATION] Recording ended check:', {
-					totalWords: allWords.length,
-					unemittedApproved: unemittedApprovedWords.length,
-					alreadyEmittedCount: pluginState.emittedWordIds.size
-				});
+				if (pluginState && lastParaIndex >= 0) {
+					// Get all approved words from the last paragraph that haven't been emitted
+					const lastPara = newState.doc.child(lastParaIndex);
+					const allWords = extractWordsFromParagraph(lastPara, 0);
+					const unemittedApprovedWords = allWords.filter(
+						(w) => w.approved && !pluginState.emittedWordIds.has(w.id)
+					);
 
-				if (unemittedApprovedWords.length > 0) {
-					const segmentIndex = pluginState.segments.length + 1;
-					const segment = wordsToSegment(unemittedApprovedWords, segmentIndex);
-					console.log('[SUBTITLE-SEGMENTATION] Creating final segment with', unemittedApprovedWords.length, 'unemitted words');
-					tr.setMeta('segmentComplete', segment);
-					modified = true;
+					console.log('[SUBTITLE-SEGMENTATION] Recording ended signal, final check:', {
+						totalWords: allWords.length,
+						unemittedApproved: unemittedApprovedWords.length,
+						alreadyEmittedCount: pluginState.emittedWordIds.size
+					});
+
+					if (unemittedApprovedWords.length > 0) {
+						const segmentIndex = pluginState.segments.length + 1;
+						const segment = wordsToSegment(unemittedApprovedWords, segmentIndex);
+						console.log('[SUBTITLE-SEGMENTATION] Creating final segment with', unemittedApprovedWords.length, 'unemitted words');
+						tr.setMeta('segmentComplete', segment);
+						modified = true;
+					}
 				}
 			}
 
@@ -311,51 +315,7 @@ export function subtitleSegmentationPlugin(onSegmentComplete?: (segment: Subtitl
 			return null;
 		},
 
-		view(editorView) {
-			return {
-				update(view, prevState) {
-					const pluginState = subtitleSegmentationKey.getState(view.state);
-					if (!pluginState || !pluginState.recordingEnded) return;
-
-					// Check if all words are approved
-					let totalWords = 0;
-					let approvedWords = 0;
-					view.state.doc.descendants((node) => {
-						if (node.isText && node.marks.length > 0) {
-							const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-							if (wordMark && node.text && node.text.trim().length > 0) {
-								totalWords++;
-								if (wordMark.attrs.approved) {
-									approvedWords++;
-								}
-							}
-						}
-					});
-
-					// If we have approved words that haven't been emitted yet, emit final segment
-					// Don't require ALL words to be approved - just emit what we have
-					if (totalWords > 0 && approvedWords > 0 && pluginState.lastEmittedWordCount < approvedWords) {
-						console.log('[SUBTITLE-SEGMENTATION] View update:', approvedWords, 'words approved, emitting final segment');
-
-						const lastParaIndex = view.state.doc.childCount - 1;
-						if (lastParaIndex >= 0) {
-							const lastPara = view.state.doc.child(lastParaIndex);
-							const allWords = extractWordsFromParagraph(lastPara, 0);
-							const unemittedApprovedWords = allWords.filter(
-								(w) => w.approved && !pluginState.emittedWordIds.has(w.id)
-							);
-
-							if (unemittedApprovedWords.length > 0) {
-								const tr = view.state.tr;
-								const segmentIndex = pluginState.segments.length + 1;
-								const segment = wordsToSegment(unemittedApprovedWords, segmentIndex);
-								tr.setMeta('segmentComplete', segment);
-								view.dispatch(tr);
-							}
-						}
-					}
-				}
-			};
-		}
+		// NOTE: view update removed to prevent infinite loops
+		// Segment emission now happens only in appendTransaction
 	});
 }
