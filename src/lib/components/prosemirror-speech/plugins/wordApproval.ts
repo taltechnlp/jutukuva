@@ -7,12 +7,11 @@
 import { Plugin, PluginKey, EditorState, Transaction } from 'prosemirror-state';
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
 import type { Node } from 'prosemirror-model';
-import type { Word, ApprovalMode } from '../utils/types';
+import type { Word } from '../utils/types';
 
 export interface WordApprovalState {
 	approvalBoundary: number; // Document position before which everything is read-only
 	activeWordPos: number | null; // Position of the active word
-	approvalMode: ApprovalMode;
 	decorations: DecorationSet;
 }
 
@@ -159,8 +158,7 @@ function findSentenceEnd(doc: Node, fromPos: number): number {
  * Word Approval Plugin
  */
 export function wordApprovalPlugin(
-	onWordApproved?: (word: Word) => void,
-	initialMode: ApprovalMode = 'word'
+	onWordApproved?: (word: Word) => void
 ) {
 	return new Plugin<WordApprovalState>({
 		key: wordApprovalKey,
@@ -170,23 +168,17 @@ export function wordApprovalPlugin(
 				return {
 					approvalBoundary: 0,
 					activeWordPos: null,
-					approvalMode: initialMode,
 					decorations: DecorationSet.empty
 				};
 			},
 
 			apply(tr, value, oldState, newState): WordApprovalState {
-				let { approvalBoundary, activeWordPos, approvalMode, decorations } = value;
+				let { approvalBoundary, activeWordPos, decorations } = value;
 
 				// Handle meta actions
 				const setActiveWord = tr.getMeta('setActiveWord');
 				if (setActiveWord !== undefined) {
 					activeWordPos = setActiveWord;
-				}
-
-				const setApprovalMode = tr.getMeta('setApprovalMode');
-				if (setApprovalMode !== undefined) {
-					approvalMode = setApprovalMode;
 				}
 
 				const approveWordMeta = tr.getMeta('approveWord');
@@ -224,7 +216,6 @@ export function wordApprovalPlugin(
 				return {
 					approvalBoundary,
 					activeWordPos,
-					approvalMode,
 					decorations
 				};
 			}
@@ -279,6 +270,30 @@ export function approveWordCommand(state: EditorState, dispatch?: (tr: Transacti
 		let tr = state.tr;
 		tr = approveWord(tr, pluginState.activeWordPos);
 		tr.setMeta('approveWord', pluginState.activeWordPos);
+		dispatch(tr);
+	}
+
+	return true;
+}
+
+/**
+ * Helper: Approve all words from document start up to and including current word
+ */
+export function approveUpToCurrentWordCommand(state: EditorState, dispatch?: (tr: Transaction) => void): boolean {
+	const pluginState = wordApprovalKey.getState(state);
+	if (!pluginState || pluginState.activeWordPos === null) return false;
+
+	if (dispatch) {
+		// Find the node at current word position to get its end position
+		const node = state.doc.nodeAt(pluginState.activeWordPos);
+		if (!node) return false;
+
+		const currentWordEnd = pluginState.activeWordPos + node.nodeSize;
+
+		// Approve all words from document start to current word (inclusive)
+		let tr = state.tr;
+		tr = approveWordsInRange(tr, 0, currentWordEnd);
+		tr.setMeta('approveWord', currentWordEnd);
 		dispatch(tr);
 	}
 
