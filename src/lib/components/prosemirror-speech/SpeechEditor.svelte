@@ -32,6 +32,8 @@
 		config.autoConfirm || { enabled: true, timeoutSeconds: 5 }
 	);
 	let recordingStartTime = $state<number | null>(null);
+	let autoScroll = $state(true);
+	let editorContainer: HTMLDivElement;
 
 	// Initialize editor
 	onMount(() => {
@@ -60,6 +62,15 @@
 
 				// Update reactive state
 				updateEditorState(newState);
+
+				// Auto-scroll to bottom after document changes
+				if (autoScroll && transaction.docChanged && editorContainer) {
+					requestAnimationFrame(() => {
+						if (editorContainer) {
+							editorContainer.scrollTop = editorContainer.scrollHeight;
+						}
+					});
+				}
 			}
 		});
 
@@ -139,6 +150,11 @@
 		const tr = editorView.state.tr;
 		tr.setMeta('setApprovalMode', mode);
 		editorView.dispatch(tr);
+	}
+
+	// Handle auto-scroll toggle
+	function handleAutoScrollChange(enabled: boolean) {
+		autoScroll = enabled;
 	}
 
 	// Public API: Start timing for recording session
@@ -230,18 +246,22 @@
 		{wordCount}
 		{approvedCount}
 		{autoConfirmConfig}
+		{autoScroll}
 		onUndo={() => undo()}
 		onRedo={() => redo()}
 		onAutoConfirmChange={handleAutoConfirmChange}
 		onModeChange={handleModeChange}
+		onAutoScrollChange={handleAutoScrollChange}
 	/>
 
 	<!-- Editor -->
 	<div
-		bind:this={editorElement}
+		bind:this={editorContainer}
 		class="speech-editor"
 		style:font-size={config.fontSize ? `${config.fontSize}px` : '16px'}
-	></div>
+	>
+		<div bind:this={editorElement}></div>
+	</div>
 
 	<!-- Status bar -->
 	<div class="status-bar">
@@ -267,6 +287,7 @@
 		padding: 20px;
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 		line-height: 1.6;
+		scroll-behavior: smooth;
 	}
 
 	.speech-editor :global(.subtitle-segment) {
