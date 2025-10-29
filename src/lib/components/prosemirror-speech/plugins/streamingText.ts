@@ -112,6 +112,12 @@ function insertStreamingText(
 	const committedWords = committedText.trim().split(/\s+/).filter(w => w.length > 0);
 	const incomingWords = text.trim().split(/\s+/).filter(w => w.length > 0);
 
+	// Debug logging for paragraph creation deduplication issues
+	if (shouldCreateNewParagraph) {
+		console.log('[DEDUP] After new paragraph creation:');
+		console.log('[DEDUP] Committed:', committedWords.length, 'words:', committedWords.slice(0, 20).join(' '));
+		console.log('[DEDUP] Incoming:', incomingWords.length, 'words:', incomingWords.slice(0, 20).join(' '));
+	}
 
 	// Find how many words at the start match (common prefix)
 	let commonPrefixLength = 0;
@@ -123,6 +129,10 @@ function insertStreamingText(
 		}
 	}
 
+	if (shouldCreateNewParagraph) {
+		console.log('[DEDUP] Common prefix:', commonPrefixLength, 'words');
+		console.log('[DEDUP] Will insert:', incomingWords.length - commonPrefixLength, 'new words');
+	}
 
 	// Extract pending words from last paragraph (for ID reuse)
 	// Use ARRAY to preserve order and handle duplicate words correctly
