@@ -286,7 +286,7 @@
 		overflow-y: auto;
 		padding: 20px;
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-		line-height: 1.6;
+		line-height: 2;
 		scroll-behavior: smooth;
 	}
 
