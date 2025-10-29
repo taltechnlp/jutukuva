@@ -60,7 +60,6 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 					// Old timers for replaced words will gracefully fail when word not found
 				} else if (streamingEnded) {
 					// Recording stopped, clear streaming flag
-					console.log('[AUTO-CONFIRM] Streaming ended');
 					isStreamingActive = false;
 				} else if (tr.docChanged) {
 					// Non-streaming doc change means final text arrived
@@ -134,8 +133,6 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 					const docModified = view.state.doc !== prevState.doc;
 
 					if (docModified) {
-						console.log('[AUTO-CONFIRM] Doc changed, scheduling timers for new words');
-
 						// Find new pending words and schedule auto-confirm
 						view.state.doc.descendants((node, pos) => {
 							if (node.isText && node.marks.length > 0) {
@@ -148,7 +145,6 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 
 									if (!pluginState.pendingWords.has(wordId)) {
 										// Schedule auto-confirm
-										console.log('[AUTO-CONFIRM] Scheduling timer for word:', wordId, 'text:', node.text, 'position:', pos);
 										const timeout = setTimeout(() => {
 											// Auto-approve this word
 											const currentState = view.state;
@@ -183,7 +179,6 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 												}
 
 												if (wordStillExists && wordPos !== null) {
-													console.log('[AUTO-CONFIRM] Timer fired, approving word:', wordId, 'at position:', wordPos);
 													approveWordAtPosition(currentState, view.dispatch, wordPos);
 
 													// Check if this was the last pending word - if so, trigger final segment emission
@@ -202,14 +197,11 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 														});
 
 														if (!hasPendingWords) {
-															console.log('[AUTO-CONFIRM] All words approved, triggering final segment check');
 															const tr = latestState.tr;
 															tr.setMeta('allWordsApproved', true);
 															view.dispatch(tr);
 														}
 													}, 100);
-												} else {
-													console.log('[AUTO-CONFIRM] Timer fired but word no longer exists:', wordId);
 												}
 												// Clean up from pending words
 												currentPluginState.pendingWords.delete(wordId);
