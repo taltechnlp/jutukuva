@@ -360,13 +360,6 @@
 				if (DEBUG_VAD) console.log('🔇 [VAD] Speech ended, audio length:', audio.length);
 				isSpeaking = false;
 
-				// Signal to editor to create new paragraph on next text
-				// (only if recording is still active)
-				if (isRecording && isVadActive && speechEditor) {
-					console.log('[VAD] Signaling speech end to editor for new paragraph');
-					speechEditor.signalVadSpeechEnd();
-				}
-
 				// Note: We don't send utterance_end anymore
 				// - For streaming models (ET/EN): Sessions should stay open across pauses
 				// - For offline models (Parakeet): 15s buffer auto-processes without needing utterance_end
@@ -1027,14 +1020,14 @@
 </script>
 
 <svelte:head>
-	<title>{$_('dictate.pageTitle')}</title>
+	<title>Real-time Speech Recognition | tekstiks.ee</title>
 </svelte:head>
 
 <div class="bg-base-100">
 	<div class="container mx-auto px-4 py-8 max-w-4xl xl:max-w-7xl">
 	<!-- Header -->
 	<div class="mb-8">
-		<h1 class="text-4xl font-bold mb-4">{$_('dictate.pageHeading')}</h1>
+		<h1 class="text-4xl font-bold mb-4">Real-time Speech Recognition</h1>
 		<div class="prose max-w-none">
 			<p class="mb-2">{$_('dictate.intro1')}</p>
 			<p class="mb-2">{$_('dictate.intro2')}</p>
@@ -1183,7 +1176,7 @@
 					<!-- Audio Source Selector -->
 					<div class="form-control">
 						<label class="label">
-							<span class="label-text font-semibold">{$_('dictate.audioSource')}</span>
+							<span class="label-text font-semibold">Audio Source</span>
 						</label>
 						<select
 							class="select w-full"
@@ -1192,9 +1185,9 @@
 							onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
 							disabled={isAudioSourceSwitching || !isWasmReady}
 						>
-							<option value="microphone">🎤 {$_('dictate.audioSourceMicrophone')}</option>
+							<option value="microphone">🎤 Microphone</option>
 							{#if systemAudioAvailable}
-								<option value="system">🔊 {$_('dictate.audioSourceSystem')}</option>
+								<option value="system">🔊 System Audio</option>
 							{/if}
 						</select>
 					</div>
@@ -1205,8 +1198,8 @@
 							<label class="label">
 								<span class="label-text font-semibold">
 									{audioSourceType === 'system' && availableAudioDevices.some(d => d.kind === 'desktop')
-										? $_('dictate.captureSource')
-										: $_('dictate.device')}
+										? 'Capture Source'
+										: 'Device'}
 								</span>
 							</label>
 							<select
@@ -1216,7 +1209,7 @@
 								onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
 								disabled={isAudioSourceSwitching || !isWasmReady}
 							>
-								<option value={null}>{$_('dictate.deviceDefault')}</option>
+								<option value={null}>Default</option>
 								{#each availableAudioDevices as device}
 									<option value={device.deviceId}>{device.label}</option>
 								{/each}
@@ -1228,7 +1221,7 @@
 					{#if isAudioSourceSwitching}
 						<div class="alert alert-info">
 							<span class="loading loading-spinner loading-sm"></span>
-							<span>{$_('dictate.switchingAudioSource')}</span>
+							<span>Switching audio source...</span>
 						</div>
 					{/if}
 
