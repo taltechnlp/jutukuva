@@ -299,7 +299,6 @@
 
 	.speech-editor :global(.word-pending) {
 		background-color: rgba(255, 235, 59, 0.2);
-		font-style: italic;
 		padding: 2px 0;
 		cursor: pointer;
 	}
