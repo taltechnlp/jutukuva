@@ -42,19 +42,6 @@ function insertStreamingText(
 	const schema = state.schema;
 	let doc = tr.doc;
 
-	// Extract committedText from ALL words in document (both approved and pending)
-	// This prevents duplication when creating new paragraphs after speech pauses
-	let committedText = '';
-	doc.descendants((node) => {
-		if (node.isText && node.marks.length > 0) {
-			const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-			if (wordMark && node.text && node.text.trim().length > 0) {
-				committedText += (committedText ? ' ' : '') + node.text.trim();
-			}
-		}
-	});
-	console.log('[STREAMING-PLUGIN] Committed text (all words):', committedText.substring(0, 50));
-
 	// Find the last paragraph by traversing from the end
 	let lastPara: any = null;
 	let lastParaPos = 0;
@@ -66,6 +53,26 @@ function insertStreamingText(
 			lastParaPos = pos;
 		}
 	});
+
+	// Extract committedText:
+	// - ALL approved words from entire document
+	// - ALL pending words from previous paragraphs (not including last paragraph)
+	// This allows streaming replacement in the last paragraph while preventing
+	// duplication from previous paragraphs after speech pauses
+	let committedText = '';
+	doc.descendants((node, pos) => {
+		if (node.isText && node.marks.length > 0) {
+			const wordMark = node.marks.find((mark) => mark.type.name === 'word');
+			if (wordMark && node.text && node.text.trim().length > 0) {
+				// Include if approved, OR if pending but not in last paragraph
+				const inLastParagraph = lastPara && pos >= lastParaPos && pos < lastParaPos + lastPara.nodeSize;
+				if (wordMark.attrs.approved || !inLastParagraph) {
+					committedText += (committedText ? ' ' : '') + node.text.trim();
+				}
+			}
+		}
+	});
+	console.log('[STREAMING-PLUGIN] Committed text:', committedText.substring(0, 50));
 
 	console.log('[STREAMING-PLUGIN] Found paragraph:', { lastParaPos, paraSize: lastPara?.content.size });
 
