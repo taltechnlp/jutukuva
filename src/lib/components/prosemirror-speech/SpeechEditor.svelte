@@ -309,14 +309,7 @@
 		min-height: 1.6em;
 	}
 
-	.speech-editor :global(.word-final) {
-		border-bottom: 2px solid rgba(76, 175, 80, 0.6); /* Solid green underline - stable, will auto-confirm */
-		padding: 2px 0;
-		cursor: pointer;
-	}
-
-	.speech-editor :global(.word-non-final) {
-		border-bottom: 2px dashed rgba(255, 152, 0, 0.8); /* Dashed orange underline - unstable, may change */
+	.speech-editor :global(.word-pending) {
 		padding: 2px 0;
 		cursor: pointer;
 	}

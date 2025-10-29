@@ -72,11 +72,8 @@ export const speechSchema = new Schema({
 				final: { default: false }
 			},
 			toDOM(mark) {
-				// Determine CSS class based on state
-				let cssClass = 'word-approved';
-				if (!mark.attrs.approved) {
-					cssClass = mark.attrs.final ? 'word-final' : 'word-non-final';
-				}
+				// Determine CSS class based on approval state
+				const cssClass = mark.attrs.approved ? 'word-approved' : 'word-pending';
 
 				return [
 					'span',
