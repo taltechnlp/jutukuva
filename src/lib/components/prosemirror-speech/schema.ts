@@ -68,17 +68,25 @@ export const speechSchema = new Schema({
 				id: {},
 				start: { default: 0 },
 				end: { default: 0 },
-				approved: { default: false }
+				approved: { default: false },
+				final: { default: false }
 			},
 			toDOM(mark) {
+				// Determine CSS class based on state
+				let cssClass = 'word-approved';
+				if (!mark.attrs.approved) {
+					cssClass = mark.attrs.final ? 'word-final' : 'word-non-final';
+				}
+
 				return [
 					'span',
 					{
-						class: mark.attrs.approved ? 'word-approved' : 'word-pending',
+						class: cssClass,
 						'data-word-id': mark.attrs.id,
 						'data-start': mark.attrs.start,
 						'data-end': mark.attrs.end,
-						'data-approved': mark.attrs.approved
+						'data-approved': mark.attrs.approved,
+						'data-final': mark.attrs.final
 					},
 					0
 				];
@@ -92,7 +100,8 @@ export const speechSchema = new Schema({
 							id: el.getAttribute('data-word-id'),
 							start: parseFloat(el.getAttribute('data-start') || '0'),
 							end: parseFloat(el.getAttribute('data-end') || '0'),
-							approved: el.getAttribute('data-approved') === 'true'
+							approved: el.getAttribute('data-approved') === 'true',
+							final: el.getAttribute('data-final') === 'true'
 						};
 					}
 				}

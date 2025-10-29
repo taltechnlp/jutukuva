@@ -75,10 +75,17 @@ const nextWordCommand: Command = (state, dispatch) => {
 	if (nextPos === null) return false;
 
 	if (dispatch) {
+		const node = state.doc.nodeAt(nextPos);
+		if (!node) return false;
+
+		console.log('[NAV] Selecting word at pos', nextPos, 'text:', node.text, 'size:', node.nodeSize);
+
 		const tr = state.tr;
 		tr.setMeta('setActiveWord', nextPos);
-		// Set selection to the word position
-		tr.setSelection(TextSelection.near(state.doc.resolve(nextPos)));
+		// Select the entire word so typing replaces it
+		const selection = TextSelection.create(state.doc, nextPos, nextPos + node.nodeSize);
+		console.log('[NAV] Created selection from', nextPos, 'to', nextPos + node.nodeSize, 'empty:', selection.empty);
+		tr.setSelection(selection);
 		dispatch(tr);
 	}
 
@@ -96,10 +103,13 @@ const prevWordCommand: Command = (state, dispatch) => {
 	if (prevPos === null) return false;
 
 	if (dispatch) {
+		const node = state.doc.nodeAt(prevPos);
+		if (!node) return false;
+
 		const tr = state.tr;
 		tr.setMeta('setActiveWord', prevPos);
-		// Set selection to the word position
-		tr.setSelection(TextSelection.near(state.doc.resolve(prevPos)));
+		// Select the entire word so typing replaces it
+		tr.setSelection(TextSelection.create(state.doc, prevPos, prevPos + node.nodeSize));
 		dispatch(tr);
 	}
 

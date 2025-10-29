@@ -13,14 +13,16 @@ import { approveWordAtPosition } from './wordApproval';
 
 export interface AutoConfirmState {
 	config: AutoConfirmConfig;
-	pendingWords: Map<string, { wordId: string; position: number; timeout: NodeJS.Timeout }>;
-	isStreamingActive: boolean;
+	finalWordTimers: Map<string, NodeJS.Timeout>; // wordId -> timer
 }
 
 export const autoConfirmKey = new PluginKey<AutoConfirmState>('autoConfirm');
 
 /**
- * Create auto-confirm plugin
+ * Create auto-confirm plugin (simplified for final-word approach)
+ *
+ * Only schedules timers for words when they become final (appear in 2+ consecutive ASR results)
+ * This is much simpler than tracking all pending words - final words are stable and won't be deleted
  */
 export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: true, timeoutSeconds: 5 }) {
 	return new Plugin<AutoConfirmState>({
@@ -30,13 +32,12 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 			init(): AutoConfirmState {
 				return {
 					config: initialConfig,
-					pendingWords: new Map(),
-					isStreamingActive: false
+					finalWordTimers: new Map()
 				};
 			},
 
-			apply(tr, value, oldState, newState): AutoConfirmState {
-				let { config, pendingWords, isStreamingActive } = value;
+			apply(tr, value): AutoConfirmState {
+				let { config, finalWordTimers } = value;
 
 				// Update config if changed
 				const newConfig = tr.getMeta('updateAutoConfirm');
@@ -45,81 +46,43 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 
 					// Clear all existing timers if disabled
 					if (!config.enabled) {
-						pendingWords.forEach((pending) => clearTimeout(pending.timeout));
-						pendingWords.clear();
+						finalWordTimers.forEach((timer) => clearTimeout(timer));
+						finalWordTimers = new Map();
 					}
 				}
 
-				// Track streaming state
-				const isStreamingText = tr.getMeta('streamingText');
-				const streamingEnded = tr.getMeta('streamingEnded');
-
-				if (isStreamingText) {
-					isStreamingActive = true;
-					// Don't clear timers - let each word's timer fire individually
-					// Old timers for replaced words will gracefully fail when word not found
-				} else if (streamingEnded) {
-					// Recording stopped, clear streaming flag
-					isStreamingActive = false;
-				} else if (tr.docChanged) {
-					// Non-streaming doc change means final text arrived
-					isStreamingActive = false;
-				}
-
-				// Map positions across document changes and clean up approved words
+				// Clean up timers for approved words
 				if (tr.docChanged) {
-					const approvedWords = new Set<string>();
-					const currentWordPositions = new Map<string, number>();
+					const approvedWordIds = new Set<string>();
 
-					// Find all words and their current positions
-					newState.doc.descendants((node, pos) => {
+					// Find all approved words
+					tr.doc.descendants((node) => {
 						if (node.isText && node.marks.length > 0) {
 							const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-							if (wordMark) {
-								currentWordPositions.set(wordMark.attrs.id, pos);
-								if (wordMark.attrs.approved) {
-									approvedWords.add(wordMark.attrs.id);
-								}
+							if (wordMark && wordMark.attrs.approved) {
+								approvedWordIds.add(wordMark.attrs.id);
 							}
 						}
 					});
 
-					// Update positions and clear approved words
-					const newPendingWords = new Map<string, { wordId: string; position: number; timeout: NodeJS.Timeout }>();
-
-					pendingWords.forEach((pending, wordId) => {
-						if (approvedWords.has(wordId)) {
-							// Clear timer for approved words
-							clearTimeout(pending.timeout);
-						} else {
-							// Update position using transaction mapping
-							const currentPos = currentWordPositions.get(wordId);
-							if (currentPos !== undefined) {
-								newPendingWords.set(wordId, {
-									...pending,
-									position: currentPos
-								});
-							} else {
-								// Word no longer exists, but keep timer (will fail gracefully when it fires)
-								newPendingWords.set(wordId, pending);
-							}
+					// Clear timers for approved words
+					approvedWordIds.forEach((wordId) => {
+						const timer = finalWordTimers.get(wordId);
+						if (timer) {
+							clearTimeout(timer);
+							finalWordTimers.delete(wordId);
 						}
 					});
-
-					pendingWords = newPendingWords;
 				}
 
 				return {
 					config,
-					pendingWords,
-					isStreamingActive
+					finalWordTimers
 				};
 			}
 		},
 
 		view(editorView: EditorView) {
-			let lastDocSize = editorView.state.doc.content.size;
-
 			return {
 				update(view, prevState) {
 					const pluginState = autoConfirmKey.getState(view.state);
@@ -127,103 +90,79 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 						return;
 					}
 
-					// Schedule timers for new pending words whenever doc changes
-					// This includes during streaming for real-time auto-confirm
-					const currentDocSize = view.state.doc.content.size;
-					const docModified = view.state.doc !== prevState.doc;
-
-					if (docModified) {
-						// Find new pending words and schedule auto-confirm
+					// Only schedule timers for final words on doc changes
+					if (view.state.doc !== prevState.doc) {
+						// Find all final words that don't have timers yet
 						view.state.doc.descendants((node, pos) => {
 							if (node.isText && node.marks.length > 0) {
 								const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-								const pendingMark = node.marks.find((mark) => mark.type.name === 'pending');
 
-								// If word is pending and not already scheduled
-								if (wordMark && pendingMark && !wordMark.attrs.approved) {
+								// Only schedule timers for FINAL words that aren't approved yet
+								if (wordMark && wordMark.attrs.final && !wordMark.attrs.approved) {
 									const wordId = wordMark.attrs.id;
 
-									if (!pluginState.pendingWords.has(wordId)) {
-										// Schedule auto-confirm
+									// If this word doesn't have a timer yet, schedule one
+									if (!pluginState.finalWordTimers.has(wordId)) {
 										const timeout = setTimeout(() => {
-											// Auto-approve this word
+											// Find word by ID and approve it
 											const currentState = view.state;
-											const currentPluginState = autoConfirmKey.getState(currentState);
+											let wordPos: number | null = null;
 
-											if (currentPluginState) {
-												// Get current position from plugin state
-												const pendingWord = currentPluginState.pendingWords.get(wordId);
-												let wordPos: number | null = pendingWord?.position ?? null;
-
-												// Double-check word still exists at tracked position
-												let wordStillExists = false;
-												if (wordPos !== null) {
-													const nodeAtPos = currentState.doc.nodeAt(wordPos);
-													if (nodeAtPos && nodeAtPos.isText) {
-														const mark = nodeAtPos.marks.find((m) => m.type.name === 'word' && m.attrs.id === wordId);
-														if (mark) {
-															wordStillExists = true;
-														}
+											currentState.doc.descendants((n, p) => {
+												if (n.isText && n.marks.length > 0) {
+													const mark = n.marks.find((m) => m.type.name === 'word' && m.attrs.id === wordId);
+													if (mark && !mark.attrs.approved) {
+														wordPos = p;
+														return false; // Stop searching
 													}
 												}
+											});
 
-												// Fallback: search for word if not found at tracked position
-												if (!wordStillExists) {
-													currentState.doc.descendants((n, p) => {
-														if (n.isText && n.marks.find((m) => m.type.name === 'word' && m.attrs.id === wordId)) {
-															wordPos = p;
-															wordStillExists = true;
-															return false;
+											if (wordPos !== null) {
+												approveWordAtPosition(currentState, view.dispatch, wordPos);
+
+												// Check if this was the last pending word
+												setTimeout(() => {
+													const latestState = view.state;
+													let hasPendingWords = false;
+
+													latestState.doc.descendants((n) => {
+														if (n.isText && n.marks.length > 0) {
+															const wMark = n.marks.find((m) => m.type.name === 'word');
+															const pMark = n.marks.find((m) => m.type.name === 'pending');
+															if (wMark && pMark && !wMark.attrs.approved) {
+																hasPendingWords = true;
+																return false;
+															}
 														}
 													});
-												}
 
-												if (wordStillExists && wordPos !== null) {
-													approveWordAtPosition(currentState, view.dispatch, wordPos);
-
-													// Check if this was the last pending word - if so, trigger final segment emission
-													setTimeout(() => {
-														const latestState = view.state;
-														let hasPendingWords = false;
-														latestState.doc.descendants((n) => {
-															if (n.isText && n.marks.length > 0) {
-																const wMark = n.marks.find((m) => m.type.name === 'word');
-																const pMark = n.marks.find((m) => m.type.name === 'pending');
-																if (wMark && pMark && !wMark.attrs.approved) {
-																	hasPendingWords = true;
-																	return false;
-																}
-															}
-														});
-
-														if (!hasPendingWords) {
-															const tr = latestState.tr;
-															tr.setMeta('allWordsApproved', true);
-															view.dispatch(tr);
-														}
-													}, 100);
-												}
-												// Clean up from pending words
-												currentPluginState.pendingWords.delete(wordId);
+													if (!hasPendingWords) {
+														const tr = latestState.tr;
+														tr.setMeta('allWordsApproved', true);
+														view.dispatch(tr);
+													}
+												}, 100);
 											}
+
+											// Clean up timer
+											pluginState.finalWordTimers.delete(wordId);
 										}, pluginState.config.timeoutSeconds * 1000);
 
-										pluginState.pendingWords.set(wordId, { wordId, position: pos, timeout });
+										pluginState.finalWordTimers.set(wordId, timeout);
 									}
 								}
 							}
 						});
 					}
-
-					lastDocSize = currentDocSize;
 				},
 
 				destroy() {
 					// Clean up all timers
 					const pluginState = autoConfirmKey.getState(editorView.state);
 					if (pluginState) {
-						pluginState.pendingWords.forEach((pending) => clearTimeout(pending.timeout));
-						pluginState.pendingWords.clear();
+						pluginState.finalWordTimers.forEach((timer) => clearTimeout(timer));
+						pluginState.finalWordTimers.clear();
 					}
 				}
 			};
