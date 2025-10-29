@@ -40,7 +40,7 @@ function insertStreamingText(
 	});
 
 	const schema = state.schema;
-	const doc = tr.doc;
+	let doc = tr.doc;
 
 	// Extract committedText from APPROVED words in document
 	// This ensures we only skip words that have actually been approved
