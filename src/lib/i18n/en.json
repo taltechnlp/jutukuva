@@ -436,9 +436,9 @@
   },
   "dictate": {
     "title": "Dictate",
-    "intro1": "This page allows you to dictate speech in multiple languages using TalTech realtime speech recognition. The web browser sends speech in real-time to the TalTech Laboratory of Language Technology server, where it is transformed into text and returned back to the browser.",
-    "intro2": "For Estonian and English, results appear almost immediately. For other languages, there is approximately a 15 second delay before results appear.",
-    "intro3": "For best results, use a good quality microphone and speak clearly at a moderate pace. You don't need to pause between words.",
+    "intro1": "Real-time Estonian speech recognition with word-by-word transcription. Speak into your microphone and see your words appear instantly as you speak.",
+    "intro2": "Each word appears highlighted as pending until you approve it. Press Enter to approve all words up to the current position, or enable auto-confirm to automatically approve words after a few seconds.",
+    "intro3": "For best results, use a good quality microphone and speak clearly at a moderate pace. The editor supports manual corrections and includes undo/redo functionality.",
     "attention": "Attention!",
     "freeConnections": "free connections",
     "noConnections": "No connections are available at this moment!",

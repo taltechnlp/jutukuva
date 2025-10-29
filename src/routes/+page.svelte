@@ -1020,14 +1020,14 @@
 </script>
 
 <svelte:head>
-	<title>Kirjutustõlk | tekstiks.ee</title>
+	<title>Real-time Speech Recognition | tekstiks.ee</title>
 </svelte:head>
 
 <div class="bg-base-100">
 	<div class="container mx-auto px-4 py-8 max-w-4xl xl:max-w-7xl">
 	<!-- Header -->
 	<div class="mb-8">
-		<h1 class="text-4xl font-bold mb-4">Kirjutustõlk</h1>
+		<h1 class="text-4xl font-bold mb-4">Real-time Speech Recognition</h1>
 		<div class="prose max-w-none">
 			<p class="mb-2">{$_('dictate.intro1')}</p>
 			<p class="mb-2">{$_('dictate.intro2')}</p>
