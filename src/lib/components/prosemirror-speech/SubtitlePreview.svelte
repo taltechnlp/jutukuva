@@ -14,16 +14,6 @@
 
 	let containerElement: HTMLDivElement;
 
-	// Auto-scroll to current segment (using $effect instead of afterUpdate)
-	$effect(() => {
-		if (containerElement && currentSegmentIndex >= 0) {
-			const activeElement = containerElement.querySelector('.segment.active');
-			if (activeElement) {
-				activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-			}
-		}
-	});
-
 	function formatTimestamp(seconds: number): string {
 		const hours = Math.floor(seconds / 3600);
 		const minutes = Math.floor((seconds % 3600) / 60);
