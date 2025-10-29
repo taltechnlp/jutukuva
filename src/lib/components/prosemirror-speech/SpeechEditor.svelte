@@ -32,7 +32,6 @@
 	);
 	let recordingStartTime = $state<number | null>(null);
 	let autoScroll = $state(true);
-	let editorContainer: HTMLDivElement;
 
 	// Initialize editor
 	onMount(() => {
@@ -63,10 +62,15 @@
 				updateEditorState(newState);
 
 				// Auto-scroll to bottom after document changes
-				if (autoScroll && transaction.docChanged && editorContainer) {
+				if (autoScroll && transaction.docChanged && editorElement) {
 					requestAnimationFrame(() => {
-						if (editorContainer) {
-							editorContainer.scrollTop = editorContainer.scrollHeight;
+						if (editorElement) {
+							// Scroll to the bottom of the editor element
+							const rect = editorElement.getBoundingClientRect();
+							const isNearBottom = rect.bottom - window.innerHeight < 200;
+							if (isNearBottom || rect.bottom > window.innerHeight) {
+								editorElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+							}
 						}
 					});
 				}
@@ -234,7 +238,6 @@
 
 	<!-- Editor -->
 	<div
-		bind:this={editorContainer}
 		class="speech-editor"
 		style:font-size={config.fontSize ? `${config.fontSize}px` : '16px'}
 	>
@@ -260,7 +263,6 @@
 	.speech-editor-container {
 		display: flex;
 		flex-direction: column;
-		height: 100%;
 		border: 1px solid #ddd;
 		border-radius: 8px;
 		overflow: hidden;
@@ -268,12 +270,11 @@
 	}
 
 	.speech-editor {
-		flex: 1;
-		overflow-y: auto;
+		min-height: 300px;
 		padding: 20px;
+		padding-bottom: 170px;
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 		line-height: 2;
-		scroll-behavior: smooth;
 	}
 
 	.speech-editor :global(.subtitle-segment) {

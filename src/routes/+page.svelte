@@ -1293,7 +1293,7 @@
 	</div>
 
 <!-- Speech Editor and Subtitle Preview -->
-<div class="flex flex-col xl:flex-row gap-6 mb-6">
+<div class="flex flex-col xl:flex-row xl:items-start gap-6 mb-6">
 	<!-- Speech Editor -->
 	<div class="xl:flex-[2] flex-1 min-w-[500px]">
 		<SpeechEditor
@@ -1303,7 +1303,6 @@
 				onWordApproved: handleWordApproved,
 				onSubtitleEmit: handleSubtitleEmit
 			}}
-			class="h-[600px]"
 		/>
 	</div>
 
