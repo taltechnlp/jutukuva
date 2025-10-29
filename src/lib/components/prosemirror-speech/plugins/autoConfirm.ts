@@ -13,16 +13,16 @@ import { approveWordAtPosition } from './wordApproval';
 
 export interface AutoConfirmState {
 	config: AutoConfirmConfig;
-	finalWordTimers: Map<string, NodeJS.Timeout>; // wordId -> timer
+	wordTimers: Map<string, NodeJS.Timeout>; // wordId -> timer
 }
 
 export const autoConfirmKey = new PluginKey<AutoConfirmState>('autoConfirm');
 
 /**
- * Create auto-confirm plugin (simplified for final-word approach)
+ * Create auto-confirm plugin
  *
- * Only schedules timers for words when they become final (appear in 2+ consecutive ASR results)
- * This is much simpler than tracking all pending words - final words are stable and won't be deleted
+ * Schedules timers for all non-approved words
+ * Words can be deleted/recreated by ASR, timers gracefully handle missing words
  */
 export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: true, timeoutSeconds: 5 }) {
 	return new Plugin<AutoConfirmState>({
@@ -32,12 +32,12 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 			init(): AutoConfirmState {
 				return {
 					config: initialConfig,
-					finalWordTimers: new Map()
+					wordTimers: new Map()
 				};
 			},
 
 			apply(tr, value): AutoConfirmState {
-				let { config, finalWordTimers } = value;
+				let { config, wordTimers } = value;
 
 				// Update config if changed
 				const newConfig = tr.getMeta('updateAutoConfirm');
@@ -46,8 +46,8 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 
 					// Clear all existing timers if disabled
 					if (!config.enabled) {
-						finalWordTimers.forEach((timer) => clearTimeout(timer));
-						finalWordTimers = new Map();
+						wordTimers.forEach((timer) => clearTimeout(timer));
+						wordTimers = new Map();
 					}
 				}
 
@@ -67,17 +67,17 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 
 					// Clear timers for approved words
 					approvedWordIds.forEach((wordId) => {
-						const timer = finalWordTimers.get(wordId);
+						const timer = wordTimers.get(wordId);
 						if (timer) {
 							clearTimeout(timer);
-							finalWordTimers.delete(wordId);
+							wordTimers.delete(wordId);
 						}
 					});
 				}
 
 				return {
 					config,
-					finalWordTimers
+					wordTimers
 				};
 			}
 		},
@@ -90,19 +90,19 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 						return;
 					}
 
-					// Only schedule timers for final words on doc changes
+					// Schedule timers for all non-approved words on doc changes
 					if (view.state.doc !== prevState.doc) {
-						// Find all final words that don't have timers yet
+						// Find all non-approved words that don't have timers yet
 						view.state.doc.descendants((node, pos) => {
 							if (node.isText && node.marks.length > 0) {
 								const wordMark = node.marks.find((mark) => mark.type.name === 'word');
 
-								// Only schedule timers for FINAL words that aren't approved yet
-								if (wordMark && wordMark.attrs.final && !wordMark.attrs.approved) {
+								// Schedule timers for all non-approved words
+								if (wordMark && !wordMark.attrs.approved) {
 									const wordId = wordMark.attrs.id;
 
 									// If this word doesn't have a timer yet, schedule one
-									if (!pluginState.finalWordTimers.has(wordId)) {
+									if (!pluginState.wordTimers.has(wordId)) {
 										const timeout = setTimeout(() => {
 											// Find word by ID and approve it
 											const currentState = view.state;
@@ -146,10 +146,10 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 											}
 
 											// Clean up timer
-											pluginState.finalWordTimers.delete(wordId);
+											pluginState.wordTimers.delete(wordId);
 										}, pluginState.config.timeoutSeconds * 1000);
 
-										pluginState.finalWordTimers.set(wordId, timeout);
+										pluginState.wordTimers.set(wordId, timeout);
 									}
 								}
 							}
@@ -161,8 +161,8 @@ export function autoConfirmPlugin(initialConfig: AutoConfirmConfig = { enabled: 
 					// Clean up all timers
 					const pluginState = autoConfirmKey.getState(editorView.state);
 					if (pluginState) {
-						pluginState.finalWordTimers.forEach((timer) => clearTimeout(timer));
-						pluginState.finalWordTimers.clear();
+						pluginState.wordTimers.forEach((timer) => clearTimeout(timer));
+						pluginState.wordTimers.clear();
 					}
 				}
 			};

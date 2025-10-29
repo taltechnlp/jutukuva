@@ -115,133 +115,29 @@ function insertStreamingText(
 		console.log('[FINAL-WORD] Original text length:', text.length, 'Filtered text length:', filteredText.length);
 	}
 
-	// Split both into word lists (use filtered text if we created a new paragraph)
-	const previousWords = new Set(previousIncomingText.trim().split(/\s+/).filter(w => w.length > 0));
+	// Split filtered text into words for insertion
 	const incomingWords = filteredText.trim().split(/\s+/).filter(w => w.length > 0);
-	const incomingWordsSet = new Set(incomingWords);
 
-	// Common words = words appearing in BOTH previous and current results
-	// These words are stable and should be marked as final
-	const commonWords = new Set<string>();
-	for (const word of incomingWords) {
-		if (previousWords.has(word)) {
-			commonWords.add(word);
-		}
-	}
-
-	console.log('[FINAL-WORD] Previous:', previousIncomingText);
-	console.log('[FINAL-WORD] Incoming (filtered):', filteredText);
-	console.log('[FINAL-WORD] Common words:', Array.from(commonWords));
+	console.log('[STREAMING] Incoming (filtered):', filteredText);
+	console.log('[STREAMING] Will process', incomingWords.length, 'words');
 
 	const paraStart = lastParaPos + 1;
 	const paraEnd = lastParaPos + lastPara.nodeSize - 1;
 
-	// Collect all words in the last paragraph
-	const existingWords: Array<{
-		text: string;
-		id: string;
-		pos: number;
-		nodeSize: number;
-		final: boolean;
-		approved: boolean;
-	}> = [];
-
-	doc.nodesBetween(paraStart, paraEnd, (node, pos) => {
-		if (node.isText && node.marks.length > 0) {
-			const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-			if (wordMark && node.text && node.text.trim().length > 0) {
-				existingWords.push({
-					text: node.text.trim(),
-					id: wordMark.attrs.id,
-					pos: pos,
-					nodeSize: node.nodeSize,
-					final: wordMark.attrs.final,
-					approved: wordMark.attrs.approved
-				});
-			}
-		}
-	});
-
-	// Track words that became final (for auto-confirm notification)
-	const wordsBecameFinal: string[] = [];
-
-	// Step 1: Mark non-final words as final if they're in commonWords
-	// NEVER touch approved or already-final words
-	for (const word of existingWords) {
-		if (!word.approved && !word.final && commonWords.has(word.text)) {
-			// Update this word to final=true
-			const node = doc.nodeAt(word.pos);
-			if (node && node.isText) {
-				const wordMark = node.marks.find((m) => m.type.name === 'word');
-				if (wordMark) {
-					// Create new word mark with final=true
-					const newWordMark = schema.marks.word.create({
-						...wordMark.attrs,
-						final: true
-					});
-
-					// Replace marks on this text node
-					const otherMarks = node.marks.filter((m) => m.type.name !== 'word');
-					tr.removeMark(word.pos, word.pos + node.nodeSize, schema.marks.word);
-					tr.addMark(word.pos, word.pos + node.nodeSize, newWordMark);
-
-					// Restore other marks
-					for (const mark of otherMarks) {
-						tr.addMark(word.pos, word.pos + node.nodeSize, mark);
-					}
-
-					wordsBecameFinal.push(wordMark.attrs.id);
-					console.log('[FINAL-WORD] Marked as final:', word.text);
-				}
-			}
-		}
-	}
-
-	// Emit wordBecameFinal meta for auto-confirm to pick up
-	if (wordsBecameFinal.length > 0) {
-		tr.setMeta('wordsBecameFinal', wordsBecameFinal);
-	}
-
-	// Update doc reference after marking
-	doc = tr.doc;
-
-	// Re-collect existing words with updated state
-	const updatedExistingWords: Array<{
-		text: string;
-		id: string;
-		pos: number;
-		nodeSize: number;
-		final: boolean;
-		approved: boolean;
-	}> = [];
-
-	doc.nodesBetween(paraStart, paraEnd, (node, pos) => {
-		if (node.isText && node.marks.length > 0) {
-			const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-			if (wordMark && node.text && node.text.trim().length > 0) {
-				updatedExistingWords.push({
-					text: node.text.trim(),
-					id: wordMark.attrs.id,
-					pos: pos,
-					nodeSize: node.nodeSize,
-					final: wordMark.attrs.final,
-					approved: wordMark.attrs.approved
-				});
-			}
-		}
-	});
-
-	// Step 2: Delete ALL non-final, non-approved words
-	// NEVER delete final or approved words (immutable!)
-	// Non-final words are unstable - ASR may correct them, so delete and re-insert
+	// Step 1: Delete ALL non-approved words
+	// NEVER delete approved words (immutable - user confirmed)
+	// All non-approved words can be updated/corrected by ASR
 	const wordsToDelete: Array<{ pos: number; nodeSize: number }> = [];
 
-	for (const word of updatedExistingWords) {
-		if (!word.approved && !word.final) {
-			wordsToDelete.push({ pos: word.pos, nodeSize: word.nodeSize });
-			console.log('[FINAL-WORD] Deleting non-final word:', word.text);
+	doc.nodesBetween(paraStart, paraEnd, (node, pos) => {
+		if (node.isText && node.marks.length > 0) {
+			const wordMark = node.marks.find((mark) => mark.type.name === 'word');
+			if (wordMark && node.text && node.text.trim().length > 0 && !wordMark.attrs.approved) {
+				wordsToDelete.push({ pos: pos, nodeSize: node.nodeSize });
+				console.log('[STREAMING] Deleting non-approved word:', node.text.trim());
+			}
 		}
-	}
+	});
 
 	// Delete in reverse order to preserve positions
 	wordsToDelete.sort((a, b) => b.pos - a.pos);
@@ -262,19 +158,19 @@ function insertStreamingText(
 		}
 	});
 
-	// Step 3: Collect final/approved words to avoid duplicating them
-	const finalAndApprovedWords = new Set<string>();
+	// Step 2: Collect approved words to avoid duplicating them
+	const approvedWords = new Set<string>();
 	doc.nodesBetween(lastParaPos + 1, lastParaPos + lastPara.nodeSize - 1, (node) => {
 		if (node.isText && node.marks.length > 0) {
 			const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-			if (wordMark && (wordMark.attrs.final || wordMark.attrs.approved) && node.text && node.text.trim().length > 0) {
-				finalAndApprovedWords.add(node.text.trim());
+			if (wordMark && wordMark.attrs.approved && node.text && node.text.trim().length > 0) {
+				approvedWords.add(node.text.trim());
 			}
 		}
 	});
 
-	console.log('[FINAL-WORD] Final/approved words in paragraph:', finalAndApprovedWords.size);
-	console.log('[FINAL-WORD] Will insert', incomingWords.filter(w => !finalAndApprovedWords.has(w)).length, 'new words');
+	console.log('[STREAMING] Approved words in paragraph:', approvedWords.size);
+	console.log('[STREAMING] Will insert', incomingWords.filter(w => !approvedWords.has(w)).length, 'new words');
 
 	// Step 4: Insert new words
 	const insertPos = lastParaPos + 1 + (lastPara?.content.size || 0);
@@ -286,13 +182,13 @@ function insertStreamingText(
 	let charPosition = 0;
 
 	// Track if we need to add space before next word
-	let needsSpace = finalAndApprovedWords.size > 0;
+	let needsSpace = approvedWords.size > 0;
 
 	for (let i = 0; i < incomingWords.length; i++) {
 		const word = incomingWords[i];
 
-		// Skip words that are already final or approved (immutable!)
-		if (finalAndApprovedWords.has(word)) {
+		// Skip words that are already approved (immutable!)
+		if (approvedWords.has(word)) {
 			charPosition += word.length + 1; // +1 for space
 			continue;
 		}
@@ -312,16 +208,13 @@ function insertStreamingText(
 		// Generate new ID for this word
 		const wordId = uuidv4();
 
-		// Determine if this word should be final
-		const shouldBeFinal = commonWords.has(word);
-
-		// Create word mark
+		// Create word mark (all words start as non-final, non-approved)
 		const wordMark = schema.marks.word.create({
 			id: wordId,
 			start: wordStartTime,
 			end: wordEndTime,
 			approved: false,
-			final: shouldBeFinal
+			final: false
 		});
 
 		// Add pending mark for non-approved words
@@ -332,13 +225,7 @@ function insertStreamingText(
 		tr.insert(currentPos, textNode);
 		currentPos += word.length;
 
-		console.log('[FINAL-WORD] Inserted word:', word, 'final:', shouldBeFinal);
-
-		// If word is final on insertion, notify auto-confirm
-		if (shouldBeFinal) {
-			const existingList = tr.getMeta('wordsBecameFinal') || [];
-			tr.setMeta('wordsBecameFinal', [...existingList, wordId]);
-		}
+		console.log('[STREAMING] Inserted word:', word);
 
 		charPosition += word.length + 1; // +1 for space
 	}
