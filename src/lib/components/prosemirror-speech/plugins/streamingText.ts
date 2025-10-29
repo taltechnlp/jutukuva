@@ -73,15 +73,28 @@ function insertStreamingText(
 	const pluginState = streamingTextKey.getState(state);
 	const shouldCreateNewParagraph = pluginState?.createNewParagraphOnNextText;
 
+	console.log('[STREAMING-PLUGIN] shouldCreateNewParagraph:', shouldCreateNewParagraph);
+
 	if (shouldCreateNewParagraph && lastPara && lastPara.content.size > 0) {
 		console.log('[STREAMING-PLUGIN] Creating new paragraph after speech pause');
 		const newPara = schema.nodes.paragraph.create();
 		const insertPos = lastParaPos + lastPara.nodeSize;
 		tr.insert(insertPos, newPara);
 
-		// Update last paragraph reference to the newly created one
-		lastParaPos = insertPos;
-		lastPara = newPara;
+		// Re-find the new paragraph in the updated document
+		let newLastParaPos = 0;
+		let newLastPara: any = null;
+		tr.doc.descendants((node, pos) => {
+			if (node.type.name === 'paragraph') {
+				newLastPara = node;
+				newLastParaPos = pos;
+			}
+		});
+
+		lastParaPos = newLastParaPos;
+		lastPara = newLastPara;
+
+		console.log('[STREAMING-PLUGIN] New paragraph created at pos:', lastParaPos, 'size:', lastPara?.content.size);
 
 		// Clear the flag by setting meta
 		tr.setMeta('clearNewParagraphFlag', true);
