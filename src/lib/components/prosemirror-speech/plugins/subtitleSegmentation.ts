@@ -180,8 +180,79 @@ export function subtitleSegmentationPlugin(onSegmentComplete?: (segment: Subtitl
 
 		// Monitor for automatic paragraph breaks
 		appendTransaction(transactions, oldState, newState) {
+			// Prevent infinite loops - don't process transactions created by this plugin
+			if (transactions.some((t) => t.getMeta('subtitleSegmentation'))) {
+				return null;
+			}
+
 			const tr = newState.tr;
 			let modified = false;
+
+			// Check if a word was just approved - potentially emit segment in real-time
+			const wordApproved = transactions.some((t) => t.getMeta('approveWord') !== undefined);
+			if (wordApproved) {
+				const pluginState = subtitleSegmentationKey.getState(newState);
+				const lastParaIndex = newState.doc.childCount - 1;
+
+				if (pluginState && lastParaIndex >= 0) {
+					const lastPara = newState.doc.child(lastParaIndex);
+					const allWords = extractWordsFromParagraph(lastPara, 0);
+					const approvedWords = allWords.filter((w) => w.approved);
+
+					// Calculate total character length of approved words
+					const approvedTextLength = approvedWords.reduce((sum, w) => sum + w.text.length, 0);
+					const approvedWordCount = approvedWords.length;
+
+					// Emit segment if we have enough approved content (more aggressive for real-time)
+					// Criteria: 40+ chars OR 8+ words OR sentence ending
+					const shouldEmit =
+						approvedTextLength >= 40 ||
+						approvedWordCount >= 8 ||
+						(approvedWords.length > 0 && /[.!?]$/.test(approvedWords[approvedWords.length - 1].text.trim()));
+
+					if (shouldEmit) {
+						console.log('[SUBTITLE-SEGMENTATION] Word approved, emitting segment with', approvedWords.length, 'words,', approvedTextLength, 'chars');
+						const segmentIndex = pluginState.segments.length + 1;
+						const segment = wordsToSegment(approvedWords, segmentIndex);
+						tr.setMeta('segmentComplete', segment);
+
+						// Clear the approved words by splitting the paragraph
+						// Create a new paragraph after the last approved word
+						let lastApprovedPos = 0;
+						lastPara.descendants((node, pos) => {
+							if (node.isText) {
+								const wordMark = node.marks.find((m) => m.type.name === 'word');
+								if (wordMark && wordMark.attrs.id === approvedWords[approvedWords.length - 1].id) {
+									lastApprovedPos = pos + node.nodeSize;
+									return false;
+								}
+							}
+						});
+
+						if (lastApprovedPos > 0) {
+							// Calculate absolute position in document
+							let paraPos = 0;
+							for (let i = 0; i < lastParaIndex; i++) {
+								paraPos += newState.doc.child(i).nodeSize;
+							}
+
+							// Split paragraph after last approved word
+							const absolutePos = paraPos + lastApprovedPos + 1;
+							const $pos = tr.doc.resolve(absolutePos);
+							if ($pos.parent.type.name === 'paragraph') {
+								tr.split($pos.pos);
+							}
+						}
+
+						modified = true;
+					}
+				}
+
+				if (modified) {
+					tr.setMeta('subtitleSegmentation', true);
+					return tr;
+				}
+			}
 
 			// Check if all words were just approved - emit final segment
 			const allWordsApproved = transactions.some((t) => t.getMeta('allWordsApproved'));
@@ -205,7 +276,11 @@ export function subtitleSegmentationPlugin(onSegmentComplete?: (segment: Subtitl
 					}
 				}
 
-				return modified ? tr : null;
+				if (modified) {
+					tr.setMeta('subtitleSegmentation', true);
+					return tr;
+				}
+				return null;
 			}
 
 			// Check if we should split the last paragraph
@@ -297,7 +372,12 @@ export function subtitleSegmentationPlugin(onSegmentComplete?: (segment: Subtitl
 				}
 			}
 
-			return modified ? tr : null;
+			// Mark transaction with metadata to prevent infinite loops
+			if (modified) {
+				tr.setMeta('subtitleSegmentation', true);
+				return tr;
+			}
+			return null;
 		},
 
 		view(editorView) {

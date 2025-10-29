@@ -256,28 +256,36 @@
 		}
 	}
 
+	// Initialize audio source manager (only once)
+	async function initializeAudioSourceManager() {
+		if (!audioSourceManager) {
+			console.log('[INIT-AUDIO] Initializing audio source manager...');
+			audioSourceManager = new AudioSourceManager();
+			await audioSourceManager.initialize();
+
+			// Check system audio availability
+			systemAudioAvailable = await audioSourceManager.checkSystemAudioSupport();
+			console.log('[INIT-AUDIO] System audio available:', systemAudioAvailable);
+
+			// Load available audio devices
+			await loadAudioDevices();
+
+			// Fall back to microphone if system audio is selected but not available
+			if (audioSourceType === 'system' && !systemAudioAvailable) {
+				console.warn('[INIT-AUDIO] System audio selected but not available, falling back to microphone');
+				audioSourceType = 'microphone';
+				vadError = 'System audio not available. Please follow the setup instructions below or use microphone.';
+			}
+		}
+	}
+
 	// Initialize VAD separately
 	async function initializeVAD() {
 		console.log('[INIT-VAD] Initializing VAD...');
 		isWasmLoading = true;
 
-		// Initialize audio source manager
-		audioSourceManager = new AudioSourceManager();
-		await audioSourceManager.initialize();
-
-		// Check system audio availability
-		systemAudioAvailable = await audioSourceManager.checkSystemAudioSupport();
-		console.log('[INIT-VAD] System audio available:', systemAudioAvailable);
-
-		// Load available audio devices
-		await loadAudioDevices();
-
-		// Fall back to microphone if system audio is selected but not available
-		if (audioSourceType === 'system' && !systemAudioAvailable) {
-			console.warn('[INIT-VAD] System audio selected but not available, falling back to microphone');
-			audioSourceType = 'microphone';
-			vadError = 'System audio not available. Please follow the setup instructions below or use microphone.';
-		}
+		// Initialize audio source manager if not already done
+		await initializeAudioSourceManager();
 
 		// Get custom audio stream based on selected source
 		try {
@@ -892,6 +900,13 @@
 		isVadActive = false;
 		isSpeaking = false;
 
+		// Notify editor that recording ended (for final segment emission)
+		if (speechEditor && speechEditor.view) {
+			const tr = speechEditor.view.state.tr;
+			tr.setMeta('recordingEnded', true);
+			speechEditor.view.dispatch(tr);
+		}
+
 		// Stop timing tracking
 		speechEditor?.stopTiming();
 
@@ -1167,11 +1182,15 @@
 					</select>
 				</div>
 
-				<!-- Device Selector (if multiple devices available) -->
-				{#if availableAudioDevices.length > 1}
+				<!-- Device Selector (if devices available or system audio mode) -->
+				{#if availableAudioDevices.length > 0 || audioSourceType === 'system'}
 					<div class="form-control mt-2">
 						<label class="label">
-							<span class="label-text font-semibold">Device</span>
+							<span class="label-text font-semibold">
+								{audioSourceType === 'system' && availableAudioDevices.some(d => d.kind === 'desktop')
+									? 'Capture Source'
+									: 'Device'}
+							</span>
 						</label>
 						<select
 							class="select select-bordered w-full"
