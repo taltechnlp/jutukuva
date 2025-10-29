@@ -54,26 +54,6 @@ function insertStreamingText(
 		}
 	});
 
-	// Extract committedText:
-	// - ALL approved words from entire document
-	// - ALL pending words from previous paragraphs (not including last paragraph)
-	// This allows streaming replacement in the last paragraph while preventing
-	// duplication from previous paragraphs after speech pauses
-	let committedText = '';
-	doc.descendants((node, pos) => {
-		if (node.isText && node.marks.length > 0) {
-			const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-			if (wordMark && node.text && node.text.trim().length > 0) {
-				// Include if approved, OR if pending but not in last paragraph
-				const inLastParagraph = lastPara && pos >= lastParaPos && pos < lastParaPos + lastPara.nodeSize;
-				if (wordMark.attrs.approved || !inLastParagraph) {
-					committedText += (committedText ? ' ' : '') + node.text.trim();
-				}
-			}
-		}
-	});
-	console.log('[STREAMING-PLUGIN] Committed text:', committedText.substring(0, 50));
-
 	console.log('[STREAMING-PLUGIN] Found paragraph:', { lastParaPos, paraSize: lastPara?.content.size });
 
 	// Check if we should create a new paragraph (after VAD speech end)
@@ -109,6 +89,26 @@ function insertStreamingText(
 		// Clear the flag by setting meta
 		tr.setMeta('clearNewParagraphFlag', true);
 	}
+
+	// Extract committedText AFTER potentially creating new paragraph:
+	// - ALL approved words from entire document
+	// - ALL pending words from previous paragraphs (not including last paragraph)
+	// This allows streaming replacement in the last paragraph while preventing
+	// duplication from previous paragraphs after speech pauses
+	let committedText = '';
+	doc.descendants((node, pos) => {
+		if (node.isText && node.marks.length > 0) {
+			const wordMark = node.marks.find((mark) => mark.type.name === 'word');
+			if (wordMark && node.text && node.text.trim().length > 0) {
+				// Include if approved, OR if pending but not in last paragraph
+				const inLastParagraph = lastPara && pos >= lastParaPos && pos < lastParaPos + lastPara.nodeSize;
+				if (wordMark.attrs.approved || !inLastParagraph) {
+					committedText += (committedText ? ' ' : '') + node.text.trim();
+				}
+			}
+		}
+	});
+	console.log('[STREAMING-PLUGIN] Committed text:', committedText.substring(0, 50));
 
 	// If no paragraph found, create one
 	if (!lastPara) {
