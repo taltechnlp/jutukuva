@@ -1,44 +1,22 @@
 <script lang="ts">
-	import type { ApprovalMode, AutoConfirmConfig } from './utils/types';
+	import type { AutoConfirmConfig } from './utils/types';
 
 	// Props
 	let {
-		currentMode = 'word',
 		wordCount = 0,
 		approvedCount = 0,
 		autoConfirmConfig = { enabled: true, timeoutSeconds: 5 },
-		autoScroll = true,
 		onUndo = () => {},
 		onRedo = () => {},
-		onAutoConfirmChange = (config: AutoConfirmConfig) => {},
-		onModeChange = (mode: ApprovalMode) => {},
-		onAutoScrollChange = (enabled: boolean) => {}
+		onAutoConfirmChange = (config: AutoConfirmConfig) => {}
 	}: {
-		currentMode?: ApprovalMode;
 		wordCount?: number;
 		approvedCount?: number;
 		autoConfirmConfig?: AutoConfirmConfig;
-		autoScroll?: boolean;
 		onUndo?: () => void;
 		onRedo?: () => void;
 		onAutoConfirmChange?: (config: AutoConfirmConfig) => void;
-		onModeChange?: (mode: ApprovalMode) => void;
-		onAutoScrollChange?: (enabled: boolean) => void;
 	} = $props();
-
-	// Mode options
-	const modes: ApprovalMode[] = ['word', 'sentence', 'paragraph'];
-
-	function cycleMode() {
-		const currentIndex = modes.indexOf(currentMode);
-		const nextMode = modes[(currentIndex + 1) % modes.length];
-		onModeChange(nextMode);
-	}
-
-	// Auto-scroll handler
-	function toggleAutoScroll() {
-		onAutoScrollChange(!autoScroll);
-	}
 
 	// Auto-confirm handlers
 	function toggleAutoConfirm() {
@@ -82,34 +60,6 @@
 				<path d="M3 17a9 9 0 019-9 9 9 0 016 2.3l3 2.7" />
 			</svg>
 		</button>
-	</div>
-
-	<!-- Mode Selector -->
-	<div class="toolbar-group">
-		<label class="toolbar-label">Mode:</label>
-		<button
-			class="mode-button"
-			onclick={cycleMode}
-			title="Toggle approval mode (Ctrl+E)"
-		>
-			<span class="mode-text">{currentMode}</span>
-			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-				<polyline points="6 9 12 15 18 9" />
-			</svg>
-		</button>
-	</div>
-
-	<!-- Auto-Scroll Toggle -->
-	<div class="toolbar-group">
-		<label class="toolbar-toggle">
-			<input
-				type="checkbox"
-				checked={autoScroll}
-				onchange={toggleAutoScroll}
-				aria-label="Enable auto-scroll"
-			/>
-			<span>Auto-scroll</span>
-		</label>
 	</div>
 
 	<!-- Auto-Confirm Settings -->
@@ -207,38 +157,6 @@
 		background-color: #e0e0e0;
 	}
 
-	.toolbar-label {
-		font-size: 13px;
-		font-weight: 500;
-		color: #666;
-	}
-
-	.mode-button {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		padding: 6px 12px;
-		border: 1px solid #ddd;
-		border-radius: 6px;
-		background-color: white;
-		cursor: pointer;
-		font-size: 13px;
-		font-weight: 500;
-		text-transform: capitalize;
-		color: #424242;
-		transition: all 0.2s ease;
-	}
-
-	.mode-button:hover {
-		background-color: #f5f5f5;
-		border-color: #bbb;
-	}
-
-	.mode-text {
-		min-width: 70px;
-		text-align: left;
-	}
-
 	.progress-group {
 		flex: 1;
 		max-width: 150px;
@@ -271,20 +189,6 @@
 	.auto-confirm-group {
 		border-left: 1px solid #ddd;
 		padding-left: 12px;
-	}
-
-	.toolbar-toggle {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		font-size: 13px;
-		color: #666;
-		cursor: pointer;
-		user-select: none;
-	}
-
-	.toolbar-toggle input {
-		cursor: pointer;
 	}
 
 	.auto-confirm-toggle {

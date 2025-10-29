@@ -25,7 +25,6 @@
 	let editorElement: HTMLDivElement;
 	let editorView: EditorView | null = $state(null);
 	let segments = $state<SubtitleSegment[]>([]);
-	let currentMode = $state<'word' | 'sentence' | 'paragraph'>('word');
 	let wordCount = $state(0);
 	let approvedCount = $state(0);
 	let autoConfirmConfig = $state<AutoConfirmConfig>(
@@ -86,12 +85,6 @@
 
 	// Update reactive state from editor state
 	function updateEditorState(state: EditorState) {
-		// Update approval mode
-		const approvalPluginState = wordApprovalKey.getState(state);
-		if (approvalPluginState) {
-			currentMode = approvalPluginState.approvalMode;
-		}
-
 		// Update segments
 		const segmentPluginState = subtitleSegmentationKey.getState(state);
 		if (segmentPluginState) {
@@ -141,20 +134,9 @@
 		}, newConfig);
 	}
 
-	// Handle mode change
-	function handleModeChange(mode: 'word' | 'sentence' | 'paragraph') {
-		if (!editorView) return;
-
-		// The word approval plugin will handle the mode change via its state
-		// We just need to dispatch a transaction with the new mode
-		const tr = editorView.state.tr;
-		tr.setMeta('setApprovalMode', mode);
-		editorView.dispatch(tr);
-	}
-
 	// Handle auto-scroll toggle
-	function handleAutoScrollChange(enabled: boolean) {
-		autoScroll = enabled;
+	function handleAutoScrollChange() {
+		autoScroll = !autoScroll;
 	}
 
 	// Public API: Start timing for recording session
@@ -242,16 +224,12 @@
 <div class="speech-editor-container {className}">
 	<!-- Toolbar -->
 	<Toolbar
-		{currentMode}
 		{wordCount}
 		{approvedCount}
 		{autoConfirmConfig}
-		{autoScroll}
 		onUndo={() => undo()}
 		onRedo={() => redo()}
 		onAutoConfirmChange={handleAutoConfirmChange}
-		onModeChange={handleModeChange}
-		onAutoScrollChange={handleAutoScrollChange}
 	/>
 
 	<!-- Editor -->
@@ -265,7 +243,15 @@
 
 	<!-- Status bar -->
 	<div class="status-bar">
-		<span class="mode-indicator">Mode: {currentMode}</span>
+		<label class="auto-scroll-toggle">
+			<input
+				type="checkbox"
+				checked={autoScroll}
+				onchange={handleAutoScrollChange}
+				aria-label="Enable auto-scroll"
+			/>
+			<span>Auto-scroll</span>
+		</label>
 		<span class="word-count">{approvedCount} / {wordCount} words approved</span>
 	</div>
 </div>
@@ -322,9 +308,18 @@
 		color: #666;
 	}
 
-	.mode-indicator {
-		font-weight: 600;
-		text-transform: capitalize;
+	.auto-scroll-toggle {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 13px;
+		color: #666;
+		cursor: pointer;
+		user-select: none;
+	}
+
+	.auto-scroll-toggle input {
+		cursor: pointer;
 	}
 
 	.word-count {
