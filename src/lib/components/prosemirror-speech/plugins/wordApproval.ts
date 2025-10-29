@@ -66,24 +66,11 @@ function findNextUnapprovedWord(
 
 /**
  * Create decorations for active word highlighting
+ * (Disabled - highlighting removed to prevent text jumping)
  */
 function createDecorations(doc: Node, activeWordPos: number | null): DecorationSet {
-	const decorations: Decoration[] = [];
-
-	if (activeWordPos !== null) {
-		// Find the word at active position
-		doc.descendants((node, pos) => {
-			if (pos === activeWordPos && node.isText) {
-				decorations.push(
-					Decoration.inline(pos, pos + node.nodeSize, {
-						class: 'word-state-active'
-					})
-				);
-			}
-		});
-	}
-
-	return DecorationSet.create(doc, decorations);
+	// Return empty decoration set - active word highlighting removed
+	return DecorationSet.empty;
 }
 
 /**

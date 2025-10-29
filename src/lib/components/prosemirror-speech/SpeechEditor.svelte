@@ -308,13 +308,6 @@
 		padding: 2px 0;
 	}
 
-	.speech-editor :global(.word-state-active) {
-		background-color: rgba(255, 193, 7, 0.5);
-		font-weight: 600;
-		padding: 2px 4px;
-		border-radius: 3px;
-	}
-
 	.speech-editor :global(.word-state-pending) {
 		color: #757575;
 	}
