@@ -272,7 +272,6 @@
 	.speech-editor {
 		min-height: 300px;
 		padding: 20px;
-		padding-bottom: 170px;
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 		line-height: 2;
 	}
