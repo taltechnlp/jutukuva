@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { _ } from 'svelte-i18n';
 	import type { SubtitleSegment } from './utils/types';
 
 	// Props
@@ -43,32 +44,32 @@
 <div class="subtitle-preview {className}">
 	<!-- Header -->
 	<div class="preview-header">
-		<h3 class="preview-title">Subtitle Preview ({segments.length})</h3>
+		<h3 class="preview-title">{$_('dictate.subtitlePreview')} ({segments.length})</h3>
 		<div class="preview-actions">
 			<button
 				class="action-button"
 				onclick={copyToClipboard}
 				disabled={segments.length === 0}
-				title="Copy SRT to clipboard"
+				title={$_('dictate.copy')}
 			>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
 					<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
 				</svg>
-				Copy
+				{$_('dictate.copy')}
 			</button>
 			<button
 				class="action-button"
 				onclick={downloadSRT}
 				disabled={segments.length === 0}
-				title="Download SRT file"
+				title={$_('dictate.download')}
 			>
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
 					<polyline points="7 10 12 15 17 10" />
 					<line x1="12" y1="15" x2="12" y2="3" />
 				</svg>
-				Download
+				{$_('dictate.download')}
 			</button>
 		</div>
 	</div>
@@ -82,8 +83,8 @@
 					<path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13" />
 					<path d="M2 20l2-2 2 2" />
 				</svg>
-				<p>No subtitles yet</p>
-				<p class="hint">Approve words to generate subtitles</p>
+				<p>{$_('dictate.noSubtitlesYet')}</p>
+				<p class="hint">{$_('dictate.approveWordsToGenerateSubtitles')}</p>
 			</div>
 		{:else}
 			{#each segments as segment (segment.index)}

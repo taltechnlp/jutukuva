@@ -14,6 +14,7 @@ export interface StreamingTextState {
 	pendingText: string;
 	currentTime: number;
 	committedText: string; // Plain text that's been inserted (for deduplication)
+	createNewParagraphOnNextText: boolean; // Set when VAD detects speech end
 }
 
 export const streamingTextKey = new PluginKey<StreamingTextState>('streamingText');
@@ -67,6 +68,24 @@ function insertStreamingText(
 	});
 
 	console.log('[STREAMING-PLUGIN] Found paragraph:', { lastParaPos, paraSize: lastPara?.content.size });
+
+	// Check if we should create a new paragraph (after VAD speech end)
+	const pluginState = streamingTextKey.getState(state);
+	const shouldCreateNewParagraph = pluginState?.createNewParagraphOnNextText;
+
+	if (shouldCreateNewParagraph && lastPara && lastPara.content.size > 0) {
+		console.log('[STREAMING-PLUGIN] Creating new paragraph after speech pause');
+		const newPara = schema.nodes.paragraph.create();
+		const insertPos = lastParaPos + lastPara.nodeSize;
+		tr.insert(insertPos, newPara);
+
+		// Update last paragraph reference to the newly created one
+		lastParaPos = insertPos;
+		lastPara = newPara;
+
+		// Clear the flag by setting meta
+		tr.setMeta('clearNewParagraphFlag', true);
+	}
 
 	// If no paragraph found, create one
 	if (!lastPara) {
@@ -270,11 +289,29 @@ export function streamingTextPlugin() {
 					buffer: [],
 					pendingText: '',
 					currentTime: 0,
-					committedText: ''
+					committedText: '',
+					createNewParagraphOnNextText: false
 				};
 			},
 
 			apply(tr, value): StreamingTextState {
+				// Handle VAD speech end - set flag to create new paragraph
+				if (tr.getMeta('vadSpeechEnd')) {
+					console.log('[STREAMING-PLUGIN] VAD speech end - will create new paragraph on next text');
+					return {
+						...value,
+						createNewParagraphOnNextText: true
+					};
+				}
+
+				// Clear the flag after it's been used
+				if (tr.getMeta('clearNewParagraphFlag')) {
+					return {
+						...value,
+						createNewParagraphOnNextText: false
+					};
+				}
+
 				// Handle streaming text meta
 				const streamingEvent = tr.getMeta('insertStreamingText') as
 					| StreamingTextEvent
@@ -345,6 +382,20 @@ export function insertStreamingTextCommand(
 ): boolean {
 	const tr = state.tr;
 	tr.setMeta('insertStreamingText', event);
+	dispatch(tr);
+	return true;
+}
+
+/**
+ * Helper: Signal VAD speech end to create new paragraph on next text
+ */
+export function signalVadSpeechEndCommand(
+	state: EditorState,
+	dispatch: (tr: Transaction) => void
+): boolean {
+	const tr = state.tr;
+	tr.setMeta('vadSpeechEnd', true);
+	tr.setMeta('addToHistory', false);
 	dispatch(tr);
 	return true;
 }

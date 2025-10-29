@@ -360,6 +360,11 @@
 				if (DEBUG_VAD) console.log('🔇 [VAD] Speech ended, audio length:', audio.length);
 				isSpeaking = false;
 
+				// Signal to editor to create new paragraph on next text
+				if (speechEditor && isRecording) {
+					speechEditor.signalVadSpeechEnd();
+				}
+
 				// Note: We don't send utterance_end anymore
 				// - For streaming models (ET/EN): Sessions should stay open across pauses
 				// - For offline models (Parakeet): 15s buffer auto-processes without needing utterance_end

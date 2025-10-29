@@ -1,4 +1,7 @@
 {
+  "app": {
+    "title": "Kõnetuvastus"
+  },
   "sign_in": "Logi sisse",
   "sign_up": "Logi välja",
   "common": {
@@ -422,9 +425,26 @@
   },
   "dictate": {
     "title": "Dikteeri",
+    "pageTitle": "Reaalajas kõnetuvastus",
+    "pageHeading": "Reaalajas kõnetuvastus",
     "intro1": "Reaalajas eestikeelne kõnetuvastus sõna-sõnalise transkriptsiooniga. Rääkige mikrofoni ja näete oma sõnu ilmumas kohe, kui räägite.",
     "intro2": "Iga sõna ilmub esmalt esiletõstetuna ootel olekus, kuni selle kinnitad. Vajuta Enter, et kinnitada kõik sõnad kuni praeguse positsioonini, või lülita sisse automaatne kinnitamine, mis kinnitab sõnad mõne sekundi pärast automaatselt.",
     "intro3": "Parimate tulemuste saamiseks kasutage head mikrofoni ja rääkige selgelt mõõdukas tempos. Redaktor toetab käsitsi parandusi ning sisaldab tagasivõtmise ja uuesti tegemise funktsionaalsust.",
+    "audioSource": "Heliallikas",
+    "audioSourceMicrophone": "Mikrofon",
+    "audioSourceSystem": "Süsteemi heli",
+    "device": "Seade",
+    "captureSource": "Salvestusallikas",
+    "deviceDefault": "Vaikimisi",
+    "switchingAudioSource": "Heliallika vahetamine...",
+    "autoConfirm": "Automaatne kinnitamine",
+    "autoScroll": "Automaatne kerimine",
+    "wordsApproved": "sõna kinnitatud",
+    "subtitlePreview": "Subtiitrite eelvaade",
+    "copy": "Kopeeri",
+    "download": "Laadi alla",
+    "noSubtitlesYet": "Subtiitrid puuduvad",
+    "approveWordsToGenerateSubtitles": "Kinnita sõnad subtiitrite genereerimiseks",
     "attention": "Tähelepanu!",
     "freeConnections": "vaba ühendust",
     "noConnections": "Ühtegi ühendust pole hetkel saadaval!",
