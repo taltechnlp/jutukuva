@@ -180,17 +180,22 @@ function insertStreamingText(
 
 	// Delete all pending content in one operation
 	if (firstPendingPos !== null && lastPendingPos !== null) {
+		console.log('[STREAMING-PLUGIN] Deleting pending content from', firstPendingPos, 'to', lastPendingPos);
 		tr.delete(firstPendingPos, lastPendingPos);
+
+		// Update doc reference after deletion
+		doc = tr.doc;
 
 		// Re-find the last paragraph after deletion
 		lastPara = null;
 		lastParaPos = 0;
-		tr.doc.descendants((node, pos) => {
+		doc.descendants((node, pos) => {
 			if (node.type.name === 'paragraph') {
 				lastPara = node;
 				lastParaPos = pos;
 			}
 		});
+		console.log('[STREAMING-PLUGIN] After deletion, lastPara at:', lastParaPos, 'size:', lastPara?.content.size);
 	}
 
 	// Insert position is at the end of the last paragraph
