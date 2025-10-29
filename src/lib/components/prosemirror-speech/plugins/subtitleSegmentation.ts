@@ -217,6 +217,13 @@ export function subtitleSegmentationPlugin(onSegmentComplete?: (segment: Subtitl
 					const approvedTextLength = unemittedApprovedWords.reduce((sum, w) => sum + w.text.length, 0);
 					const approvedWordCount = unemittedApprovedWords.length;
 
+					console.log('[SUBTITLE-SEGMENTATION] Word approved, checking emission:', {
+						unemittedCount: approvedWordCount,
+						textLength: approvedTextLength,
+						totalWords: allWords.length,
+						emittedCount: pluginState.emittedWordIds.size
+					});
+
 					// Emit segment more frequently since we're not splitting paragraphs
 					// Criteria: 30+ chars OR 5+ words OR sentence ending OR any approved words if recording ended
 					const shouldEmit =
