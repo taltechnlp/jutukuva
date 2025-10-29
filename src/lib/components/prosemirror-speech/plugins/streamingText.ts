@@ -124,20 +124,56 @@ function insertStreamingText(
 	const paraStart = lastParaPos + 1;
 	const paraEnd = lastParaPos + lastPara.nodeSize - 1;
 
-	// Step 1: Delete ALL non-approved words
-	// NEVER delete approved words (immutable - user confirmed)
-	// All non-approved words can be updated/corrected by ASR
-	const wordsToDelete: Array<{ pos: number; nodeSize: number }> = [];
+	// Step 1: Collect existing words in order (approved and non-approved)
+	const existingWords: Array<{ text: string; approved: boolean; id: string; pos: number; nodeSize: number }> = [];
 
 	doc.nodesBetween(paraStart, paraEnd, (node, pos) => {
 		if (node.isText && node.marks.length > 0) {
 			const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-			if (wordMark && node.text && node.text.trim().length > 0 && !wordMark.attrs.approved) {
-				wordsToDelete.push({ pos: pos, nodeSize: node.nodeSize });
-				console.log('[STREAMING] Deleting non-approved word:', node.text.trim());
+			if (wordMark && node.text && node.text.trim().length > 0) {
+				existingWords.push({
+					text: node.text.trim(),
+					approved: wordMark.attrs.approved,
+					id: wordMark.attrs.id,
+					pos: pos,
+					nodeSize: node.nodeSize
+				});
 			}
 		}
 	});
+
+	console.log('[STREAMING] Existing words:', existingWords.length, 'approved:', existingWords.filter(w => w.approved).length);
+
+	// Step 2: Match incoming words against ALL existing words (approved + non-approved)
+	// Find the first position where they differ
+	let matchLength = 0;
+
+	for (let i = 0; i < Math.min(existingWords.length, incomingWords.length); i++) {
+		if (existingWords[i].text === incomingWords[i]) {
+			matchLength++;
+		} else {
+			// Words differ - stop matching
+			break;
+		}
+	}
+
+	console.log('[STREAMING] Matched', matchLength, '/', existingWords.length, 'existing words with incoming');
+
+	// Step 3: Delete only NON-APPROVED words after the match point
+	// Never delete approved words (they're immutable)
+	const wordsToDelete: Array<{ pos: number; nodeSize: number }> = [];
+
+	for (let i = matchLength; i < existingWords.length; i++) {
+		if (!existingWords[i].approved) {
+			wordsToDelete.push({
+				pos: existingWords[i].pos,
+				nodeSize: existingWords[i].nodeSize
+			});
+			console.log('[STREAMING] Deleting changed word:', existingWords[i].text);
+		} else {
+			console.log('[STREAMING] Preserving approved word:', existingWords[i].text);
+		}
+	}
 
 	// Delete in reverse order to preserve positions
 	wordsToDelete.sort((a, b) => b.pos - a.pos);
@@ -158,40 +194,29 @@ function insertStreamingText(
 		}
 	});
 
-	// Step 2: Collect approved words to avoid duplicating them
-	const approvedWords = new Set<string>();
-	doc.nodesBetween(lastParaPos + 1, lastParaPos + lastPara.nodeSize - 1, (node) => {
-		if (node.isText && node.marks.length > 0) {
-			const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-			if (wordMark && wordMark.attrs.approved && node.text && node.text.trim().length > 0) {
-				approvedWords.add(node.text.trim());
-			}
-		}
-	});
-
-	console.log('[STREAMING] Approved words in paragraph:', approvedWords.size);
-	console.log('[STREAMING] Will insert', incomingWords.filter(w => !approvedWords.has(w)).length, 'new words');
-
-	// Step 4: Insert new words
+	// Step 4: Insert new words (only those after match point)
 	const insertPos = lastParaPos + 1 + (lastPara?.content.size || 0);
 	let currentPos = insertPos;
 
 	// Calculate timing info
 	const totalDuration = (endTime || 0) - (startTime || 0);
 	const timePerChar = filteredText.length > 0 ? totalDuration / filteredText.length : 0;
+
+	// Calculate character position up to match point
 	let charPosition = 0;
+	for (let i = 0; i < matchLength; i++) {
+		charPosition += incomingWords[i].length + 1; // +1 for space
+	}
 
 	// Track if we need to add space before next word
-	let needsSpace = approvedWords.size > 0;
+	// Need space if there are existing words remaining in the document
+	let needsSpace = lastPara.content.size > 0;
 
-	for (let i = 0; i < incomingWords.length; i++) {
+	// Only insert words after the match point
+	console.log('[STREAMING] Will insert', incomingWords.length - matchLength, 'new words (after match point)');
+
+	for (let i = matchLength; i < incomingWords.length; i++) {
 		const word = incomingWords[i];
-
-		// Skip words that are already approved (immutable!)
-		if (approvedWords.has(word)) {
-			charPosition += word.length + 1; // +1 for space
-			continue;
-		}
 
 		// Add space before word if needed
 		if (needsSpace) {
