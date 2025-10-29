@@ -158,23 +158,26 @@ export function subtitleSegmentationPlugin(onSegmentComplete?: (segment: Subtitl
 					// Recalculate current segment length
 					const lastParaIndex = newState.doc.childCount - 1;
 					currentSegmentLength = calculateSegmentLength(newState.doc, lastParaIndex);
+				}
 
-					// Check if we need to update segments
-					const segmentCompleteMeta = tr.getMeta('segmentComplete');
-					if (segmentCompleteMeta && onSegmentComplete) {
-						onSegmentComplete(segmentCompleteMeta);
-						segments = [...segments, segmentCompleteMeta];
+				// Check if we need to update segments (do this outside tr.docChanged!)
+				// The transaction from appendTransaction has metadata but doesn't change the doc
+				const segmentCompleteMeta = tr.getMeta('segmentComplete');
+				if (segmentCompleteMeta && onSegmentComplete) {
+					console.log('[SUBTITLE-SEGMENTATION] Apply: Processing segment with', segmentCompleteMeta.words.length, 'words');
+					onSegmentComplete(segmentCompleteMeta);
+					segments = [...segments, segmentCompleteMeta];
 
-						// Count how many words were in this segment
-						lastEmittedWordCount += segmentCompleteMeta.words.length;
+					// Count how many words were in this segment
+					lastEmittedWordCount += segmentCompleteMeta.words.length;
 
-						// Track emitted word IDs
-						const newEmittedWordIds = new Set(emittedWordIds);
-						segmentCompleteMeta.words.forEach((word: Word) => {
-							newEmittedWordIds.add(word.id);
-						});
-						emittedWordIds = newEmittedWordIds;
-					}
+					// Track emitted word IDs
+					const newEmittedWordIds = new Set(emittedWordIds);
+					segmentCompleteMeta.words.forEach((word: Word) => {
+						newEmittedWordIds.add(word.id);
+					});
+					emittedWordIds = newEmittedWordIds;
+					console.log('[SUBTITLE-SEGMENTATION] Apply: Updated emittedWordIds, now has', emittedWordIds.size, 'IDs');
 				}
 
 				return {
