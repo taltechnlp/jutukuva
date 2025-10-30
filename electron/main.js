@@ -54,9 +54,21 @@ app.whenReady().then(() => {
 
 	// Register protocol handler for serving app files
 	protocol.handle('app', async (request) => {
-		const url = request.url.slice('app://'.length);
-		const filePath = url.startsWith('./') ? url.slice(2) : url;
-		const fullPath = path.normalize(path.join(__dirname, '../build', filePath));
+		let url = request.url.slice('app://'.length);
+
+		// Remove leading './' or '/' if present
+		if (url.startsWith('./')) {
+			url = url.slice(2);
+		} else if (url.startsWith('/')) {
+			url = url.slice(1);
+		}
+
+		// If empty, serve index.html
+		if (!url || url === '') {
+			url = 'index.html';
+		}
+
+		const fullPath = path.normalize(path.join(__dirname, '../build', url));
 
 		try {
 			const data = await readFile(fullPath);
@@ -75,12 +87,14 @@ app.whenReady().then(() => {
 				'.onnx': 'application/octet-stream'
 			};
 
+			const contentType = mimeTypes[ext] || 'application/octet-stream';
+
 			return new Response(data, {
-				headers: { 'Content-Type': mimeTypes[ext] || 'application/octet-stream' }
+				headers: { 'Content-Type': contentType }
 			});
 		} catch (error) {
-			console.error('Error loading file:', fullPath, error);
-			return new Response('File not found', { status: 404 });
+			console.error('[PROTOCOL] Error loading file:', fullPath, error.message);
+			return new Response('File not found: ' + url, { status: 404 });
 		}
 	});
 
