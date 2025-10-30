@@ -30,7 +30,23 @@ function createWindow() {
 			preload: path.join(__dirname, 'preload.cjs'),
 			contextIsolation: true,
 			nodeIntegration: false,
-			sandbox: false
+			sandbox: false,
+			webSecurity: false // Disable web security to allow fetch from app:// protocol
+		}
+	});
+
+	// Intercept all requests and redirect to protocol handler
+	mainWindow.webContents.session.webRequest.onBeforeRequest((details, callback) => {
+		const url = details.url;
+
+		// Redirect any fetch requests for HTML files to the protocol
+		if (url.startsWith('app://') && url.includes('.html')) {
+			callback({ cancel: false });
+		} else if (url.startsWith('http://') || url.startsWith('https://')) {
+			// Allow external requests
+			callback({ cancel: false });
+		} else {
+			callback({ cancel: false });
 		}
 	});
 
