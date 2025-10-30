@@ -1211,7 +1211,7 @@
 					<!-- Audio Source Selector -->
 					<div class="form-control">
 						<label class="label">
-							<span class="label-text font-semibold">Audio Source</span>
+							<span class="label-text font-semibold">{$_('dictate.audioSource')}</span>
 						</label>
 						<select
 							class="select w-full"
@@ -1233,8 +1233,8 @@
 							<label class="label">
 								<span class="label-text font-semibold">
 									{audioSourceType === 'system' && availableAudioDevices.some(d => d.kind === 'desktop')
-										? 'Capture Source'
-										: 'Device'}
+										? $_('dictate.captureSource')
+										: $_('dictate.device')}
 								</span>
 							</label>
 							<select
