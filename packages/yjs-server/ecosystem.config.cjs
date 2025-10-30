@@ -14,8 +14,6 @@ module.exports = {
 			NODE_ENV: 'production',
 			PORT: 1234,
 			HOST: '127.0.0.1',
-			VITE_YJS_SERVER_URL: 'wss://tekstiks.ee/kk',
-			VITE_WEB_VIEWER_URL: 'https://tekstiks.ee/kk',
 			ALLOWED_ORIGINS: '*'
 		},
 		error_file: './logs/error.log',
