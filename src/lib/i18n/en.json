@@ -534,7 +534,8 @@
       "editing": "Editing",
       "undo": "Undo",
       "redo": "Redo",
-      "close": "Close"
+      "close": "Close",
+      "or": "or"
     },
     "toolbar": {
       "undo": "Undo",

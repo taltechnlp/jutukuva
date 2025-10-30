@@ -520,7 +520,8 @@
       "editing": "Redigeerimine",
       "undo": "Võta tagasi",
       "redo": "Tee uuesti",
-      "close": "Sulge"
+      "close": "Sulge",
+      "or": "või"
     },
     "toolbar": {
       "undo": "Võta tagasi",

@@ -505,7 +505,8 @@
       "editing": "Muokkaus",
       "undo": "Kumoa",
       "redo": "Tee uudelleen",
-      "close": "Sulje"
+      "close": "Sulje",
+      "or": "tai"
     },
     "toolbar": {
       "undo": "Kumoa",
