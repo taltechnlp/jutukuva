@@ -53,8 +53,8 @@
 		<button
 			class="toolbar-button"
 			onclick={onUndo}
-			title="Undo (Ctrl+Z)"
-			aria-label="Undo"
+			title={$_('dictate.toolbar.undoShortcut')}
+			aria-label={$_('dictate.toolbar.undo')}
 		>
 			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 				<path d="M3 7v6h6" />
@@ -64,8 +64,8 @@
 		<button
 			class="toolbar-button"
 			onclick={onRedo}
-			title="Redo (Ctrl+Shift+Z)"
-			aria-label="Redo"
+			title={$_('dictate.toolbar.redoShortcut')}
+			aria-label={$_('dictate.toolbar.redo')}
 		>
 			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 				<path d="M21 7v6h-6" />
@@ -90,8 +90,8 @@
 				class="timeout-select"
 				value={autoConfirmConfig.timeoutSeconds || 5}
 				onchange={handleTimeoutChange}
-				title="Auto-confirm timeout"
-				aria-label="Auto-confirm timeout"
+				title={$_('dictate.toolbar.autoConfirmTimeout')}
+				aria-label={$_('dictate.toolbar.autoConfirmTimeout')}
 			>
 				<option value={5}>5s</option>
 				<option value={7}>7s</option>

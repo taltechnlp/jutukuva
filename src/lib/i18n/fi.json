@@ -506,6 +506,16 @@
       "undo": "Kumoa",
       "redo": "Tee uudelleen",
       "close": "Sulje"
+    },
+    "toolbar": {
+      "undo": "Kumoa",
+      "undoShortcut": "Kumoa (Ctrl+Z)",
+      "redo": "Tee uudelleen",
+      "redoShortcut": "Tee uudelleen (Ctrl+Shift+Z)",
+      "autoConfirmTimeout": "Automaattisen vahvistuksen aika"
+    },
+    "editor": {
+      "wordsApprovedStatus": "{approved} / {total} sanaa hyväksytty"
     }
   }
 }

@@ -521,6 +521,16 @@
       "undo": "Võta tagasi",
       "redo": "Tee uuesti",
       "close": "Sulge"
+    },
+    "toolbar": {
+      "undo": "Võta tagasi",
+      "undoShortcut": "Võta tagasi (Ctrl+Z)",
+      "redo": "Tee uuesti",
+      "redoShortcut": "Tee uuesti (Ctrl+Shift+Z)",
+      "autoConfirmTimeout": "Automaatse kinnitamise aeg"
+    },
+    "editor": {
+      "wordsApprovedStatus": "{approved} / {total} sõna kinnitatud"
     }
   }
 }
