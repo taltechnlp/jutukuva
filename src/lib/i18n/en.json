@@ -521,6 +521,20 @@
       "sl": "Slovenian",
       "sv": "Swedish",
       "uk": "Ukrainian"
+    },
+    "shortcuts": {
+      "title": "Keyboard Shortcuts",
+      "action": "Action",
+      "shortcut": "Shortcut",
+      "navigation": "Navigation",
+      "navigateNext": "Navigate to next word",
+      "navigatePrevious": "Navigate to previous word",
+      "approval": "Approval",
+      "approveUpToCurrent": "Approve all words up to current word",
+      "editing": "Editing",
+      "undo": "Undo",
+      "redo": "Redo",
+      "close": "Close"
     }
   }
 }

@@ -118,8 +118,8 @@
 		<button
 			class="toolbar-button"
 			onclick={openShortcutsModal}
-			title="Keyboard shortcuts"
-			aria-label="Keyboard shortcuts"
+			title={$_('dictate.shortcuts.title')}
+			aria-label={$_('dictate.shortcuts.title')}
 		>
 			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 				<rect x="2" y="4" width="20" height="16" rx="2" />
@@ -133,29 +133,29 @@
 {#if showShortcutsModal}
 	<dialog class="modal modal-open">
 		<div class="modal-box max-w-2xl">
-			<h3 class="text-lg font-bold mb-4">Keyboard Shortcuts</h3>
+			<h3 class="text-lg font-bold mb-4">{$_('dictate.shortcuts.title')}</h3>
 
 			<div class="overflow-x-auto">
 				<table class="table">
 					<thead>
 						<tr>
-							<th>Action</th>
-							<th>Shortcut</th>
+							<th>{$_('dictate.shortcuts.action')}</th>
+							<th>{$_('dictate.shortcuts.shortcut')}</th>
 						</tr>
 					</thead>
 					<tbody>
 						<!-- Navigation -->
 						<tr class="bg-base-200">
-							<td colspan="2" class="font-semibold">Navigation</td>
+							<td colspan="2" class="font-semibold">{$_('dictate.shortcuts.navigation')}</td>
 						</tr>
 						<tr>
-							<td>Navigate to next word</td>
+							<td>{$_('dictate.shortcuts.navigateNext')}</td>
 							<td>
 								<kbd class="kbd kbd-sm">Tab</kbd> or <kbd class="kbd kbd-sm">→</kbd>
 							</td>
 						</tr>
 						<tr>
-							<td>Navigate to previous word</td>
+							<td>{$_('dictate.shortcuts.navigatePrevious')}</td>
 							<td>
 								<kbd class="kbd kbd-sm">Shift</kbd> + <kbd class="kbd kbd-sm">Tab</kbd> or <kbd class="kbd kbd-sm">←</kbd>
 							</td>
@@ -163,10 +163,10 @@
 
 						<!-- Approval -->
 						<tr class="bg-base-200">
-							<td colspan="2" class="font-semibold">Approval</td>
+							<td colspan="2" class="font-semibold">{$_('dictate.shortcuts.approval')}</td>
 						</tr>
 						<tr>
-							<td>Approve all words up to current word</td>
+							<td>{$_('dictate.shortcuts.approveUpToCurrent')}</td>
 							<td>
 								<kbd class="kbd kbd-sm">Enter</kbd>
 							</td>
@@ -174,16 +174,16 @@
 
 						<!-- Editing -->
 						<tr class="bg-base-200">
-							<td colspan="2" class="font-semibold">Editing</td>
+							<td colspan="2" class="font-semibold">{$_('dictate.shortcuts.editing')}</td>
 						</tr>
 						<tr>
-							<td>Undo</td>
+							<td>{$_('dictate.shortcuts.undo')}</td>
 							<td>
 								<kbd class="kbd kbd-sm">Ctrl</kbd> + <kbd class="kbd kbd-sm">Z</kbd>
 							</td>
 						</tr>
 						<tr>
-							<td>Redo</td>
+							<td>{$_('dictate.shortcuts.redo')}</td>
 							<td>
 								<kbd class="kbd kbd-sm">Ctrl</kbd> + <kbd class="kbd kbd-sm">Y</kbd> or
 								<kbd class="kbd kbd-sm">Ctrl</kbd> + <kbd class="kbd kbd-sm">Shift</kbd> + <kbd class="kbd kbd-sm">Z</kbd>
@@ -194,7 +194,7 @@
 			</div>
 
 			<div class="modal-action">
-				<button class="btn" onclick={closeShortcutsModal}>Close</button>
+				<button class="btn" onclick={closeShortcutsModal}>{$_('dictate.shortcuts.close')}</button>
 			</div>
 		</div>
 		<form method="dialog" class="modal-backdrop" onclick={closeShortcutsModal}>
