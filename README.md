@@ -62,6 +62,35 @@ This will:
 2. Package the Electron app with electron-builder
 3. Output to the `dist/` directory
 
+### Run the built app
+
+After running `npm run build`, you can run the app without packaging:
+
+```bash
+npx electron . --no-sandbox
+```
+
+Or if you have Electron installed globally:
+
+```bash
+electron . --no-sandbox
+```
+
+This is useful for testing the production build before creating a distributable package.
+
+To run the packaged app from `dist/`:
+
+```bash
+# Linux
+./dist/kirikaja-0.0.1-x86_64.AppImage
+
+# macOS
+open dist/mac/Kirikaja.app
+
+# Windows
+dist\win-unpacked\Kirikaja.exe
+```
+
 ## Database
 
 The app uses SQLite with better-sqlite3. The database file is stored in the user data directory:

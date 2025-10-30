@@ -16,6 +16,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let mainWindow;
 
+// No custom protocol needed
+
 function createWindow() {
 	mainWindow = new BrowserWindow({
 		width: 1200,
@@ -24,7 +26,8 @@ function createWindow() {
 			preload: path.join(__dirname, 'preload.cjs'),
 			contextIsolation: true,
 			nodeIntegration: false,
-			sandbox: false
+			sandbox: false,
+			webSecurity: false // Disable web security to allow fetch from app:// protocol
 		}
 	});
 
@@ -33,6 +36,7 @@ function createWindow() {
 		mainWindow.loadURL('http://localhost:5173');
 		mainWindow.webContents.openDevTools();
 	} else {
+		// Load from file system
 		mainWindow.loadFile(path.join(__dirname, '../build/index.html'));
 	}
 
@@ -45,9 +49,9 @@ app.whenReady().then(() => {
 	// Initialize database
 	initDatabase();
 
-	// Initialize broadcast server
-	const broadcastPort = dbOperations.getSetting('broadcast_port') || 8082;
-	initBroadcastServer(parseInt(broadcastPort));
+	// Initialize broadcast server (disabled)
+	// const broadcastPort = dbOperations.getSetting('broadcast_port') || 8082;
+	// initBroadcastServer(parseInt(broadcastPort));
 
 	// Set up IPC handlers for database operations
 	ipcMain.handle('db:getSetting', async (event, key) => {
@@ -159,13 +163,13 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
 	if (process.platform !== 'darwin') {
-		stopBroadcastServer();
+		// stopBroadcastServer();
 		closeDatabase();
 		app.quit();
 	}
 });
 
 app.on('before-quit', () => {
-	stopBroadcastServer();
+	// stopBroadcastServer();
 	closeDatabase();
 });
