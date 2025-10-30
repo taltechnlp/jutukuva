@@ -32,7 +32,7 @@
 		await new Promise((resolve) => setTimeout(resolve, 500));
 
 		try {
-			const serverUrl = import.meta.env.VITE_YJS_SERVER_URL || 'ws://localhost:1234';
+			const serverUrl = import.meta.env.VITE_YJS_SERVER_URL || 'wss://tekstiks.ee/kk';
 
 			sessionInfo = {
 				code: sessionCode,
