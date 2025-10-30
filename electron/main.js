@@ -45,9 +45,9 @@ app.whenReady().then(() => {
 	// Initialize database
 	initDatabase();
 
-	// Initialize broadcast server
-	const broadcastPort = dbOperations.getSetting('broadcast_port') || 8082;
-	initBroadcastServer(parseInt(broadcastPort));
+	// Initialize broadcast server (disabled)
+	// const broadcastPort = dbOperations.getSetting('broadcast_port') || 8082;
+	// initBroadcastServer(parseInt(broadcastPort));
 
 	// Set up IPC handlers for database operations
 	ipcMain.handle('db:getSetting', async (event, key) => {
@@ -159,13 +159,13 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
 	if (process.platform !== 'darwin') {
-		stopBroadcastServer();
+		// stopBroadcastServer();
 		closeDatabase();
 		app.quit();
 	}
 });
 
 app.on('before-quit', () => {
-	stopBroadcastServer();
+	// stopBroadcastServer();
 	closeDatabase();
 });
