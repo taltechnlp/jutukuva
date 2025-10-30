@@ -12,7 +12,11 @@ const config = {
 			fallback: null,
 			precompress: false,
 			strict: false
-		})
+		}),
+		paths: {
+			base: '',
+			assets: ''
+		}
 	}
 };
 
