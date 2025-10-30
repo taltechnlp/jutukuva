@@ -3,7 +3,7 @@
 	import { _ } from 'svelte-i18n';
 	import { EditorState } from 'prosemirror-state';
 	import { EditorView } from 'prosemirror-view';
-	import { history } from 'prosemirror-history';
+	import { history, undo as pmUndo, redo as pmRedo } from 'prosemirror-history';
 	import { speechSchema } from './schema';
 	import { wordApprovalPlugin, wordApprovalKey } from './plugins/wordApproval';
 	import { keyboardShortcutsPlugin } from './plugins/keyboardShortcuts';
@@ -236,19 +236,19 @@
 	// Public API: Undo
 	export function undo() {
 		if (!editorView) return;
-		const { state, dispatch } = editorView;
-		const tr = state.tr;
-		tr.setMeta('undo', true);
-		dispatch(tr);
+		pmUndo(editorView.state, (tr) => {
+			tr.setMeta('isHistoryAction', true);
+			editorView?.dispatch(tr);
+		});
 	}
 
 	// Public API: Redo
 	export function redo() {
 		if (!editorView) return;
-		const { state, dispatch } = editorView;
-		const tr = state.tr;
-		tr.setMeta('redo', true);
-		dispatch(tr);
+		pmRedo(editorView.state, (tr) => {
+			tr.setMeta('isHistoryAction', true);
+			editorView?.dispatch(tr);
+		});
 	}
 </script>
 
