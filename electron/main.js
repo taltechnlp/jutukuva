@@ -1,6 +1,7 @@
-import { app, BrowserWindow, ipcMain, desktopCapturer } from 'electron';
+import { app, BrowserWindow, ipcMain, desktopCapturer, protocol, net } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import { readFile } from 'fs/promises';
 import { initDatabase, closeDatabase, dbOperations } from './database.js';
 import {
 	initBroadcastServer,
@@ -16,7 +17,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let mainWindow;
 
-// No custom protocol needed
+// Register custom app:// protocol before app is ready
+protocol.registerSchemesAsPrivileged([
+	{
+		scheme: 'app',
+		privileges: {
+			secure: true,
+			standard: true,
+			supportFetchAPI: true,
+			corsEnabled: true,
+			stream: true
+		}
+	}
+]);
 
 function createWindow() {
 	mainWindow = new BrowserWindow({
@@ -36,8 +49,8 @@ function createWindow() {
 		mainWindow.loadURL('http://localhost:5173');
 		mainWindow.webContents.openDevTools();
 	} else {
-		// Load from file system
-		mainWindow.loadFile(path.join(__dirname, '../build/index.html'));
+		// Load from custom app:// protocol
+		mainWindow.loadURL('app://./index.html');
 	}
 
 	mainWindow.on('closed', () => {
@@ -48,6 +61,46 @@ function createWindow() {
 app.whenReady().then(() => {
 	// Initialize database
 	initDatabase();
+
+	// Register app:// protocol handler
+	protocol.handle('app', async (request) => {
+		const url = request.url.slice('app://'.length);
+		// Remove leading './' if present
+		const filePath = url.startsWith('./') ? url.slice(2) : url;
+		const fullPath = path.normalize(path.join(__dirname, '../build', filePath));
+
+		console.log('[PROTOCOL] Serving:', filePath, '→', fullPath);
+
+		try {
+			const data = await readFile(fullPath);
+
+			// Determine content type
+			let contentType = 'application/octet-stream';
+			const ext = path.extname(fullPath).toLowerCase();
+			const mimeTypes = {
+				'.html': 'text/html',
+				'.js': 'application/javascript',
+				'.mjs': 'application/javascript',
+				'.css': 'text/css',
+				'.json': 'application/json',
+				'.png': 'image/png',
+				'.jpg': 'image/jpeg',
+				'.gif': 'image/gif',
+				'.svg': 'image/svg+xml',
+				'.ico': 'image/x-icon',
+				'.wasm': 'application/wasm',
+				'.onnx': 'application/octet-stream'
+			};
+			contentType = mimeTypes[ext] || contentType;
+
+			return new Response(data, {
+				headers: { 'Content-Type': contentType }
+			});
+		} catch (error) {
+			console.error('[PROTOCOL] Error serving file:', error);
+			return new Response('File not found', { status: 404 });
+		}
+	});
 
 	// Initialize broadcast server (disabled)
 	// const broadcastPort = dbOperations.getSetting('broadcast_port') || 8082;
