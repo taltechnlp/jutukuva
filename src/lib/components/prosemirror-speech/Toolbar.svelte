@@ -151,13 +151,13 @@
 						<tr>
 							<td>{$_('dictate.shortcuts.navigateNext')}</td>
 							<td>
-								<kbd class="kbd kbd-sm">Tab</kbd> or <kbd class="kbd kbd-sm">→</kbd>
+								<kbd class="kbd kbd-sm">Tab</kbd> {$_('dictate.shortcuts.or')} <kbd class="kbd kbd-sm">→</kbd>
 							</td>
 						</tr>
 						<tr>
 							<td>{$_('dictate.shortcuts.navigatePrevious')}</td>
 							<td>
-								<kbd class="kbd kbd-sm">Shift</kbd> + <kbd class="kbd kbd-sm">Tab</kbd> or <kbd class="kbd kbd-sm">←</kbd>
+								<kbd class="kbd kbd-sm">Shift</kbd> + <kbd class="kbd kbd-sm">Tab</kbd> {$_('dictate.shortcuts.or')} <kbd class="kbd kbd-sm">←</kbd>
 							</td>
 						</tr>
 
@@ -185,7 +185,7 @@
 						<tr>
 							<td>{$_('dictate.shortcuts.redo')}</td>
 							<td>
-								<kbd class="kbd kbd-sm">Ctrl</kbd> + <kbd class="kbd kbd-sm">Y</kbd> or
+								<kbd class="kbd kbd-sm">Ctrl</kbd> + <kbd class="kbd kbd-sm">Y</kbd> {$_('dictate.shortcuts.or')}
 								<kbd class="kbd kbd-sm">Ctrl</kbd> + <kbd class="kbd kbd-sm">Shift</kbd> + <kbd class="kbd kbd-sm">Z</kbd>
 							</td>
 						</tr>
