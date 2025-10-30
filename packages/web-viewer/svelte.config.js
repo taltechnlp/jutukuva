@@ -11,6 +11,9 @@ const config = {
 			precompress: false,
 			envPrefix: 'VITE_'
 		}),
+		paths: {
+			base: '/kk'
+		},
 		alias: {
 			$shared: '../../src/lib'
 		}

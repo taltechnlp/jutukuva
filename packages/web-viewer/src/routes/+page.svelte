@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { base } from '$app/paths';
 	import { _ } from 'svelte-i18n';
 
 	let sessionCode = $state('');
 
 	function joinSession() {
 		if (sessionCode.length === 6) {
-			goto(`/kt/${sessionCode.toUpperCase()}`);
+			goto(`${base}/${sessionCode.toUpperCase()}`);
 		}
 	}
 </script>

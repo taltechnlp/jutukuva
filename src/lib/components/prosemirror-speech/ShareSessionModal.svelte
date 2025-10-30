@@ -23,8 +23,8 @@
 	const isMobile = typeof window !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 	// Get URLs
-	const webViewerUrl = import.meta.env.VITE_WEB_VIEWER_URL || 'http://localhost:1234';
-	const webJoinUrl = `${webViewerUrl}/kt/${sessionInfo.code}`;
+	const webViewerUrl = import.meta.env.VITE_WEB_VIEWER_URL || 'http://localhost:1234/kk';
+	const webJoinUrl = `${webViewerUrl}/${sessionInfo.code}`;
 	const electronJoinUrl = `kirikaja://join/${sessionInfo.code}`;
 	const desktopJoinUrl = isElectron ? `${window.location.origin}?join=${sessionInfo.code}` : electronJoinUrl;
 
