@@ -507,6 +507,20 @@
       "sl": "sloveeni",
       "sv": "rootsi",
       "uk": "ukraina"
+    },
+    "shortcuts": {
+      "title": "Klaviatuurikombinatsoonid",
+      "action": "Tegevus",
+      "shortcut": "Kiirklahv",
+      "navigation": "Navigeerimine",
+      "navigateNext": "Liikumine järgmisele sõnale",
+      "navigatePrevious": "Liikumine eelmisele sõnale",
+      "approval": "Kinnitamine",
+      "approveUpToCurrent": "Kinnita kõik sõnad kuni praeguseni",
+      "editing": "Redigeerimine",
+      "undo": "Võta tagasi",
+      "redo": "Tee uuesti",
+      "close": "Sulge"
     }
   }
 }

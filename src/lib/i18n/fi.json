@@ -492,6 +492,20 @@
       "sl": "slovenia",
       "sv": "ruotsi",
       "uk": "ukraina"
+    },
+    "shortcuts": {
+      "title": "Pikanäppäimet",
+      "action": "Toiminto",
+      "shortcut": "Pikanäppäin",
+      "navigation": "Navigointi",
+      "navigateNext": "Siirry seuraavaan sanaan",
+      "navigatePrevious": "Siirry edelliseen sanaan",
+      "approval": "Hyväksyminen",
+      "approveUpToCurrent": "Hyväksy kaikki sanat nykyiseen saakka",
+      "editing": "Muokkaus",
+      "undo": "Kumoa",
+      "redo": "Tee uudelleen",
+      "close": "Sulje"
     }
   }
 }
