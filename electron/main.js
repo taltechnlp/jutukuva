@@ -1,6 +1,7 @@
-import { app, BrowserWindow, ipcMain, desktopCapturer } from 'electron';
+import { app, BrowserWindow, ipcMain, desktopCapturer, protocol } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import { readFile } from 'fs/promises';
 import { initDatabase, closeDatabase, dbOperations } from './database.js';
 import {
 	initBroadcastServer,
@@ -15,6 +16,11 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let mainWindow;
+
+// Register custom protocol before app is ready
+protocol.registerSchemesAsPrivileged([
+	{ scheme: 'app', privileges: { secure: true, standard: true, supportFetchAPI: true } }
+]);
 
 function createWindow() {
 	mainWindow = new BrowserWindow({
@@ -33,7 +39,8 @@ function createWindow() {
 		mainWindow.loadURL('http://localhost:5173');
 		mainWindow.webContents.openDevTools();
 	} else {
-		mainWindow.loadFile(path.join(__dirname, '../build/index.html'));
+		// Use custom app:// protocol for proper asset loading
+		mainWindow.loadURL('app://./index.html');
 	}
 
 	mainWindow.on('closed', () => {
@@ -44,6 +51,38 @@ function createWindow() {
 app.whenReady().then(() => {
 	// Initialize database
 	initDatabase();
+
+	// Register protocol handler for serving app files
+	protocol.handle('app', async (request) => {
+		const url = request.url.slice('app://'.length);
+		const filePath = url.startsWith('./') ? url.slice(2) : url;
+		const fullPath = path.normalize(path.join(__dirname, '../build', filePath));
+
+		try {
+			const data = await readFile(fullPath);
+
+			// Determine MIME type
+			const ext = path.extname(fullPath).toLowerCase();
+			const mimeTypes = {
+				'.html': 'text/html',
+				'.js': 'text/javascript',
+				'.css': 'text/css',
+				'.json': 'application/json',
+				'.png': 'image/png',
+				'.jpg': 'image/jpeg',
+				'.svg': 'image/svg+xml',
+				'.wasm': 'application/wasm',
+				'.onnx': 'application/octet-stream'
+			};
+
+			return new Response(data, {
+				headers: { 'Content-Type': mimeTypes[ext] || 'application/octet-stream' }
+			});
+		} catch (error) {
+			console.error('Error loading file:', fullPath, error);
+			return new Response('File not found', { status: 404 });
+		}
+	});
 
 	// Initialize broadcast server (disabled)
 	// const broadcastPort = dbOperations.getSetting('broadcast_port') || 8082;
