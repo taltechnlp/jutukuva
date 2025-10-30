@@ -255,6 +255,9 @@ export function wordApprovalPlugin(
 			// Allow meta transactions
 			if (tr.getMeta('addToHistory') === false) return true;
 
+			// Allow undo/redo transactions
+			if (tr.getMeta('isHistoryAction') === true) return true;
+
 			// Check if trying to edit before approval boundary
 			if (tr.docChanged) {
 				const { approvalBoundary } = pluginState;

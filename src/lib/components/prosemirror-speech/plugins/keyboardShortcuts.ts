@@ -14,6 +14,26 @@ import {
 } from './wordApproval';
 
 /**
+ * Wrap undo to add metadata
+ */
+const undoCommand: Command = (state, dispatch) => {
+	return undo(state, dispatch ? (tr) => {
+		tr.setMeta('isHistoryAction', true);
+		dispatch(tr);
+	} : undefined);
+};
+
+/**
+ * Wrap redo to add metadata
+ */
+const redoCommand: Command = (state, dispatch) => {
+	return redo(state, dispatch ? (tr) => {
+		tr.setMeta('isHistoryAction', true);
+		dispatch(tr);
+	} : undefined);
+};
+
+/**
  * Find the next word position after the current position
  */
 function findNextWordPos(state: any, currentPos: number | null): number | null {
@@ -131,9 +151,9 @@ export function keyboardShortcutsPlugin() {
 		Enter: approveUpToCurrentWordCommand,
 
 		// Undo/Redo
-		'Mod-z': undo,
-		'Mod-y': redo,
-		'Mod-Shift-z': redo,
+		'Mod-z': undoCommand,
+		'Mod-y': redoCommand,
+		'Mod-Shift-z': redoCommand,
 
 		// Escape: would cancel edit / revert word (implement in future)
 		Escape: (state, dispatch) => {
