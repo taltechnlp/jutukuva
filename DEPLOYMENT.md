@@ -155,8 +155,8 @@ After deployment:
 - **Landing page**: `https://tekstiks.ee/kk`
 - **Session viewer**: `https://tekstiks.ee/kk/ABC123`
 - **WebSocket**: `wss://tekstiks.ee/kk` (automatically handled)
-- **Health check**: `https://tekstiks.ee/health`
-- **Stats**: `https://tekstiks.ee/stats`
+- **Health check**: `https://tekstiks.ee/kk/health`
+- **Stats**: `https://tekstiks.ee/kk/stats`
 
 ## PM2 Commands
 
@@ -211,7 +211,7 @@ sudo tail -f /var/log/nginx/tekstiks.ee-error.log
 ### 1. Test Health Endpoint
 
 ```bash
-curl https://tekstiks.ee/health
+curl https://tekstiks.ee/kk/health
 # Should return: {"status":"healthy","activeSessions":0,"totalConnections":0}
 ```
 
@@ -255,7 +255,7 @@ pm2 restart kirikaja-server
 
 # 5. Verify
 pm2 logs kirikaja-server --lines 50
-curl https://tekstiks.ee/health
+curl https://tekstiks.ee/kk/health
 ```
 
 ## Monitoring
