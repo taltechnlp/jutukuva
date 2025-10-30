@@ -8,7 +8,7 @@ import type { EditorView } from 'prosemirror-view';
 import { ySyncPlugin, yCursorPlugin, yUndoPlugin } from 'y-prosemirror';
 import type { SessionInfo, SessionRole, Participant, WordApprovalData, SessionMetadata } from './types';
 
-const YJS_SERVER_URL = import.meta.env.VITE_YJS_SERVER_URL || 'ws://localhost:1234';
+const YJS_SERVER_URL = import.meta.env.VITE_YJS_SERVER_URL || 'wss://tekstiks.ee/kk';
 
 export class CollaborationManager {
 	public ydoc: Y.Doc;
