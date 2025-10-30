@@ -17,7 +17,7 @@
 	// State
 	let speechEditor: any = $state(null);
 	let subtitleSegments = $state<SubtitleSegment[]>([]);
-	let collaborationManager: CollaborationManager | null = null;
+	let collaborationManager: CollaborationManager | null = $state(null);
 	let sessionInfo = $state<SessionInfo | null>(null);
 	let participants = $state<Participant[]>([]);
 	let collaborationConnected = $state(false);

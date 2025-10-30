@@ -3,7 +3,11 @@
 import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
 import { parse } from 'url';
-import { setupWSConnection } from 'y-websocket/bin/utils.js';
+import * as Y from 'yjs';
+import * as encoding from 'lib0/encoding';
+import * as decoding from 'lib0/decoding';
+import * as syncProtocol from 'y-protocols/sync';
+import * as awarenessProtocol from 'y-protocols/awareness';
 import express from 'express';
 
 const PORT = process.env.PORT || 1234;
@@ -12,6 +16,96 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(',') || ['*'];
 
 // Session tracking
 const activeSessions = new Map(); // roomName -> { createdAt, connections, metadata }
+const docs = new Map(); // roomName -> Y.Doc
+
+// Message types
+const messageSync = 0;
+const messageAwareness = 1;
+
+// Get or create Yjs document for a room
+const getYDoc = (roomName) => {
+	if (!docs.has(roomName)) {
+		const doc = new Y.Doc();
+		docs.set(roomName, doc);
+	}
+	return docs.get(roomName);
+};
+
+// Setup WebSocket connection for Yjs
+const setupWSConnection = (conn, req, roomName) => {
+	const doc = getYDoc(roomName);
+	const awareness = new awarenessProtocol.Awareness(doc);
+
+	conn.binaryType = 'arraybuffer';
+
+	// Send sync step 1
+	const encoder = encoding.createEncoder();
+	encoding.writeVarUint(encoder, messageSync);
+	syncProtocol.writeSyncStep1(encoder, doc);
+	conn.send(encoding.toUint8Array(encoder));
+
+	const awarenessStates = awareness.getStates();
+	if (awarenessStates.size > 0) {
+		const encoder = encoding.createEncoder();
+		encoding.writeVarUint(encoder, messageAwareness);
+		encoding.writeVarUint8Array(encoder, awarenessProtocol.encodeAwarenessUpdate(awareness, Array.from(awarenessStates.keys())));
+		conn.send(encoding.toUint8Array(encoder));
+	}
+
+	// Handle incoming messages
+	const messageListener = (message) => {
+		try {
+			const uint8Array = new Uint8Array(message);
+			const decoder = decoding.createDecoder(uint8Array);
+			const messageType = decoding.readVarUint(decoder);
+
+			switch (messageType) {
+				case messageSync:
+					encoding.writeVarUint(encoder, messageSync);
+					syncProtocol.readSyncMessage(decoder, encoder, doc, conn);
+					if (encoding.length(encoder) > 1) {
+						conn.send(encoding.toUint8Array(encoder));
+					}
+					break;
+				case messageAwareness:
+					awarenessProtocol.applyAwarenessUpdate(awareness, decoding.readVarUint8Array(decoder), conn);
+					break;
+			}
+		} catch (err) {
+			console.error('[ERROR] Message handling error:', err);
+		}
+	};
+
+	// Broadcast awareness and document updates
+	const broadcastMessage = (update, origin) => {
+		if (origin !== conn) {
+			conn.send(update);
+		}
+	};
+
+	doc.on('update', (update, origin) => {
+		const encoder = encoding.createEncoder();
+		encoding.writeVarUint(encoder, messageSync);
+		syncProtocol.writeUpdate(encoder, update);
+		broadcastMessage(encoding.toUint8Array(encoder), origin);
+	});
+
+	awareness.on('update', ({ added, updated, removed }, origin) => {
+		const changedClients = added.concat(updated).concat(removed);
+		const encoder = encoding.createEncoder();
+		encoding.writeVarUint(encoder, messageAwareness);
+		encoding.writeVarUint8Array(encoder, awarenessProtocol.encodeAwarenessUpdate(awareness, changedClients));
+		broadcastMessage(encoding.toUint8Array(encoder), origin);
+	});
+
+	conn.on('message', messageListener);
+
+	conn.on('close', () => {
+		doc.off('update', broadcastMessage);
+		awareness.off('update', broadcastMessage);
+		awarenessProtocol.removeAwarenessStates(awareness, [doc.clientID], 'disconnect');
+	});
+};
 
 // Create Express app
 const app = express();
@@ -128,7 +222,7 @@ wss.on('connection', (ws, req) => {
 	activeSessions.get(roomName).connections++;
 
 	// Setup Yjs connection
-	setupWSConnection(ws, req);
+	setupWSConnection(ws, req, roomName);
 
 	// Handle disconnection
 	ws.on('close', () => {
