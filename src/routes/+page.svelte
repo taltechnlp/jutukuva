@@ -2,11 +2,15 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { _ } from 'svelte-i18n';
 	import { browser } from '$app/environment';
+	import { page } from '$app/stores';
 	import { MicVAD } from '@ricky0123/vad-web';
 	import * as ort from 'onnxruntime-web';
-	import { SpeechEditor, SubtitlePreview } from '$lib/components/prosemirror-speech';
+	import { SpeechEditor, SubtitlePreview, ShareSessionModal, SessionStatus } from '$lib/components/prosemirror-speech';
 	import type { SubtitleSegment, Word } from '$lib/components/prosemirror-speech/utils/types';
 	import { AudioSourceManager, type AudioSourceType, type AudioDevice } from '$lib/audioSourceManager';
+	import { CollaborationManager } from '$lib/collaboration/CollaborationManager';
+	import { generateSessionCode, normalizeSessionCode, isValidSessionCode } from '$lib/collaboration/sessionCode';
+	import type { SessionInfo, Participant } from '$lib/collaboration/types';
 
 	// Configure ONNX Runtime to use WASM only (disable WebGPU to avoid warnings)
 	if (browser) {
@@ -76,6 +80,14 @@
 	let speechEditor: any = $state(null);
 	let subtitleSegments = $state<SubtitleSegment[]>([]);
 
+	// Collaboration
+	let collaborationManager: CollaborationManager | null = null;
+	let sessionInfo = $state<SessionInfo | null>(null);
+	let participants = $state<Participant[]>([]);
+	let collaborationConnected = $state(false);
+	let showShareModal = $state(false);
+	let joinSessionCode = $state('');
+
 	// ═══════════════════════════════════════════════════════════════
 	// MODEL TYPE HELPERS
 	// ═══════════════════════════════════════════════════════════════
@@ -129,6 +141,88 @@
 	// Delete a past recording
 	function deleteRecording(id: string) {
 		pastRecordings = pastRecordings.filter((r) => r.id !== id);
+	}
+
+	// ═══════════════════════════════════════════════════════════════
+	// COLLABORATION FUNCTIONS
+	// ═══════════════════════════════════════════════════════════════
+
+	/**
+	 * Start a new collaborative session as host
+	 */
+	function startCollaborativeSession() {
+		const code = generateSessionCode();
+		const serverUrl = import.meta.env.VITE_YJS_SERVER_URL || 'ws://localhost:1234';
+
+		sessionInfo = {
+			code,
+			role: 'host',
+			roomName: code,
+			serverUrl
+		};
+
+		initializeCollaboration();
+		console.log('[COLLAB] Started session as host:', code);
+	}
+
+	/**
+	 * Join an existing collaborative session as guest
+	 */
+	function joinCollaborativeSession(code: string) {
+		const normalizedCode = normalizeSessionCode(code);
+
+		if (!isValidSessionCode(normalizedCode)) {
+			alert($_('collaboration.invalid_code', { default: 'Invalid session code' }));
+			return;
+		}
+
+		const serverUrl = import.meta.env.VITE_YJS_SERVER_URL || 'ws://localhost:1234';
+
+		sessionInfo = {
+			code: normalizedCode,
+			role: 'guest',
+			roomName: normalizedCode,
+			serverUrl
+		};
+
+		initializeCollaboration();
+		console.log('[COLLAB] Joined session as guest:', normalizedCode);
+	}
+
+	/**
+	 * Initialize collaboration manager and connect
+	 */
+	function initializeCollaboration() {
+		if (!sessionInfo || !speechEditor) return;
+
+		collaborationManager = new CollaborationManager();
+
+		collaborationManager.connect(
+			sessionInfo,
+			speechEditor.editorView,
+			{
+				onParticipantsChange: (p) => {
+					participants = p;
+				},
+				onConnectionStatusChange: (connected) => {
+					collaborationConnected = connected;
+				}
+			}
+		);
+	}
+
+	/**
+	 * Disconnect from collaborative session
+	 */
+	function disconnectCollaboration() {
+		if (collaborationManager) {
+			collaborationManager.disconnect();
+			collaborationManager = null;
+		}
+		sessionInfo = null;
+		participants = [];
+		collaborationConnected = false;
+		showShareModal = false;
 	}
 
 	// Handle word approved
@@ -1034,6 +1128,21 @@
 				console.log('[AUDIO] Restored device ID:', selectedDeviceId);
 			}
 		}
+
+		// Check for join session URL parameter
+		if (browser) {
+			const urlParams = new URLSearchParams(window.location.search);
+			const joinCode = urlParams.get('join');
+			if (joinCode) {
+				joinSessionCode = joinCode;
+				// Auto-join after a short delay to ensure editor is ready
+				setTimeout(() => {
+					if (joinSessionCode) {
+						joinCollaborativeSession(joinSessionCode);
+					}
+				}, 500);
+			}
+		}
 	});
 
 	// Cleanup on component destroy
@@ -1208,7 +1317,8 @@
 						{/if}
 					</div>
 
-					<!-- Audio Source Selector -->
+					<!-- Audio Source Selector (Hidden for guests) -->
+					{#if sessionInfo?.role !== 'guest'}
 					<div class="form-control">
 						<label class="label">
 							<span class="label-text font-semibold">{$_('dictate.audioSource')}</span>
@@ -1277,6 +1387,7 @@
 							</div>
 						</div>
 					{/if}
+					{/if}
 				</div>
 
 				<!-- Right Column: Recording Button -->
@@ -1286,7 +1397,8 @@
 							<button
 								class="btn btn-circle btn-primary w-32 h-32 hover:scale-105 transition-transform shadow-lg"
 								onclick={startRecording}
-								disabled={!isWasmReady || !isConnected}
+								disabled={!isWasmReady || !isConnected || (sessionInfo?.role === 'guest')}
+								title={sessionInfo?.role === 'guest' ? $_('collaboration.guest_cannot_record', { default: 'Only the host can record' }) : ''}
 							>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
@@ -1336,12 +1448,85 @@
 		</div>
 	</div>
 
+<!-- Collaboration Controls -->
+<div class="mb-6">
+	{#if sessionInfo}
+		<!-- Session Status -->
+		<SessionStatus
+			{sessionInfo}
+			{participants}
+			connected={collaborationConnected}
+			onShowShareModal={() => (showShareModal = true)}
+		/>
+	{:else}
+		<!-- Join/Start Session UI -->
+		<div class="flex gap-4 p-4 bg-base-200 rounded-lg">
+			<!-- Join Session -->
+			<div class="flex-1">
+				<label class="label">
+					<span class="label-text font-semibold">
+						{$_('collaboration.join_session', { default: 'Join Session' })}
+					</span>
+				</label>
+				<div class="flex gap-2">
+					<input
+						type="text"
+						placeholder={$_('collaboration.enter_code', { default: 'Enter 6-character code' })}
+						class="input input-bordered flex-1 font-mono uppercase"
+						maxlength="6"
+						bind:value={joinSessionCode}
+						oninput={(e) => {
+							joinSessionCode = e.currentTarget.value.toUpperCase();
+						}}
+						onkeydown={(e) => {
+							if (e.key === 'Enter' && joinSessionCode.length === 6) {
+								joinCollaborativeSession(joinSessionCode);
+							}
+						}}
+					/>
+					<button
+						class="btn btn-secondary"
+						disabled={joinSessionCode.length !== 6}
+						onclick={() => joinCollaborativeSession(joinSessionCode)}
+					>
+						{$_('collaboration.join', { default: 'Join' })}
+					</button>
+				</div>
+			</div>
+
+			<div class="divider divider-horizontal">OR</div>
+
+			<!-- Start New Session -->
+			<div class="flex-1 flex items-end">
+				<button class="btn btn-primary w-full" onclick={startCollaborativeSession}>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-5 w-5"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 4v16m8-8H4"
+						/>
+					</svg>
+					{$_('collaboration.start_session', { default: 'Start New Session' })}
+				</button>
+			</div>
+		</div>
+	{/if}
+</div>
+
 <!-- Speech Editor and Subtitle Preview -->
 <div class="flex flex-col xl:flex-row xl:items-start gap-6 mb-6">
 	<!-- Speech Editor -->
 	<div class="xl:flex-[2] flex-1 min-w-[500px]">
 		<SpeechEditor
 			bind:this={speechEditor}
+			collaborationManager={collaborationManager}
 			config={{
 				fontSize: 16,
 				onWordApproved: handleWordApproved,
@@ -1428,3 +1613,12 @@
 	{/if}
 	</div>
 </div>
+
+<!-- Share Session Modal -->
+{#if showShareModal && sessionInfo}
+	<ShareSessionModal
+		{sessionInfo}
+		{participants}
+		onClose={() => (showShareModal = false)}
+	/>
+{/if}

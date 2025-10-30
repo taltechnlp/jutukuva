@@ -11,15 +11,18 @@
 	import { subtitleSegmentationPlugin, subtitleSegmentationKey } from './plugins/subtitleSegmentation';
 	import { autoConfirmPlugin, autoConfirmKey, updateAutoConfirmConfig } from './plugins/autoConfirm';
 	import type { EditorConfig, StreamingTextEvent, SubtitleSegment, Word, AutoConfirmConfig } from './utils/types';
+	import type { CollaborationManager } from '$lib/collaboration/CollaborationManager';
 	import Toolbar from './Toolbar.svelte';
 
 	// Props
 	let {
 		config = {},
-		class: className = ''
+		class: className = '',
+		collaborationManager = undefined
 	}: {
 		config?: EditorConfig;
 		class?: string;
+		collaborationManager?: CollaborationManager;
 	} = $props();
 
 	// Editor state
@@ -36,19 +39,43 @@
 
 	// Initialize editor
 	onMount(() => {
+		// Determine plugins based on collaboration mode
+		const basePlugins = [
+			keyboardShortcutsPlugin(),
+			streamingTextPlugin(collaborationManager),
+			subtitleSegmentationPlugin(handleSegmentComplete)
+		];
+
+		// Add collaboration or history plugins
+		let plugins;
+		if (collaborationManager) {
+			// In collaborative mode: use Yjs plugins
+			const yjsPlugins = collaborationManager.getProseMirrorPlugins();
+			plugins = [
+				...yjsPlugins,
+				wordApprovalPlugin(handleWordApproved, collaborationManager),
+				...basePlugins,
+				// Only host can use auto-confirm in collaborative mode
+				...(collaborationManager.isHost() ? [autoConfirmPlugin(autoConfirmConfig)] : [])
+			];
+			console.log('[EDITOR] Collaborative mode enabled, role:', collaborationManager.sessionInfo?.role);
+		} else {
+			// Solo mode: use regular history
+			plugins = [
+				history(),
+				wordApprovalPlugin(handleWordApproved),
+				...basePlugins,
+				autoConfirmPlugin(autoConfirmConfig)
+			];
+			console.log('[EDITOR] Solo mode enabled');
+		}
+
 		const state = EditorState.create({
 			schema: speechSchema,
 			doc: speechSchema.node('doc', null, [
 				speechSchema.node('paragraph', null, [])
 			]),
-			plugins: [
-				history(),
-				wordApprovalPlugin(handleWordApproved),
-				keyboardShortcutsPlugin(),
-				streamingTextPlugin(),
-				subtitleSegmentationPlugin(handleSegmentComplete),
-				autoConfirmPlugin(autoConfirmConfig)
-			]
+			plugins
 		});
 
 		editorView = new EditorView(editorElement, {
