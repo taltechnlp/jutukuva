@@ -7,6 +7,24 @@
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="false">
-		<div style="display: contents">%sveltekit.body%</div>
+		<div style="display: contents">
+			<script>
+				// Intercept fetch before SvelteKit loads
+				const originalFetch = window.fetch;
+				window.fetch = function(url, options) {
+					const urlStr = typeof url === 'string' ? url : url.url;
+					// If trying to fetch .html files, return empty JSON
+					if (urlStr.endsWith('.html') || urlStr.includes('index.html')) {
+						console.log('[FETCH INTERCEPT] Blocked:', urlStr);
+						return Promise.resolve(new Response('{}', {
+							status: 200,
+							headers: { 'Content-Type': 'application/json' }
+						}));
+					}
+					return originalFetch.apply(this, arguments);
+				};
+			</script>
+			%sveltekit.body%
+		</div>
 	</body>
 </html>
