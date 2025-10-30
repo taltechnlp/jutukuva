@@ -1,7 +1,6 @@
-import { app, BrowserWindow, ipcMain, desktopCapturer, protocol } from 'electron';
+import { app, BrowserWindow, ipcMain, desktopCapturer } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { readFile } from 'fs/promises';
 import { initDatabase, closeDatabase, dbOperations } from './database.js';
 import {
 	initBroadcastServer,
@@ -17,10 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let mainWindow;
 
-// Register custom protocol before app is ready
-protocol.registerSchemesAsPrivileged([
-	{ scheme: 'app', privileges: { secure: true, standard: true, supportFetchAPI: true } }
-]);
+// No custom protocol needed
 
 function createWindow() {
 	mainWindow = new BrowserWindow({
@@ -35,28 +31,13 @@ function createWindow() {
 		}
 	});
 
-	// Intercept all requests and redirect to protocol handler
-	mainWindow.webContents.session.webRequest.onBeforeRequest((details, callback) => {
-		const url = details.url;
-
-		// Redirect any fetch requests for HTML files to the protocol
-		if (url.startsWith('app://') && url.includes('.html')) {
-			callback({ cancel: false });
-		} else if (url.startsWith('http://') || url.startsWith('https://')) {
-			// Allow external requests
-			callback({ cancel: false });
-		} else {
-			callback({ cancel: false });
-		}
-	});
-
 	// Load the app
 	if (process.env.NODE_ENV === 'development') {
 		mainWindow.loadURL('http://localhost:5173');
 		mainWindow.webContents.openDevTools();
 	} else {
-		// Use custom app:// protocol
-		mainWindow.loadURL('app://./index.html');
+		// Load from file system
+		mainWindow.loadFile(path.join(__dirname, '../build/index.html'));
 	}
 
 	mainWindow.on('closed', () => {
@@ -67,52 +48,6 @@ function createWindow() {
 app.whenReady().then(() => {
 	// Initialize database
 	initDatabase();
-
-	// Register protocol handler for serving app files
-	protocol.handle('app', async (request) => {
-		let url = request.url.slice('app://'.length);
-
-		// Remove leading './' or '/' if present
-		if (url.startsWith('./')) {
-			url = url.slice(2);
-		} else if (url.startsWith('/')) {
-			url = url.slice(1);
-		}
-
-		// If empty, serve index.html
-		if (!url || url === '') {
-			url = 'index.html';
-		}
-
-		const fullPath = path.normalize(path.join(__dirname, '../build', url));
-
-		try {
-			const data = await readFile(fullPath);
-
-			// Determine MIME type
-			const ext = path.extname(fullPath).toLowerCase();
-			const mimeTypes = {
-				'.html': 'text/html',
-				'.js': 'text/javascript',
-				'.css': 'text/css',
-				'.json': 'application/json',
-				'.png': 'image/png',
-				'.jpg': 'image/jpeg',
-				'.svg': 'image/svg+xml',
-				'.wasm': 'application/wasm',
-				'.onnx': 'application/octet-stream'
-			};
-
-			const contentType = mimeTypes[ext] || 'application/octet-stream';
-
-			return new Response(data, {
-				headers: { 'Content-Type': contentType }
-			});
-		} catch (error) {
-			console.error('[PROTOCOL] Error loading file:', fullPath, error.message);
-			return new Response('File not found: ' + url, { status: 404 });
-		}
-	});
 
 	// Initialize broadcast server (disabled)
 	// const broadcastPort = dbOperations.getSetting('broadcast_port') || 8082;
