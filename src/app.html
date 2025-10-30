@@ -3,11 +3,14 @@
 	<head>
 		<meta charset="utf-8" />
 		<script>
-			// Fix file:// protocol URLs for SvelteKit - must run early
-			if (window.location.protocol === 'file:') {
-				// Add a base tag to preserve resource loading
+			// Fix app:// protocol URLs for SvelteKit - must run early
+			if (window.location.protocol === 'app:') {
+				// Store the actual base path for later use
+				const actualBasePath = window.location.href.replace('index.html', '');
+
+				// Add a base tag to preserve resource loading for static assets
 				const base = document.createElement('base');
-				base.href = window.location.href.replace('index.html', '');
+				base.href = actualBasePath;
 				document.head.appendChild(base);
 				console.log('[BASE TAG] Added base href:', base.href);
 
