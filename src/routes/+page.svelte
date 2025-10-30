@@ -1244,7 +1244,7 @@
 								onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
 								disabled={isAudioSourceSwitching || !isWasmReady}
 							>
-								<option value={null}>Default</option>
+								<option value={null}>{$_('dictate.deviceDefault')}</option>
 								{#each availableAudioDevices as device}
 									<option value={device.deviceId}>{device.label}</option>
 								{/each}
