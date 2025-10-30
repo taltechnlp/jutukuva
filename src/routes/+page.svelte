@@ -1122,6 +1122,8 @@
 			if (savedType) {
 				audioSourceType = savedType as AudioSourceType;
 				console.log('[AUDIO] Restored audio source type:', audioSourceType);
+				// Reload device list for the restored type
+				await loadAudioDevices();
 			}
 			if (savedDeviceId) {
 				selectedDeviceId = savedDeviceId;
