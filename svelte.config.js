@@ -9,14 +9,10 @@ const config = {
 		adapter: adapter({
 			pages: 'build',
 			assets: 'build',
-			fallback: null,
+			fallback: undefined,
 			precompress: false,
 			strict: false
-		}),
-		paths: {
-			base: '',
-			assets: ''
-		}
+		})
 	}
 };
 

@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build && sed -i 's/base: new URL(\".\", location).pathname.slice(0, -1)/base: \"\"/g' build/index.html",
+    "build": "vite build && sed -i 's/base: new URL(\".\", location).pathname.slice(0, -1)/base: \"\"/g' build/*.html",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
