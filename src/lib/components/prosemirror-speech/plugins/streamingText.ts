@@ -269,7 +269,7 @@ function insertStreamingText(
 /**
  * Create streaming text plugin
  */
-export function streamingTextPlugin() {
+export function streamingTextPlugin(collaborationManager?: any) {
 	return new Plugin<StreamingTextState>({
 		key: streamingTextKey,
 

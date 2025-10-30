@@ -172,7 +172,8 @@ function findSentenceEnd(doc: Node, fromPos: number): number {
  * Word Approval Plugin
  */
 export function wordApprovalPlugin(
-	onWordApproved?: (word: Word) => void
+	onWordApproved?: (word: Word) => void,
+	collaborationManager?: any
 ) {
 	return new Plugin<WordApprovalState>({
 		key: wordApprovalKey,
@@ -197,17 +198,35 @@ export function wordApprovalPlugin(
 
 				const approveWordMeta = tr.getMeta('approveWord');
 				if (approveWordMeta !== undefined) {
-					// Word was approved, update boundary
-					approvalBoundary = Math.max(approvalBoundary, approveWordMeta);
+					const node = newState.doc.nodeAt(approveWordMeta);
+					if (node && node.isText) {
+						const wordMark = node.marks.find((mark) => mark.type.name === 'word');
+						if (wordMark) {
+							const wordId = wordMark.attrs.id;
 
-					// Notify callback
-					if (onWordApproved) {
-						const node = newState.doc.nodeAt(approveWordMeta);
-						if (node && node.isText) {
-							const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-							if (wordMark) {
+							// In collaborative mode, sync via Yjs (first to approve wins)
+							if (collaborationManager) {
+								const success = collaborationManager.approveWord(wordId);
+								if (!success) {
+									console.log('[WORD-APPROVAL] Word already approved by another user:', wordId);
+									// Still move to next word even if we didn't win the race
+									const nextWord = findNextUnapprovedWord(newState.doc, approveWordMeta);
+									activeWordPos = nextWord ? nextWord.from : null;
+									return {
+										approvalBoundary,
+										activeWordPos,
+										decorations: createDecorations(newState.doc, activeWordPos)
+									};
+								}
+							}
+
+							// Word was approved, update boundary
+							approvalBoundary = Math.max(approvalBoundary, approveWordMeta);
+
+							// Notify callback
+							if (onWordApproved) {
 								onWordApproved({
-									id: wordMark.attrs.id,
+									id: wordId,
 									text: node.text || '',
 									start: wordMark.attrs.start,
 									end: wordMark.attrs.end,

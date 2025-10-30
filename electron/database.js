@@ -30,7 +30,11 @@ export function initDatabase() {
 			duration_seconds INTEGER DEFAULT 0,
 			word_count INTEGER DEFAULT 0,
 			subtitle_count INTEGER DEFAULT 0,
-			status TEXT DEFAULT 'active'
+			status TEXT DEFAULT 'active',
+			is_collaborative INTEGER DEFAULT 0,
+			session_code TEXT,
+			collaboration_role TEXT,
+			participants TEXT
 		)
 	`);
 
