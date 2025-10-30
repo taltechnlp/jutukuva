@@ -21,6 +21,8 @@
 		"vite": "^6.4.1"
 	},
 	"dependencies": {
+		"autoprefixer": "^10.4.21",
+		"daisyui": "^5.3.10",
 		"prosemirror-model": "^1.25.4",
 		"prosemirror-state": "^1.4.4",
 		"prosemirror-view": "^1.41.3",

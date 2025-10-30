@@ -1,24 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { init, locale, register } from 'svelte-i18n';
+	import { locale } from 'svelte-i18n';
+	import '../app.css';
 
-	// Import shared i18n dictionaries
-	import enDict from '$shared/i18n/en.json';
-	import etDict from '$shared/i18n/et.json';
-	import fiDict from '$shared/i18n/fi.json';
-
-	// Register locales
-	register('en', () => Promise.resolve(enDict));
-	register('et', () => Promise.resolve(etDict));
-	register('fi', () => Promise.resolve(fiDict));
-
-	// Initialize with Estonian as default
-	init({
-		fallbackLocale: 'en',
-		initialLocale: 'et'
-	});
-
-	// Set locale from browser
+	// Set locale from browser on client
 	onMount(() => {
 		const browserLang = navigator.language.split('-')[0];
 		if (['en', 'et', 'fi'].includes(browserLang)) {
