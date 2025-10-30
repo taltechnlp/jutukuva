@@ -518,5 +518,14 @@
     "editor": {
       "wordsApprovedStatus": "{approved} / {total} sanaa hyväksytty"
     }
+  },
+  "collaboration": {
+    "collaborative_session": "Yhteistyöistunto",
+    "session_active": "Aktiivinen istunto",
+    "join_session": "Liity istuntoon",
+    "enter_code": "Syötä 6-merkkinen koodi",
+    "join": "Liity",
+    "start_session": "Aloita uusi istunto",
+    "guest_cannot_record": "Vain isäntä voi nauhoittaa"
   }
 }

@@ -1239,6 +1239,90 @@
 		</div>
 	{/if}
 
+	<!-- Collaboration Controls -->
+	<div class="mb-6">
+		<div class="collapse collapse-arrow bg-base-200">
+			<input type="checkbox" />
+			<div class="collapse-title text-lg font-semibold">
+				{#if sessionInfo}
+					{$_('collaboration.session_active', { default: 'Active Session' })}
+				{:else}
+					{$_('collaboration.collaborative_session', { default: 'Collaborative Session' })}
+				{/if}
+			</div>
+			<div class="collapse-content">
+				{#if sessionInfo}
+					<!-- Session Status -->
+					<SessionStatus
+						{sessionInfo}
+						{participants}
+						connected={collaborationConnected}
+						onShowShareModal={() => (showShareModal = true)}
+					/>
+				{:else}
+					<!-- Join/Start Session UI -->
+					<div class="flex gap-4 p-4 bg-base-100 rounded-lg">
+						<!-- Join Session -->
+						<div class="flex-1">
+							<label class="label">
+								<span class="label-text font-semibold">
+									{$_('collaboration.join_session', { default: 'Join Session' })}
+								</span>
+							</label>
+							<div class="flex gap-2">
+								<input
+									type="text"
+									placeholder={$_('collaboration.enter_code', { default: 'Enter 6-character code' })}
+									class="input input-bordered flex-1 font-mono uppercase"
+									maxlength="6"
+									bind:value={joinSessionCode}
+									oninput={(e) => {
+										joinSessionCode = e.currentTarget.value.toUpperCase();
+									}}
+									onkeydown={(e) => {
+										if (e.key === 'Enter' && joinSessionCode.length === 6) {
+											joinCollaborativeSession(joinSessionCode);
+										}
+									}}
+								/>
+								<button
+									class="btn btn-secondary"
+									disabled={joinSessionCode.length !== 6}
+									onclick={() => joinCollaborativeSession(joinSessionCode)}
+								>
+									{$_('collaboration.join', { default: 'Join' })}
+								</button>
+							</div>
+						</div>
+
+						<div class="divider divider-horizontal">OR</div>
+
+						<!-- Start New Session -->
+						<div class="flex-1 flex items-end">
+							<button class="btn btn-primary w-full" onclick={startCollaborativeSession}>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="h-5 w-5"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M12 4v16m8-8H4"
+									/>
+								</svg>
+								{$_('collaboration.start_session', { default: 'Start New Session' })}
+							</button>
+						</div>
+					</div>
+				{/if}
+			</div>
+		</div>
+	</div>
+
 	<!-- Recording Controls -->
 	<div style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; margin-bottom: 1.5rem;">
 		<!-- Header -->
@@ -1332,9 +1416,9 @@
 							onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
 							disabled={isAudioSourceSwitching || !isWasmReady}
 						>
-							<option value="microphone">🎤 Microphone</option>
+							<option value="microphone">🎤 {$_('dictate.audioSourceMicrophone')}</option>
 							{#if systemAudioAvailable}
-								<option value="system">🔊 System Audio</option>
+								<option value="system">🔊 {$_('dictate.audioSourceSystem')}</option>
 							{/if}
 						</select>
 					</div>
@@ -1449,78 +1533,6 @@
 			</div>
 		</div>
 	</div>
-
-<!-- Collaboration Controls -->
-<div class="mb-6">
-	{#if sessionInfo}
-		<!-- Session Status -->
-		<SessionStatus
-			{sessionInfo}
-			{participants}
-			connected={collaborationConnected}
-			onShowShareModal={() => (showShareModal = true)}
-		/>
-	{:else}
-		<!-- Join/Start Session UI -->
-		<div class="flex gap-4 p-4 bg-base-200 rounded-lg">
-			<!-- Join Session -->
-			<div class="flex-1">
-				<label class="label">
-					<span class="label-text font-semibold">
-						{$_('collaboration.join_session', { default: 'Join Session' })}
-					</span>
-				</label>
-				<div class="flex gap-2">
-					<input
-						type="text"
-						placeholder={$_('collaboration.enter_code', { default: 'Enter 6-character code' })}
-						class="input input-bordered flex-1 font-mono uppercase"
-						maxlength="6"
-						bind:value={joinSessionCode}
-						oninput={(e) => {
-							joinSessionCode = e.currentTarget.value.toUpperCase();
-						}}
-						onkeydown={(e) => {
-							if (e.key === 'Enter' && joinSessionCode.length === 6) {
-								joinCollaborativeSession(joinSessionCode);
-							}
-						}}
-					/>
-					<button
-						class="btn btn-secondary"
-						disabled={joinSessionCode.length !== 6}
-						onclick={() => joinCollaborativeSession(joinSessionCode)}
-					>
-						{$_('collaboration.join', { default: 'Join' })}
-					</button>
-				</div>
-			</div>
-
-			<div class="divider divider-horizontal">OR</div>
-
-			<!-- Start New Session -->
-			<div class="flex-1 flex items-end">
-				<button class="btn btn-primary w-full" onclick={startCollaborativeSession}>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						class="h-5 w-5"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke="currentColor"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M12 4v16m8-8H4"
-						/>
-					</svg>
-					{$_('collaboration.start_session', { default: 'Start New Session' })}
-				</button>
-			</div>
-		</div>
-	{/if}
-</div>
 
 <!-- Speech Editor and Subtitle Preview -->
 <div class="flex flex-col xl:flex-row xl:items-start gap-6 mb-6">
