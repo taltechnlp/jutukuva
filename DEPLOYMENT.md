@@ -14,8 +14,8 @@ Complete guide for deploying Kirikaja web viewer to `tekstiks.ee/kk` using PM2 a
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/aivo0/kirikaja.git /opt/kirikaja
-cd /opt/kirikaja
+git clone https://github.com/aivo0/kirikaja.git /home/aiolev/kirikaja
+cd /home/aiolev/kirikaja
 
 # 2. Install dependencies
 npm install
@@ -34,7 +34,7 @@ pm2 save
 pm2 startup
 
 # 6. Configure nginx (see nginx section below)
-sudo cp /opt/kirikaja/nginx.conf /etc/nginx/sites-available/tekstiks.ee
+sudo cp /home/aiolev/kirikaja/nginx.conf /etc/nginx/sites-available/tekstiks.ee
 sudo ln -s /etc/nginx/sites-available/tekstiks.ee /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
@@ -65,13 +65,13 @@ sudo apt install -y certbot python3-certbot-nginx
 ### 2. Deploy Application
 
 ```bash
-# Create application directory
-sudo mkdir -p /opt/kirikaja
-sudo chown -R $USER:$USER /opt/kirikaja
+# Create application directory (if needed)
+sudo mkdir -p /home/aiolev/kirikaja
+sudo chown -R $USER:$USER /home/aiolev/kirikaja
 
 # Clone repository
-git clone https://github.com/aivo0/kirikaja.git /opt/kirikaja
-cd /opt/kirikaja
+git clone https://github.com/aivo0/kirikaja.git /home/aiolev/kirikaja
+cd /home/aiolev/kirikaja
 
 # Install all dependencies (including workspaces)
 npm install
@@ -100,7 +100,7 @@ env: {
 ### 4. Start with PM2
 
 ```bash
-cd /opt/kirikaja/packages/yjs-server
+cd /home/aiolev/kirikaja/packages/yjs-server
 
 # Create logs directory
 mkdir -p logs
@@ -126,7 +126,7 @@ pm2 startup
 
 ```bash
 # Copy nginx configuration
-sudo cp /opt/kirikaja/nginx.conf /etc/nginx/sites-available/tekstiks.ee
+sudo cp /home/aiolev/kirikaja/nginx.conf /etc/nginx/sites-available/tekstiks.ee
 
 # Create symlink
 sudo ln -s /etc/nginx/sites-available/tekstiks.ee /etc/nginx/sites-enabled/
@@ -181,7 +181,7 @@ pm2 list
 pm2 delete kirikaja-server
 
 # Update after code changes
-cd /opt/kirikaja
+cd /home/aiolev/kirikaja
 git pull
 cd packages/web-viewer
 npm run build
@@ -239,7 +239,7 @@ ws.onerror = (e) => console.error('WebSocket error:', e);
 
 ```bash
 # 1. Pull latest changes
-cd /opt/kirikaja
+cd /home/aiolev/kirikaja
 git pull
 
 # 2. Install any new dependencies
@@ -302,7 +302,7 @@ pm2 logs kirikaja-server --lines 100
 
 # Common issues:
 # - Port 1234 already in use: sudo lsof -i :1234
-# - Missing dependencies: cd /opt/kirikaja && npm install
+# - Missing dependencies: cd /home/aiolev/kirikaja && npm install
 # - Web viewer not built: cd packages/web-viewer && npm run build
 ```
 
@@ -390,7 +390,7 @@ sudo ufw status
 sudo apt update && sudo apt upgrade -y
 
 # Update Node.js dependencies
-cd /opt/kirikaja
+cd /home/aiolev/kirikaja
 npm update
 
 # Rebuild and restart
@@ -405,7 +405,7 @@ cd ../yjs-server && pm2 restart kirikaja-server
 ```bash
 # Backup configuration
 sudo cp /etc/nginx/sites-available/tekstiks.ee ~/tekstiks-nginx-backup.conf
-cp /opt/kirikaja/packages/yjs-server/ecosystem.config.cjs ~/ecosystem-backup.cjs
+cp /home/aiolev/kirikaja/packages/yjs-server/ecosystem.config.cjs ~/ecosystem-backup.cjs
 
 # Backup PM2 configuration
 pm2 save
@@ -420,9 +420,9 @@ sudo cp ~/tekstiks-nginx-backup.conf /etc/nginx/sites-available/tekstiks.ee
 sudo nginx -t && sudo systemctl reload nginx
 
 # Restore PM2
-cp ~/ecosystem-backup.cjs /opt/kirikaja/packages/yjs-server/
+cp ~/ecosystem-backup.cjs /home/aiolev/kirikaja/packages/yjs-server/
 pm2 delete all
-pm2 start /opt/kirikaja/packages/yjs-server/ecosystem.config.cjs
+pm2 start /home/aiolev/kirikaja/packages/yjs-server/ecosystem.config.cjs
 pm2 save
 ```
 
@@ -463,7 +463,7 @@ location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
 **Deployment checklist:**
 - [ ] Node.js 20+ installed
 - [ ] PM2 installed globally
-- [ ] Repository cloned to /opt/kirikaja
+- [ ] Repository cloned to /home/aiolev/kirikaja
 - [ ] Dependencies installed (`npm install`)
 - [ ] Web viewer built (`npm run build`)
 - [ ] PM2 ecosystem configured
