@@ -60,13 +60,15 @@ const setupWSConnection = (conn, req, roomName) => {
 			const messageType = decoding.readVarUint(decoder);
 
 			switch (messageType) {
-				case messageSync:
+				case messageSync: {
+					const encoder = encoding.createEncoder();
 					encoding.writeVarUint(encoder, messageSync);
 					syncProtocol.readSyncMessage(decoder, encoder, doc, conn);
 					if (encoding.length(encoder) > 1) {
 						conn.send(encoding.toUint8Array(encoder));
 					}
 					break;
+				}
 				case messageAwareness:
 					awarenessProtocol.applyAwarenessUpdate(awareness, decoding.readVarUint8Array(decoder), conn);
 					break;
