@@ -39,7 +39,7 @@ function createWindow() {
 		mainWindow.loadURL('http://localhost:5173');
 		mainWindow.webContents.openDevTools();
 	} else {
-		// Use custom app:// protocol for proper asset loading
+		// Use custom app:// protocol
 		mainWindow.loadURL('app://./index.html');
 	}
 
