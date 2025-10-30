@@ -93,9 +93,9 @@ export class AudioSourceManager {
 
 		// Filter based on source type
 		if (sourceType === 'system') {
-			// On Linux, prefer desktop sources over monitor devices for consistency
-			// Desktop sources allow selecting specific windows/screens and are more reliable
-			if (this.platform === 'linux' && window.electronAPI) {
+			// On Linux and Windows, prefer desktop sources over monitor/loopback devices
+			// Desktop sources allow selecting specific windows/screens and work consistently
+			if ((this.platform === 'linux' || this.platform === 'win32') && window.electronAPI) {
 				const desktopSources = await this.getDesktopSourcesAsDevices();
 				if (desktopSources.length > 0) {
 					return desktopSources;
