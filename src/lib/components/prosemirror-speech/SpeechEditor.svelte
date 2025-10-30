@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { _ } from 'svelte-i18n';
 	import { EditorState } from 'prosemirror-state';
 	import { EditorView } from 'prosemirror-view';
 	import { history } from 'prosemirror-history';
@@ -277,11 +278,11 @@
 				type="checkbox"
 				checked={autoScroll}
 				onchange={handleAutoScrollChange}
-				aria-label="Enable auto-scroll"
+				aria-label={$_('dictate.autoScroll')}
 			/>
-			<span>Auto-scroll</span>
+			<span>{$_('dictate.autoScroll')}</span>
 		</label>
-		<span class="word-count">{approvedCount} / {wordCount} words approved</span>
+		<span class="word-count">{$_('dictate.editor.wordsApprovedStatus', { values: { approved: approvedCount, total: wordCount } })}</span>
 	</div>
 </div>
 

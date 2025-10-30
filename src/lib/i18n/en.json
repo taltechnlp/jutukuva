@@ -535,6 +535,16 @@
       "undo": "Undo",
       "redo": "Redo",
       "close": "Close"
+    },
+    "toolbar": {
+      "undo": "Undo",
+      "undoShortcut": "Undo (Ctrl+Z)",
+      "redo": "Redo",
+      "redoShortcut": "Redo (Ctrl+Shift+Z)",
+      "autoConfirmTimeout": "Auto-confirm timeout"
+    },
+    "editor": {
+      "wordsApprovedStatus": "{approved} / {total} words approved"
     }
   }
 }
