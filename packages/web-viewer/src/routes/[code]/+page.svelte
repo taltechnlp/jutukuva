@@ -23,13 +23,11 @@
 	let collaborationConnected = $state(false);
 	let isInitializing = $state(true);
 	let error = $state('');
+	let editorReady = $state(false);
 
-	// Initialize collaboration when editor is ready
+	// Initialize collaboration BEFORE editor mounts
 	onMount(async () => {
 		if (!browser) return;
-
-		// Wait a bit for editor to be ready
-		await new Promise((resolve) => setTimeout(resolve, 500));
 
 		try {
 			const serverUrl = import.meta.env.VITE_YJS_SERVER_URL || 'wss://tekstiks.ee/kk';
@@ -41,30 +39,54 @@
 				serverUrl
 			};
 
-			console.log('[WEB-VIEWER] Joining session:', sessionCode);
+			console.log('[WEB-VIEWER] Setting up collaboration for session:', sessionCode);
 
-			// Initialize collaboration manager
+			// Initialize and connect collaboration manager FIRST
 			collaborationManager = new CollaborationManager();
 
-			if (speechEditor?.editorView) {
-				collaborationManager.connect(sessionInfo, speechEditor.editorView, {
-					onParticipantsChange: (p) => {
-						participants = p;
-					},
-					onConnectionStatusChange: (connected) => {
-						collaborationConnected = connected;
-						if (connected) {
-							isInitializing = false;
-						}
+			// Connect the collaboration manager (editorView not used in connect())
+			collaborationManager.connect(sessionInfo, null as any, {
+				onParticipantsChange: (p) => {
+					participants = p;
+					console.log('[WEB-VIEWER] Participants changed:', p);
+				},
+				onConnectionStatusChange: (connected) => {
+					collaborationConnected = connected;
+					console.log('[WEB-VIEWER] Connection status:', connected);
+					if (connected) {
+						isInitializing = false;
 					}
+				}
+			});
+
+			// Wait a moment for initial Yjs sync
+			await new Promise(resolve => setTimeout(resolve, 500));
+
+			// Log Yjs document state after sync
+			const xmlFrag = collaborationManager.ydoc.getXmlFragment('prosemirror');
+			console.log('[WEB-VIEWER] Yjs doc state after sync:', {
+				clientID: collaborationManager.provider?.awareness.clientID,
+				docSize: collaborationManager.ydoc.store.clients.size,
+				xmlFragmentLength: xmlFrag.length,
+				xmlFragmentString: xmlFrag.toString()
+			});
+
+			// Listen for Yjs document updates
+			collaborationManager.ydoc.on('update', (update: Uint8Array, origin: any) => {
+				console.log('[WEB-VIEWER] Yjs document updated:', {
+					updateSize: update.length,
+					origin: origin?.constructor?.name,
+					xmlFragmentLength: xmlFrag.length,
+					xmlContent: xmlFrag.toString().substring(0, 200)
 				});
-			} else {
-				error = 'Editor not ready';
-				isInitializing = false;
-			}
+			});
+
+			// Now we can render the editor with the connected collaboration manager
+			editorReady = true;
+			console.log('[WEB-VIEWER] Collaboration manager ready, rendering editor');
 		} catch (err) {
-			console.error('[WEB-VIEWER] Failed to join session:', err);
-			error = 'Failed to join session';
+			console.error('[WEB-VIEWER] Failed to setup collaboration:', err);
+			error = 'Failed to setup collaboration: ' + (err as Error).message;
 			isInitializing = false;
 		}
 	});
@@ -185,15 +207,22 @@
 	<div class="flex flex-col xl:flex-row xl:items-start gap-6">
 		<!-- Speech Editor -->
 		<div class="xl:flex-[2] flex-1 min-w-[500px]">
-			<SpeechEditor
-				bind:this={speechEditor}
-				collaborationManager={collaborationManager}
-				config={{
-					fontSize: 16,
-					onWordApproved: handleWordApproved,
-					onSubtitleEmit: handleSubtitleEmit
-				}}
-			/>
+			{#if editorReady && collaborationManager}
+				<SpeechEditor
+					bind:this={speechEditor}
+					collaborationManager={collaborationManager}
+					config={{
+						fontSize: 16,
+						onWordApproved: handleWordApproved,
+						onSubtitleEmit: handleSubtitleEmit
+					}}
+				/>
+			{:else if !error}
+				<div class="alert alert-info">
+					<span class="loading loading-spinner loading-sm"></span>
+					<span>Loading editor...</span>
+				</div>
+			{/if}
 		</div>
 
 		<!-- Subtitle Preview -->

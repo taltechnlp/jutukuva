@@ -153,6 +153,7 @@ try {
 	console.log('[INFO] SvelteKit handler loaded - serving web viewer');
 } catch (error) {
 	console.log('[INFO] SvelteKit handler not found - WebSocket only mode');
+	console.log('[DEBUG] Import error:', error.message);
 	console.log('[INFO] To enable web viewer: cd packages/web-viewer && npm run build');
 
 	// Fallback: Simple status page
