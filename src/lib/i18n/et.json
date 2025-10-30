@@ -533,5 +533,14 @@
     "editor": {
       "wordsApprovedStatus": "{approved} / {total} sõna kinnitatud"
     }
+  },
+  "collaboration": {
+    "collaborative_session": "Ühissessioon",
+    "session_active": "Aktiivne sessioon",
+    "join_session": "Liitu sessiooniga",
+    "enter_code": "Sisesta 6-kohaline kood",
+    "join": "Liitu",
+    "start_session": "Alusta uut sessiooni",
+    "guest_cannot_record": "Ainult peremees saab salvestada"
   }
 }

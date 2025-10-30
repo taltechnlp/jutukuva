@@ -547,5 +547,14 @@
     "editor": {
       "wordsApprovedStatus": "{approved} / {total} words approved"
     }
+  },
+  "collaboration": {
+    "collaborative_session": "Collaborative Session",
+    "session_active": "Active Session",
+    "join_session": "Join Session",
+    "enter_code": "Enter 6-character code",
+    "join": "Join",
+    "start_session": "Start New Session",
+    "guest_cannot_record": "Only the host can record"
   }
 }
