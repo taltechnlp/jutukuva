@@ -152,7 +152,7 @@
 	 */
 	function startCollaborativeSession() {
 		const code = generateSessionCode();
-		const serverUrl = import.meta.env.VITE_YJS_SERVER_URL || 'ws://localhost:1234';
+		const serverUrl = import.meta.env.VITE_YJS_SERVER_URL || 'wss://tekstiks.ee/kk';
 
 		sessionInfo = {
 			code,
@@ -176,7 +176,7 @@
 			return;
 		}
 
-		const serverUrl = import.meta.env.VITE_YJS_SERVER_URL || 'ws://localhost:1234';
+		const serverUrl = import.meta.env.VITE_YJS_SERVER_URL || 'wss://tekstiks.ee/kk';
 
 		sessionInfo = {
 			code: normalizedCode,
