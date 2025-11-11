@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, desktopCapturer, protocol, net } from 'electron';
+import { app, BrowserWindow, ipcMain, desktopCapturer, protocol, net, systemPreferences } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { readFile } from 'fs/promises';
@@ -184,25 +184,190 @@ app.whenReady().then(() => {
 	});
 
 	// Set up IPC handlers for audio source management
+	let screenRecordingPermissionChecked = false;
+	let screenRecordingPermissionGranted = false;
+
 	ipcMain.handle('audio:getDesktopSources', async () => {
 		try {
+			console.log('[Main] Getting desktop sources...');
+
+			// On macOS, check screen recording permission
+			if (process.platform === 'darwin') {
+				if (!screenRecordingPermissionChecked) {
+					const status = systemPreferences.getMediaAccessStatus('screen');
+					console.log('[Main] Screen Recording permission status:', status);
+					screenRecordingPermissionChecked = true;
+					screenRecordingPermissionGranted = (status === 'granted');
+
+					if (!screenRecordingPermissionGranted) {
+						console.log('[Main] ⚠️  Screen Recording permission NOT granted!');
+						console.log('[Main] Permission status is:', status);
+						console.log('[Main] Returning empty array until permission is granted.');
+						return [];
+					}
+				} else if (!screenRecordingPermissionGranted) {
+					// Permission already checked and not granted, don't retry
+					console.log('[Main] Permission still not granted, returning empty array');
+					return [];
+				}
+			}
+
+			// Try to get sources
 			const sources = await desktopCapturer.getSources({
 				types: ['screen', 'window'],
-				thumbnailSize: { width: 0, height: 0 }
+				thumbnailSize: { width: 150, height: 150 },
+				fetchWindowIcons: false
 			});
+
+			console.log('[Main] ✓ Got desktop sources:', sources.length);
+			if (sources.length > 0) {
+				sources.forEach(s => console.log(`[Main]   - ${s.name}`));
+			}
+
+			// If we got sources successfully on macOS, mark permission as granted
+			if (process.platform === 'darwin' && sources.length > 0) {
+				screenRecordingPermissionGranted = true;
+			}
+
 			return sources.map((source) => ({
 				id: source.id,
 				name: source.name,
-				thumbnail: null // Don't need thumbnails for audio
+				thumbnail: null
 			}));
 		} catch (error) {
-			console.error('Error getting desktop sources:', error);
+			console.error('[Main] ❌ Error getting desktop sources:', error.message);
+
+			// If error on macOS, mark permission as not granted
+			if (process.platform === 'darwin') {
+				screenRecordingPermissionGranted = false;
+			}
+
 			return [];
 		}
 	});
 
+	// Add handler to reset permission check (useful after user grants permission)
+	ipcMain.handle('audio:resetPermissionCheck', async () => {
+		screenRecordingPermissionChecked = false;
+		screenRecordingPermissionGranted = false;
+		console.log('[Main] Permission check reset - will recheck on next request');
+		return { success: true };
+	});
+
 	ipcMain.handle('audio:getPlatform', async () => {
 		return process.platform;
+	});
+
+	ipcMain.handle('audio:openAudioMIDISetup', async () => {
+		if (process.platform === 'darwin') {
+			try {
+				const { exec } = await import('child_process');
+				exec('open "/System/Applications/Utilities/Audio MIDI Setup.app"');
+				return { success: true };
+			} catch (error) {
+				console.error('[Main] Error opening Audio MIDI Setup:', error);
+				return { success: false, error: error.message };
+			}
+		}
+		return { success: false, error: 'Not supported on this platform' };
+	});
+
+	// Download BlackHole installer
+	ipcMain.handle('audio:downloadBlackHole', async (event) => {
+		if (process.platform !== 'darwin') {
+			return { success: false, error: 'Not supported on this platform' };
+		}
+
+		try {
+			const { app } = await import('electron');
+			const os = await import('os');
+			const fs = await import('fs');
+			const https = await import('https');
+
+			// Try to find the latest BlackHole release
+			// Using the v0.6.1 release as fallback
+			const downloadUrl = 'https://github.com/ExistentialAudio/BlackHole/releases/download/v0.6.1/BlackHole2ch.v0.6.1.pkg';
+			const downloadsPath = app.getPath('downloads');
+			const fileName = 'BlackHole2ch.pkg';
+			const filePath = `${downloadsPath}/${fileName}`;
+
+			console.log('[Main] Downloading BlackHole to:', filePath);
+
+			return new Promise((resolve, reject) => {
+				const file = fs.createWriteStream(filePath);
+
+				https.get(downloadUrl, (response) => {
+					// Check for redirect or error
+					if (response.statusCode === 302 || response.statusCode === 301) {
+						// Follow redirect
+						const redirectUrl = response.headers.location;
+						console.log('[Main] Following redirect to:', redirectUrl);
+						https.get(redirectUrl, (redirectResponse) => {
+							const totalSize = parseInt(redirectResponse.headers['content-length'], 10);
+							let downloadedSize = 0;
+
+							redirectResponse.pipe(file);
+
+							redirectResponse.on('data', (chunk) => {
+								downloadedSize += chunk.length;
+								const progress = totalSize ? (downloadedSize / totalSize) * 100 : 0;
+								mainWindow?.webContents.send('download-progress', progress);
+							});
+
+							file.on('finish', () => {
+								file.close();
+								console.log('[Main] Download complete');
+
+								// Open the downloaded file
+								const { exec } = require('child_process');
+								exec(`open "${filePath}"`);
+
+								resolve({ success: true, path: filePath });
+							});
+						}).on('error', (err) => {
+							fs.unlink(filePath, () => {});
+							reject({ success: false, error: err.message });
+						});
+					} else if (response.statusCode === 200) {
+						const totalSize = parseInt(response.headers['content-length'], 10);
+						let downloadedSize = 0;
+
+						response.pipe(file);
+
+						response.on('data', (chunk) => {
+							downloadedSize += chunk.length;
+							const progress = totalSize ? (downloadedSize / totalSize) * 100 : 0;
+							mainWindow?.webContents.send('download-progress', progress);
+						});
+
+						file.on('finish', () => {
+							file.close();
+							console.log('[Main] Download complete');
+
+							// Open the downloaded file
+							const { exec } = require('child_process');
+							exec(`open "${filePath}"`);
+
+							resolve({ success: true, path: filePath });
+						});
+					} else {
+						fs.unlink(filePath, () => {});
+						reject({ success: false, error: `HTTP ${response.statusCode}` });
+					}
+				}).on('error', (err) => {
+					fs.unlink(filePath, () => {});
+					reject({ success: false, error: err.message });
+				});
+
+				file.on('error', (err) => {
+					fs.unlink(filePath, () => {});
+					reject({ success: false, error: err.message });
+				});
+			});
+		} catch (error) {
+			console.error('[Main] Error downloading BlackHole:', error);
+			return { success: false, error: error.message };
+		}
 	});
 
 	createWindow();

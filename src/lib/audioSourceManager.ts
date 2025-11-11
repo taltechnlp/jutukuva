@@ -54,19 +54,28 @@ export class AudioSourceManager {
 				return true;
 			}
 
-			// On Windows and Linux, desktopCapturer can work as fallback
-			if (this.platform === 'win32' || this.platform === 'linux') {
+			// On all desktop platforms, desktopCapturer can work as fallback
+			if (this.platform === 'win32' || this.platform === 'linux' || this.platform === 'darwin') {
 				return true;
-			}
-
-			// On macOS, require virtual audio device
-			if (this.platform === 'darwin') {
-				return loopbackDevices.length > 0;
 			}
 
 			return false;
 		} catch (error) {
 			console.error('[AudioSourceManager] Error checking system audio support:', error);
+			return false;
+		}
+	}
+
+	/**
+	 * Check if a virtual audio device is available (for macOS)
+	 */
+	async hasVirtualAudioDevice(): Promise<boolean> {
+		try {
+			const devices = await this.enumerateAudioDevices();
+			const virtualDevices = this.findLoopbackDevices(devices);
+			return virtualDevices.length > 0;
+		} catch (error) {
+			console.error('[AudioSourceManager] Error checking for virtual audio device:', error);
 			return false;
 		}
 	}
@@ -86,6 +95,8 @@ export class AudioSourceManager {
 				kind: d.kind as 'audioinput'
 			}));
 
+		// Removed verbose logging to avoid triggering permission dialogs
+
 		// If no source type specified, return all devices
 		if (!sourceType) {
 			return allAudioInputs;
@@ -93,17 +104,21 @@ export class AudioSourceManager {
 
 		// Filter based on source type
 		if (sourceType === 'system') {
-			// On Linux and Windows, prefer desktop sources over monitor/loopback devices
+			// On all desktop platforms, prefer desktop sources over monitor/loopback devices
 			// Desktop sources allow selecting specific windows/screens and work consistently
-			if ((this.platform === 'linux' || this.platform === 'win32') && window.electronAPI) {
+			if (window.electronAPI) {
 				const desktopSources = await this.getDesktopSourcesAsDevices();
 				if (desktopSources.length > 0) {
+					console.log('[AudioSourceManager] Found', desktopSources.length, 'desktop sources');
 					return desktopSources;
 				}
 			}
 
-			// Fall back to loopback/monitor devices on other platforms or if desktop sources not available
+			// Fall back to loopback/monitor devices if desktop sources not available
 			const loopbackDevices = this.findLoopbackDevices(allAudioInputs);
+			if (loopbackDevices.length > 0) {
+				console.log('[AudioSourceManager] Found', loopbackDevices.length, 'loopback devices');
+			}
 			return loopbackDevices;
 		} else {
 			// Return only non-loopback devices (microphones)
@@ -252,25 +267,30 @@ export class AudioSourceManager {
 	}
 
 	/**
-	 * Get macOS system audio (requires BlackHole or similar)
+	 * Get macOS system audio (uses desktopCapturer or virtual audio device)
 	 */
 	private async getMacOSSystemAudio(deviceId: string | null): Promise<MediaStream> {
-		// If specific device provided, use it
+		// If specific device provided, check if it's a desktop source or virtual device
 		if (deviceId) {
-			return await this.getLoopbackStream(deviceId);
+			// Desktop source IDs start with 'screen:' or 'window:'
+			if (deviceId.startsWith('screen:') || deviceId.startsWith('window:')) {
+				return await this.getDesktopCapturerAudio(deviceId);
+			} else {
+				return await this.getLoopbackStream(deviceId);
+			}
 		}
 
 		// Check for virtual audio devices
 		const devices = await this.enumerateAudioDevices();
 		const virtualDevice = devices.find((d) => /BlackHole|Loopback|Aggregate/i.test(d.label));
 
-		if (!virtualDevice) {
-			throw new Error(
-				'No virtual audio device found on macOS. Please install BlackHole: https://existential.audio/blackhole/'
-			);
+		if (virtualDevice) {
+			return await this.getLoopbackStream(virtualDevice.deviceId);
 		}
 
-		return await this.getLoopbackStream(virtualDevice.deviceId);
+		// Fall back to desktopCapturer if no virtual device found
+		console.log('[AudioSourceManager] No virtual audio device found, using desktopCapturer');
+		return await this.getDesktopCapturerAudio(null);
 	}
 
 	/**
@@ -324,9 +344,10 @@ export class AudioSourceManager {
 			sourceName = sources[0].name;
 		}
 
-		console.log('[AudioSourceManager] Using desktop source:', sourceName);
+		console.log('[AudioSourceManager] Using desktop source:', sourceName, 'ID:', selectedSourceId);
 
 		// Request screen capture with audio
+		console.log('[AudioSourceManager] Requesting desktop capture...');
 		const stream = await navigator.mediaDevices.getUserMedia({
 			audio: {
 				mandatory: {
@@ -344,11 +365,22 @@ export class AudioSourceManager {
 			} as any
 		});
 
+		console.log('[AudioSourceManager] Got stream, checking tracks...');
+		console.log('[AudioSourceManager] Audio tracks:', stream.getAudioTracks().length);
+		console.log('[AudioSourceManager] Video tracks:', stream.getVideoTracks().length);
+
 		// Extract only audio tracks
 		const audioTracks = stream.getAudioTracks();
 		if (audioTracks.length === 0) {
-			throw new Error('No audio tracks in desktop capture stream');
+			console.error('[AudioSourceManager] No audio tracks found in desktop capture!');
+			console.error('[AudioSourceManager] This may mean:');
+			console.error('[AudioSourceManager]   1. The selected source has no audio');
+			console.error('[AudioSourceManager]   2. macOS is blocking audio capture');
+			console.error('[AudioSourceManager]   3. The source needs to be playing audio');
+			throw new Error('No audio tracks in desktop capture stream. The selected source may not have audio, or you may need to play audio from that source first.');
 		}
+
+		console.log('[AudioSourceManager] Audio track details:', audioTracks[0].getSettings());
 
 		// Stop video tracks (we don't need them)
 		stream.getVideoTracks().forEach((track) => track.stop());
@@ -401,11 +433,16 @@ export class AudioSourceManager {
 				return {
 					title: 'macOS System Audio Setup',
 					steps: [
-						'Install BlackHole: https://existential.audio/blackhole/',
-						'Open Audio MIDI Setup (Applications → Utilities)',
-						'Create a Multi-Output Device combining your speakers and BlackHole',
-						'Set Multi-Output Device as default output',
-						'Select BlackHole as input in this app'
+						'Option 1 (Recommended): Select a specific window or screen from the dropdown',
+						'This will capture audio from that source directly.',
+						'',
+						'Option 2 (Advanced): Use a virtual audio device for system-wide capture',
+						'- Install BlackHole from GitHub: https://github.com/ExistentialAudio/BlackHole/releases',
+						'  (Download BlackHole2ch.pkg from the Assets section)',
+						'- Open Audio MIDI Setup (Applications → Utilities)',
+						'- Create a Multi-Output Device combining your speakers and BlackHole',
+						'- Set Multi-Output Device as default output',
+						'- Select BlackHole as input in this app'
 					]
 				};
 

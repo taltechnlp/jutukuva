@@ -69,6 +69,14 @@
     "directories": {
       "buildResources": "assets",
       "output": "dist"
+    },
+    "mac": {
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "hardenedRuntime": true,
+      "extendInfo": {
+        "NSScreenCaptureUsageDescription": "This app needs to access screen recording to capture system audio from specific windows and screens."
+      }
     }
   }
 }

@@ -52,6 +52,10 @@ contextBridge.exposeInMainWorld('broadcast', {
 contextBridge.exposeInMainWorld('electronAPI', {
 	getDesktopSources: () => ipcRenderer.invoke('audio:getDesktopSources'),
 	getPlatform: () => ipcRenderer.invoke('audio:getPlatform'),
+	openAudioMIDISetup: () => ipcRenderer.invoke('audio:openAudioMIDISetup'),
+	resetPermissionCheck: () => ipcRenderer.invoke('audio:resetPermissionCheck'),
+	downloadBlackHole: () => ipcRenderer.invoke('audio:downloadBlackHole'),
+	onDownloadProgress: (callback) => ipcRenderer.on('download-progress', (event, progress) => callback(progress)),
 	setSetting: (key, value) => ipcRenderer.invoke('db:setSetting', key, value),
 	getSetting: (key) => ipcRenderer.invoke('db:getSetting', key)
 });
