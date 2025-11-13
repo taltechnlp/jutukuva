@@ -41,7 +41,7 @@
 
 			console.log('[WEB-VIEWER] Setting up collaboration for session:', sessionCode);
 
-			// Initialize and connect collaboration manager FIRST
+			// Initialize and connect collaboration manager
 			collaborationManager = new CollaborationManager();
 
 			// Connect the collaboration manager (editorView not used in connect())
@@ -59,20 +59,13 @@
 				}
 			});
 
-			// Wait a moment for initial Yjs sync
-			await new Promise(resolve => setTimeout(resolve, 500));
+			// Render editor immediately - ySyncPlugin will handle sync when editor is created
+			editorReady = true;
+			console.log('[WEB-VIEWER] Collaboration manager ready, rendering editor');
 
-			// Log Yjs document state after sync
-			const xmlFrag = collaborationManager.ydoc.getXmlFragment('prosemirror');
-			console.log('[WEB-VIEWER] Yjs doc state after sync:', {
-				clientID: collaborationManager.provider?.awareness.clientID,
-				docSize: collaborationManager.ydoc.store.clients.size,
-				xmlFragmentLength: xmlFrag.length,
-				xmlFragmentString: xmlFrag.toString()
-			});
-
-			// Listen for Yjs document updates
+			// Listen for Yjs document updates to log sync activity
 			collaborationManager.ydoc.on('update', (update: Uint8Array, origin: any) => {
+				const xmlFrag = collaborationManager.ydoc.getXmlFragment('prosemirror');
 				console.log('[WEB-VIEWER] Yjs document updated:', {
 					updateSize: update.length,
 					origin: origin?.constructor?.name,
@@ -80,10 +73,6 @@
 					xmlContent: xmlFrag.toString().substring(0, 200)
 				});
 			});
-
-			// Now we can render the editor with the connected collaboration manager
-			editorReady = true;
-			console.log('[WEB-VIEWER] Collaboration manager ready, rendering editor');
 		} catch (err) {
 			console.error('[WEB-VIEWER] Failed to setup collaboration:', err);
 			error = 'Failed to setup collaboration: ' + (err as Error).message;
