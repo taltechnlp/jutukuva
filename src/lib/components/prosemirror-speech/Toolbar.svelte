@@ -1,22 +1,13 @@
 <script lang="ts">
 	import { _ } from 'svelte-i18n';
-	import type { AutoConfirmConfig } from './utils/types';
 
 	// Props
 	let {
-		wordCount = 0,
-		approvedCount = 0,
-		autoConfirmConfig = { enabled: true, timeoutSeconds: 5 },
 		onUndo = () => {},
-		onRedo = () => {},
-		onAutoConfirmChange = (config: AutoConfirmConfig) => {}
+		onRedo = () => {}
 	}: {
-		wordCount?: number;
-		approvedCount?: number;
-		autoConfirmConfig?: AutoConfirmConfig;
 		onUndo?: () => void;
 		onRedo?: () => void;
-		onAutoConfirmChange?: (config: AutoConfirmConfig) => void;
 	} = $props();
 
 	// Keyboard shortcuts modal state
@@ -28,22 +19,6 @@
 
 	function closeShortcutsModal() {
 		showShortcutsModal = false;
-	}
-
-	// Auto-confirm handlers
-	function toggleAutoConfirm() {
-		onAutoConfirmChange({
-			...autoConfirmConfig,
-			enabled: !autoConfirmConfig.enabled
-		});
-	}
-
-	function handleTimeoutChange(event: Event) {
-		const target = event.target as HTMLSelectElement;
-		onAutoConfirmChange({
-			...autoConfirmConfig,
-			timeoutSeconds: parseInt(target.value, 10)
-		});
 	}
 </script>
 
@@ -72,45 +47,6 @@
 				<path d="M3 17a9 9 0 019-9 9 9 0 016 2.3l3 2.7" />
 			</svg>
 		</button>
-	</div>
-
-	<!-- Auto-Confirm Settings -->
-	<div class="toolbar-group auto-confirm-group">
-		<label class="auto-confirm-toggle">
-			<input
-				type="checkbox"
-				checked={autoConfirmConfig.enabled}
-				onchange={toggleAutoConfirm}
-				aria-label={$_('dictate.autoConfirm')}
-			/>
-			<span>{$_('dictate.autoConfirm')}</span>
-		</label>
-		{#if autoConfirmConfig.enabled}
-			<select
-				class="timeout-select"
-				value={autoConfirmConfig.timeoutSeconds || 5}
-				onchange={handleTimeoutChange}
-				title={$_('dictate.toolbar.autoConfirmTimeout')}
-				aria-label={$_('dictate.toolbar.autoConfirmTimeout')}
-			>
-				<option value={5}>5s</option>
-				<option value={7}>7s</option>
-				<option value={10}>10s</option>
-				<option value={12}>12s</option>
-				<option value={15}>15s</option>
-			</select>
-		{/if}
-	</div>
-
-	<!-- Progress -->
-	<div class="toolbar-group progress-group">
-		<div class="progress-bar">
-			<div
-				class="progress-fill"
-				style:width={wordCount > 0 ? `${(approvedCount / wordCount) * 100}%` : '0%'}
-			></div>
-		</div>
-		<span class="progress-text">{Math.round((approvedCount / wordCount) * 100) || 0}%</span>
 	</div>
 
 	<!-- Keyboard Shortcuts Help -->
@@ -144,37 +80,15 @@
 						</tr>
 					</thead>
 					<tbody>
-						<!-- Navigation -->
-						<tr class="bg-base-200">
-							<td colspan="2" class="font-semibold">{$_('dictate.shortcuts.navigation')}</td>
-						</tr>
-						<tr>
-							<td>{$_('dictate.shortcuts.navigateNext')}</td>
-							<td>
-								<kbd class="kbd kbd-sm">Tab</kbd> {$_('dictate.shortcuts.or')} <kbd class="kbd kbd-sm">→</kbd>
-							</td>
-						</tr>
-						<tr>
-							<td>{$_('dictate.shortcuts.navigatePrevious')}</td>
-							<td>
-								<kbd class="kbd kbd-sm">Shift</kbd> + <kbd class="kbd kbd-sm">Tab</kbd> {$_('dictate.shortcuts.or')} <kbd class="kbd kbd-sm">←</kbd>
-							</td>
-						</tr>
-
-						<!-- Approval -->
-						<tr class="bg-base-200">
-							<td colspan="2" class="font-semibold">{$_('dictate.shortcuts.approval')}</td>
-						</tr>
-						<tr>
-							<td>{$_('dictate.shortcuts.approveUpToCurrent')}</td>
-							<td>
-								<kbd class="kbd kbd-sm">Enter</kbd>
-							</td>
-						</tr>
-
 						<!-- Editing -->
 						<tr class="bg-base-200">
 							<td colspan="2" class="font-semibold">{$_('dictate.shortcuts.editing')}</td>
+						</tr>
+						<tr>
+							<td>{$_('dictate.shortcuts.newParagraph', { default: 'Create new paragraph' })}</td>
+							<td>
+								<kbd class="kbd kbd-sm">Enter</kbd>
+							</td>
 						</tr>
 						<tr>
 							<td>{$_('dictate.shortcuts.undo')}</td>
@@ -242,74 +156,5 @@
 
 	.toolbar-button:active {
 		background-color: #e0e0e0;
-	}
-
-	.progress-group {
-		flex: 1;
-		max-width: 150px;
-		min-width: 100px;
-	}
-
-	.progress-bar {
-		flex: 1;
-		height: 8px;
-		background-color: #e0e0e0;
-		border-radius: 4px;
-		overflow: hidden;
-	}
-
-	.progress-fill {
-		height: 100%;
-		background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
-		transition: width 0.3s ease;
-	}
-
-	.progress-text {
-		font-size: 12px;
-		font-weight: 600;
-		color: #666;
-		min-width: 40px;
-		text-align: right;
-		font-variant-numeric: tabular-nums;
-	}
-
-	.auto-confirm-group {
-		border-left: 1px solid #ddd;
-		padding-left: 12px;
-	}
-
-	.auto-confirm-toggle {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		font-size: 13px;
-		color: #666;
-		cursor: pointer;
-		user-select: none;
-	}
-
-	.auto-confirm-toggle input {
-		cursor: pointer;
-	}
-
-	.timeout-select {
-		padding: 4px 8px;
-		border: 1px solid #ddd;
-		border-radius: 4px;
-		background-color: white;
-		font-size: 12px;
-		color: #424242;
-		cursor: pointer;
-		transition: all 0.2s ease;
-	}
-
-	.timeout-select:hover {
-		background-color: #f5f5f5;
-		border-color: #bbb;
-	}
-
-	.timeout-select:focus {
-		outline: none;
-		border-color: #2196f3;
 	}
 </style>

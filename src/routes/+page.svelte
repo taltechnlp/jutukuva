@@ -5,7 +5,7 @@
 	import { page } from '$app/stores';
 	import { MicVAD } from '@ricky0123/vad-web';
 	import * as ort from 'onnxruntime-web';
-	import { SpeechEditor, SubtitlePreview, ShareSessionModal, SessionStatus } from '$lib/components/prosemirror-speech';
+	import { SpeechEditor, ReadOnlyEditorPreview, ShareSessionModal, SessionStatus } from '$lib/components/prosemirror-speech';
 	import type { SubtitleSegment, Word } from '$lib/components/prosemirror-speech/utils/types';
 	import { AudioSourceManager, type AudioSourceType, type AudioDevice } from '$lib/audioSourceManager';
 	import { CollaborationManager } from '$lib/collaboration/CollaborationManager';
@@ -81,7 +81,7 @@
 	let subtitleSegments = $state<SubtitleSegment[]>([]);
 
 	// Collaboration
-	let collaborationManager: CollaborationManager | null = null;
+	let collaborationManager = $state<CollaborationManager | null>(null);
 	let sessionInfo = $state<SessionInfo | null>(null);
 	let participants = $state<Participant[]>([]);
 	let collaborationConnected = $state(false);
@@ -154,6 +154,9 @@
 		const code = generateSessionCode();
 		const serverUrl = import.meta.env.VITE_YJS_SERVER_URL || 'wss://tekstiks.ee/kk';
 
+		console.log('[COLLAB] Starting session with server URL:', serverUrl);
+		console.log('[COLLAB] Environment variable VITE_YJS_SERVER_URL:', import.meta.env.VITE_YJS_SERVER_URL);
+
 		sessionInfo = {
 			code,
 			role: 'host',
@@ -161,7 +164,24 @@
 			serverUrl
 		};
 
-		initializeCollaboration();
+		// Create and initialize CollaborationManager immediately
+		if (collaborationManager) {
+			collaborationManager.disconnect();
+		}
+		collaborationManager = new CollaborationManager();
+
+		// Initialize the provider now (without editor) so plugins can be created
+		console.log('[COLLAB] About to call initializeProvider with sessionInfo:', sessionInfo);
+		collaborationManager.initializeProvider(sessionInfo, {
+			onParticipantsChange: (p) => {
+				participants = p;
+			},
+			onConnectionStatusChange: (connected) => {
+				collaborationConnected = connected;
+				console.log('[COLLAB] Connection status changed:', connected);
+			}
+		});
+
 		console.log('[COLLAB] Started session as host:', code);
 	}
 
@@ -185,30 +205,24 @@
 			serverUrl
 		};
 
-		initializeCollaboration();
-		console.log('[COLLAB] Joined session as guest:', normalizedCode);
-	}
-
-	/**
-	 * Initialize collaboration manager and connect
-	 */
-	function initializeCollaboration() {
-		if (!sessionInfo || !speechEditor) return;
-
+		// Create and initialize CollaborationManager immediately
+		if (collaborationManager) {
+			collaborationManager.disconnect();
+		}
 		collaborationManager = new CollaborationManager();
 
-		collaborationManager.connect(
-			sessionInfo,
-			speechEditor.editorView,
-			{
-				onParticipantsChange: (p) => {
-					participants = p;
-				},
-				onConnectionStatusChange: (connected) => {
-					collaborationConnected = connected;
-				}
+		// Initialize the provider now (without editor) so plugins can be created
+		collaborationManager.initializeProvider(sessionInfo, {
+			onParticipantsChange: (p) => {
+				participants = p;
+			},
+			onConnectionStatusChange: (connected) => {
+				collaborationConnected = connected;
+				console.log('[COLLAB] Connection status changed:', connected);
 			}
-		);
+		});
+
+		console.log('[COLLAB] Joined session as guest:', normalizedCode);
 	}
 
 	/**
@@ -1538,22 +1552,23 @@
 <div class="flex flex-col xl:flex-row xl:items-start gap-6 mb-6">
 	<!-- Speech Editor -->
 	<div class="xl:flex-[2] flex-1 min-w-[500px]">
-		<SpeechEditor
-			bind:this={speechEditor}
-			collaborationManager={collaborationManager}
-			config={{
-				fontSize: 16,
-				onWordApproved: handleWordApproved,
-				onSubtitleEmit: handleSubtitleEmit
-			}}
-		/>
+		{#key sessionInfo?.code || 'solo'}
+			<SpeechEditor
+				bind:this={speechEditor}
+				collaborationManager={collaborationManager}
+				config={{
+					fontSize: 16,
+					onWordApproved: handleWordApproved,
+					onSubtitleEmit: handleSubtitleEmit
+				}}
+			/>
+		{/key}
 	</div>
 
-	<!-- Subtitle Preview -->
+	<!-- Read-Only Editor Preview -->
 	<div class="xl:flex-[1] flex-1 min-w-[500px]">
-		<SubtitlePreview
-			segments={subtitleSegments}
-			currentSegmentIndex={subtitleSegments.length - 1}
+		<ReadOnlyEditorPreview
+			collaborationManager={collaborationManager}
 			class="h-[600px]"
 		/>
 	</div>

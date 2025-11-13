@@ -5,12 +5,10 @@
 	import { EditorView } from 'prosemirror-view';
 	import { history, undo as pmUndo, redo as pmRedo } from 'prosemirror-history';
 	import { speechSchema } from './schema';
-	import { wordApprovalPlugin, wordApprovalKey } from './plugins/wordApproval';
 	import { keyboardShortcutsPlugin } from './plugins/keyboardShortcuts';
 	import { streamingTextPlugin, insertStreamingTextCommand, signalVadSpeechEndCommand } from './plugins/streamingText';
 	import { subtitleSegmentationPlugin, subtitleSegmentationKey } from './plugins/subtitleSegmentation';
-	import { autoConfirmPlugin, autoConfirmKey, updateAutoConfirmConfig } from './plugins/autoConfirm';
-	import type { EditorConfig, StreamingTextEvent, SubtitleSegment, Word, AutoConfirmConfig } from './utils/types';
+	import type { EditorConfig, StreamingTextEvent, SubtitleSegment, Word } from './utils/types';
 	import type { CollaborationManager } from '$lib/collaboration/CollaborationManager';
 	import Toolbar from './Toolbar.svelte';
 
@@ -18,22 +16,19 @@
 	let {
 		config = {},
 		class: className = '',
-		collaborationManager = undefined
+		collaborationManager = undefined,
+		readOnly = false
 	}: {
 		config?: EditorConfig;
 		class?: string;
 		collaborationManager?: CollaborationManager;
+		readOnly?: boolean;
 	} = $props();
 
 	// Editor state
 	let editorElement: HTMLDivElement;
 	let editorView: EditorView | null = $state(null);
 	let segments = $state<SubtitleSegment[]>([]);
-	let wordCount = $state(0);
-	let approvedCount = $state(0);
-	let autoConfirmConfig = $state<AutoConfirmConfig>(
-		config.autoConfirm || { enabled: true, timeoutSeconds: 5 }
-	);
 	let recordingStartTime = $state<number | null>(null);
 	let autoScroll = $state(true);
 
@@ -50,22 +45,20 @@
 		let plugins;
 		if (collaborationManager) {
 			// In collaborative mode: use Yjs plugins
-			const yjsPlugins = collaborationManager.getProseMirrorPlugins();
+			// Don't include cursor tracking in read-only mode
+			const yjsPlugins = collaborationManager.getProseMirrorPlugins({
+				includeCursor: !readOnly
+			});
 			plugins = [
 				...yjsPlugins,
-				wordApprovalPlugin(handleWordApproved, collaborationManager),
-				...basePlugins,
-				// Only host can use auto-confirm in collaborative mode
-				...(collaborationManager.isHost() ? [autoConfirmPlugin(autoConfirmConfig)] : [])
+				...basePlugins
 			];
-			console.log('[EDITOR] Collaborative mode enabled, role:', collaborationManager.sessionInfo?.role);
+			console.log('[EDITOR] Collaborative mode enabled, role:', collaborationManager.sessionInfo?.role, 'readOnly:', readOnly);
 		} else {
 			// Solo mode: use regular history
 			plugins = [
 				history(),
-				wordApprovalPlugin(handleWordApproved),
-				...basePlugins,
-				autoConfirmPlugin(autoConfirmConfig)
+				...basePlugins
 			];
 			console.log('[EDITOR] Solo mode enabled');
 		}
@@ -80,6 +73,7 @@
 
 		editorView = new EditorView(editorElement, {
 			state,
+			editable: () => !readOnly,
 			dispatchTransaction(transaction) {
 				if (!editorView) return;
 
@@ -125,31 +119,6 @@
 		if (segmentPluginState) {
 			segments = segmentPluginState.segments;
 		}
-
-		// Count words (exclude whitespace)
-		let totalWords = 0;
-		let approvedWords = 0;
-		state.doc.descendants((node) => {
-			if (node.isText && node.marks.length > 0) {
-				const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-				// Only count non-whitespace words
-				if (wordMark && node.text && node.text.trim().length > 0) {
-					totalWords++;
-					if (wordMark.attrs.approved) {
-						approvedWords++;
-					}
-				}
-			}
-		});
-		wordCount = totalWords;
-		approvedCount = approvedWords;
-	}
-
-	// Handle word approved
-	function handleWordApproved(word: Word) {
-		if (config.onWordApproved) {
-			config.onWordApproved(word);
-		}
 	}
 
 	// Handle segment complete
@@ -157,16 +126,6 @@
 		if (config.onSubtitleEmit) {
 			config.onSubtitleEmit(segment.srt, segment);
 		}
-	}
-
-	// Handle auto-confirm config change
-	function handleAutoConfirmChange(newConfig: AutoConfirmConfig) {
-		if (!editorView) return;
-
-		autoConfirmConfig = newConfig;
-		updateAutoConfirmConfig(editorView.state, (tr) => {
-			editorView?.dispatch(tr);
-		}, newConfig);
 	}
 
 	// Handle auto-scroll toggle
@@ -280,15 +239,13 @@
 </script>
 
 <div class="speech-editor-container {className}">
-	<!-- Toolbar -->
-	<Toolbar
-		{wordCount}
-		{approvedCount}
-		{autoConfirmConfig}
-		onUndo={() => undo()}
-		onRedo={() => redo()}
-		onAutoConfirmChange={handleAutoConfirmChange}
-	/>
+	{#if !readOnly}
+		<!-- Toolbar -->
+		<Toolbar
+			onUndo={() => undo()}
+			onRedo={() => redo()}
+		/>
+	{/if}
 
 	<!-- Editor -->
 	<div
@@ -298,19 +255,20 @@
 		<div bind:this={editorElement}></div>
 	</div>
 
-	<!-- Status bar -->
-	<div class="status-bar">
-		<label class="auto-scroll-toggle">
-			<input
-				type="checkbox"
-				checked={autoScroll}
-				onchange={handleAutoScrollChange}
-				aria-label={$_('dictate.autoScroll')}
-			/>
-			<span>{$_('dictate.autoScroll')}</span>
-		</label>
-		<span class="word-count">{$_('dictate.editor.wordsApprovedStatus', { values: { approved: approvedCount, total: wordCount } })}</span>
-	</div>
+	{#if !readOnly}
+		<!-- Status bar -->
+		<div class="status-bar">
+			<label class="auto-scroll-toggle">
+				<input
+					type="checkbox"
+					checked={autoScroll}
+					onchange={handleAutoScrollChange}
+					aria-label={$_('dictate.autoScroll')}
+				/>
+				<span>{$_('dictate.autoScroll')}</span>
+			</label>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -328,32 +286,6 @@
 		padding: 20px;
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 		line-height: 2;
-	}
-
-	.speech-editor :global(.subtitle-segment) {
-		margin-bottom: 1em;
-		padding: 8px;
-		border-left: 3px solid #e0e0e0;
-		min-height: 1.6em;
-	}
-
-	.speech-editor :global(.word-pending) {
-		padding: 2px 0;
-		cursor: pointer;
-	}
-
-	.speech-editor :global(.word-approved) {
-		padding: 2px 0;
-	}
-
-	.speech-editor :global(.word-active) {
-		background-color: rgba(33, 150, 243, 0.3); /* Blue highlight for arrow key selection */
-		padding: 2px 4px;
-		border-radius: 3px;
-	}
-
-	.speech-editor :global(.word-state-pending) {
-		color: #757575;
 	}
 
 	.status-bar {
@@ -379,9 +311,5 @@
 
 	.auto-scroll-toggle input {
 		cursor: pointer;
-	}
-
-	.word-count {
-		font-variant-numeric: tabular-nums;
 	}
 </style>

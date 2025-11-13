@@ -6,6 +6,7 @@
 
 export { default as SpeechEditor } from './SpeechEditor.svelte';
 export { default as SubtitlePreview } from './SubtitlePreview.svelte';
+export { default as ReadOnlyEditorPreview } from './ReadOnlyEditorPreview.svelte';
 export { default as Toolbar } from './Toolbar.svelte';
 export { default as ShareSessionModal } from './ShareSessionModal.svelte';
 export { default as SessionStatus } from './SessionStatus.svelte';

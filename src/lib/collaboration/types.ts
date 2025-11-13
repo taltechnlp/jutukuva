@@ -26,6 +26,4 @@ export interface WordApprovalData {
 
 export interface SessionMetadata {
 	hostClientId: number;
-	autoConfirmEnabled: boolean;
-	autoConfirmTimeout: number;
 }

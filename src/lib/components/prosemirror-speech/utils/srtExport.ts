@@ -45,7 +45,8 @@ export function wordsToSegment(words: Word[], index: number): SubtitleSegment {
 		throw new Error('Cannot create segment from empty words array');
 	}
 
-	const text = words.map((w) => w.text).join(' ').trim();
+	// Preserve exact formatting - don't trim or modify the text
+	const text = words.map((w) => w.text).join(' ');
 	const startTime = words[0].start;
 	const endTime = words[words.length - 1].end;
 

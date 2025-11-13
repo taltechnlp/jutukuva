@@ -5,7 +5,7 @@
 	import { browser } from '$app/environment';
 
 	// Import shared components
-	import { SpeechEditor, SubtitlePreview, SessionStatus } from '$shared/components/prosemirror-speech';
+	import { SpeechEditor, ReadOnlyEditorPreview, SessionStatus } from '$shared/components/prosemirror-speech';
 	import { CollaborationManager } from '$shared/collaboration/CollaborationManager';
 	import { normalizeSessionCode } from '$shared/collaboration/sessionCode';
 	import type { SessionInfo, Participant } from '$shared/collaboration/types';
@@ -211,6 +211,7 @@
 				<SpeechEditor
 					bind:this={speechEditor}
 					collaborationManager={collaborationManager}
+					readOnly={true}
 					config={{
 						fontSize: 16,
 						onWordApproved: handleWordApproved,
@@ -225,11 +226,10 @@
 			{/if}
 		</div>
 
-		<!-- Subtitle Preview -->
+		<!-- Read-Only Editor Preview -->
 		<div class="xl:flex-[1] flex-1 min-w-[500px]">
-			<SubtitlePreview
-				segments={subtitleSegments}
-				currentSegmentIndex={subtitleSegments.length - 1}
+			<ReadOnlyEditorPreview
+				collaborationManager={collaborationManager}
 				class="h-[600px]"
 			/>
 		</div>

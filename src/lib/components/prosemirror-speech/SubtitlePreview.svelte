@@ -15,15 +15,6 @@
 
 	let containerElement: HTMLDivElement;
 
-	function formatTimestamp(seconds: number): string {
-		const hours = Math.floor(seconds / 3600);
-		const minutes = Math.floor((seconds % 3600) / 60);
-		const secs = Math.floor(seconds % 60);
-		const milliseconds = Math.floor((seconds % 1) * 1000);
-
-		return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')},${String(milliseconds).padStart(3, '0')}`;
-	}
-
 	function copyToClipboard() {
 		const srtText = segments.map(s => s.srt).join('\n');
 		navigator.clipboard.writeText(srtText);
@@ -92,12 +83,6 @@
 					class="segment"
 					class:active={segment.index === currentSegmentIndex}
 				>
-					<div class="segment-header">
-						<span class="segment-index">{segment.index}</span>
-						<span class="segment-timing">
-							{formatTimestamp(segment.startTime)} → {formatTimestamp(segment.endTime)}
-						</span>
-					</div>
 					<div class="segment-text">{segment.text}</div>
 				</div>
 			{/each}
@@ -204,26 +189,6 @@
 	.segment.active {
 		border-color: #2196f3;
 		box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
-	}
-
-	.segment-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 8px;
-		font-size: 12px;
-	}
-
-	.segment-index {
-		font-weight: 700;
-		color: #2196f3;
-		font-variant-numeric: tabular-nums;
-	}
-
-	.segment-timing {
-		color: #757575;
-		font-family: 'Courier New', monospace;
-		font-variant-numeric: tabular-nums;
 	}
 
 	.segment-text {
