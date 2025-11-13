@@ -31,6 +31,10 @@
 	// WebSocket connection
 	let ws: WebSocket | null = null;
 	let sessionId: string | null = null;
+	let reconnectTimer: NodeJS.Timeout | null = null;
+	let reconnectAttempts = 0;
+	const MAX_RECONNECT_ATTEMPTS = 5;
+	const RECONNECT_DELAY = 2000; // 2 seconds
 
 	// VAD instance
 	let vad: MicVAD | null = null;
@@ -571,11 +575,19 @@
 	async function connectWebSocket() {
 		try {
 			connectionError = '';
+
+			// Clear any existing reconnect timer
+			if (reconnectTimer) {
+				clearTimeout(reconnectTimer);
+				reconnectTimer = null;
+			}
+
 			ws = new WebSocket(WS_URL);
 
 			ws.onopen = () => {
 				console.log('WebSocket connected');
 				isConnected = true;
+				reconnectAttempts = 0; // Reset reconnection counter on successful connection
 			};
 
 			ws.onmessage = (event) => {
@@ -587,15 +599,32 @@
 				}
 			};
 
-			ws.onclose = () => {
-				console.log('WebSocket disconnected');
+			ws.onclose = (event) => {
+				console.log('WebSocket disconnected', event.code, event.reason);
 				isConnected = false;
 				sessionId = null;
+
+				// Attempt automatic reconnection if not manually closed (code 1000)
+				if (event.code !== 1000 && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+					reconnectAttempts++;
+					console.log(`[RECONNECT] Attempting reconnection ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} in ${RECONNECT_DELAY}ms...`);
+					connectionError = `Reconnecting... (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`;
+
+					reconnectTimer = setTimeout(() => {
+						console.log('[RECONNECT] Reconnecting now...');
+						connectWebSocket();
+					}, RECONNECT_DELAY);
+				} else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+					console.error('[RECONNECT] Max reconnection attempts reached');
+					connectionError = $_('dictate.reconnectionFailed', { default: 'Connection lost. Please refresh the page.' });
+				}
 			};
 
 			ws.onerror = (error) => {
 				console.error('WebSocket error:', error);
-				connectionError = $_('dictate.noConnections');
+				if (reconnectAttempts === 0) {
+					connectionError = $_('dictate.noConnections');
+				}
 				isConnected = false;
 			};
 		} catch (error) {
@@ -606,12 +635,19 @@
 
 	// Disconnect WebSocket
 	function disconnectWebSocket() {
+		// Clear reconnection timer
+		if (reconnectTimer) {
+			clearTimeout(reconnectTimer);
+			reconnectTimer = null;
+		}
+
 		if (ws) {
 			ws.close();
 			ws = null;
 		}
 		isConnected = false;
 		sessionId = null;
+		reconnectAttempts = 0;
 	}
 
 	// ═══════════════════════════════════════════════════════════════
