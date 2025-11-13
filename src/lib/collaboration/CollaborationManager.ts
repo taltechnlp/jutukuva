@@ -28,13 +28,12 @@ export class CollaborationManager {
 	}
 
 	/**
-	 * Start a collaborative session
+	 * Initialize the WebSocket provider (can be called before editor is ready)
 	 * @param sessionInfo - Session information (code, role, room name)
-	 * @param editorView - ProseMirror editor view
+	 * @param callbacks - Event callbacks
 	 */
-	connect(
+	initializeProvider(
 		sessionInfo: SessionInfo,
-		editorView: EditorView,
 		callbacks?: {
 			onParticipantsChange?: (participants: Participant[]) => void;
 			onConnectionStatusChange?: (connected: boolean) => void;
@@ -61,8 +60,6 @@ export class CollaborationManager {
 		// Set session metadata if host
 		if (sessionInfo.role === 'host') {
 			this.sessionMetadataMap.set('hostClientId', this.provider.awareness.clientID);
-			this.sessionMetadataMap.set('autoConfirmEnabled', false);
-			this.sessionMetadataMap.set('autoConfirmTimeout', 10);
 		}
 
 		// Listen to awareness changes (participants joining/leaving)
@@ -83,6 +80,27 @@ export class CollaborationManager {
 			role: sessionInfo.role
 		});
 
+		console.log('[CollaborationManager] Provider initialized for session:', sessionInfo.code);
+	}
+
+	/**
+	 * Start a collaborative session (legacy method - calls initializeProvider)
+	 * @param sessionInfo - Session information (code, role, room name)
+	 * @param editorView - ProseMirror editor view (not used anymore, kept for compatibility)
+	 * @param callbacks - Event callbacks
+	 */
+	connect(
+		sessionInfo: SessionInfo,
+		editorView: EditorView,
+		callbacks?: {
+			onParticipantsChange?: (participants: Participant[]) => void;
+			onConnectionStatusChange?: (connected: boolean) => void;
+		}
+	): void {
+		// If provider not initialized, initialize it
+		if (!this.provider) {
+			this.initializeProvider(sessionInfo, callbacks);
+		}
 		console.log('[CollaborationManager] Connected to session:', sessionInfo.code);
 	}
 
@@ -101,19 +119,24 @@ export class CollaborationManager {
 
 	/**
 	 * Get ProseMirror plugins for Yjs integration
+	 * @param options - Configuration options
+	 * @param options.includeCursor - Whether to include cursor tracking plugin (default: true)
 	 */
-	getProseMirrorPlugins() {
+	getProseMirrorPlugins(options?: { includeCursor?: boolean }) {
 		if (!this.provider) {
 			throw new Error('Provider not initialized. Call connect() first.');
 		}
 
 		const type = this.ydoc.getXmlFragment('prosemirror');
+		const includeCursor = options?.includeCursor ?? true;
 
-		return [
+		const plugins = [
 			ySyncPlugin(type),
-			yCursorPlugin(this.provider.awareness),
+			...(includeCursor ? [yCursorPlugin(this.provider.awareness)] : []),
 			yUndoPlugin()
 		];
+
+		return plugins;
 	}
 
 	/**
@@ -189,23 +212,8 @@ export class CollaborationManager {
 		}
 
 		return {
-			hostClientId: this.sessionMetadataMap.get('hostClientId') ?? 0,
-			autoConfirmEnabled: this.sessionMetadataMap.get('autoConfirmEnabled') ?? false,
-			autoConfirmTimeout: this.sessionMetadataMap.get('autoConfirmTimeout') ?? 10
+			hostClientId: this.sessionMetadataMap.get('hostClientId') ?? 0
 		};
-	}
-
-	/**
-	 * Update auto-confirm settings (host only)
-	 */
-	updateAutoConfirmSettings(enabled: boolean, timeout: number): void {
-		if (!this.isHost() || !this.sessionMetadataMap) {
-			console.warn('[CollaborationManager] Only host can update auto-confirm settings');
-			return;
-		}
-
-		this.sessionMetadataMap.set('autoConfirmEnabled', enabled);
-		this.sessionMetadataMap.set('autoConfirmTimeout', timeout);
 	}
 
 	/**
