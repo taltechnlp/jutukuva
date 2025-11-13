@@ -211,7 +211,6 @@
 				<SpeechEditor
 					bind:this={speechEditor}
 					collaborationManager={collaborationManager}
-					readOnly={true}
 					config={{
 						fontSize: 16,
 						onWordApproved: handleWordApproved,
