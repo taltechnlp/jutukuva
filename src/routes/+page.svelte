@@ -959,13 +959,23 @@
 		try {
 			microphoneError = '';
 			vadError = '';
+			connectionError = '';
 
 			console.log('[START] Starting recording...');
 
+			// If not connected, attempt to connect first
 			if (!isConnected || !ws) {
-				connectionError = $_('dictate.noConnections');
-				console.error('[START] Not connected to server');
-				return;
+				console.log('[START] Not connected, attempting to connect...');
+				await connectWebSocket();
+
+				// Wait a moment for connection to establish
+				await new Promise(resolve => setTimeout(resolve, 1000));
+
+				if (!isConnected || !ws) {
+					connectionError = $_('dictate.noConnections');
+					console.error('[START] Failed to connect to server');
+					return;
+				}
 			}
 
 			// Reinitialize VAD if it was destroyed
@@ -1533,7 +1543,7 @@
 							<button
 								class="btn btn-circle btn-primary w-32 h-32 hover:scale-105 transition-transform shadow-lg"
 								onclick={startRecording}
-								disabled={!isWasmReady || !isConnected || (sessionInfo?.role === 'guest')}
+								disabled={!isWasmReady || (sessionInfo?.role === 'guest')}
 								title={sessionInfo?.role === 'guest' ? $_('collaboration.guest_cannot_record', { default: 'Only the host can record' }) : ''}
 							>
 								<svg
