@@ -710,11 +710,8 @@
 	 * Streaming models return full hypothesis each time, so we replace the partial.
 	 */
 	function handleTranscript_streaming(message: any) {
-		console.log('[STREAMING] Received transcript:', message.text, 'is_final:', message.is_final);
-
 		// Check for unexpected session end BEFORE inserting into editor
 		if (message.is_final && message.text.trim() === '[Session Ended]') {
-			console.warn('[STREAMING] ⚠️  Server ended session unexpectedly (possibly timeout). NOT inserting into editor.');
 			// Save the partial transcript to final before starting new session
 			if (partialTranscript.trim()) {
 				transcript += (transcript ? ' ' : '') + partialTranscript.trim();
@@ -727,7 +724,6 @@
 			// If still recording, start a new session immediately
 			if (isRecording) {
 				const language = isOfflineModel(selectedLanguage) ? 'parakeet_tdt_v3' : selectedLanguage;
-				console.log('[STREAMING] Sending new start message with language:', language);
 				sendMessage({
 					type: 'start',
 					sample_rate: SAMPLE_RATE,
@@ -739,17 +735,13 @@
 		}
 
 		// Insert into speech editor (after checking for session end)
-		console.log('[STREAMING] Attempting to insert into editor, speechEditor:', !!speechEditor, 'text length:', message.text.length);
 		if (speechEditor && message.text.trim()) {
-			console.log('[STREAMING] Calling speechEditor.insertStreamingText');
 			speechEditor.insertStreamingText({
 				text: message.text + ' ',
 				isFinal: message.is_final,
 				start: message.start,
 				end: message.end
 			});
-		} else {
-			console.warn('[STREAMING] Not inserting - speechEditor:', !!speechEditor, 'text.trim():', !!message.text.trim());
 		}
 
 		// Keep old transcript display logic for compatibility
@@ -757,7 +749,6 @@
 
 			// Add to final transcript
 			if (message.text.trim()) {
-				console.log('[STREAMING] Adding to final transcript:', message.text.trim());
 				transcript += (transcript ? ' ' : '') + message.text.trim();
 			}
 			partialTranscript = '';
@@ -765,8 +756,6 @@
 			// Show as partial transcript - REPLACE (full hypothesis)
 			if (message.text.trim() || !partialTranscript) {
 				partialTranscript = message.text;
-			} else {
-				console.log('[STREAMING] Ignoring empty partial transcript - keeping existing text');
 			}
 		}
 	}
@@ -776,12 +765,9 @@
 	 * Suppress "Session not found" during unexpected session transitions.
 	 */
 	function handleError_streaming(message: any) {
-		console.error('[STREAMING] Server error:', message.message);
-
 		// Suppress "Session not found" errors during session transitions
 		// (can occur if server unexpectedly ends session due to timeout)
 		if (message.message && message.message.includes('Session not found') && isRecording) {
-			console.log('[STREAMING] Session not found (during session transition) - suppressing');
 			return;
 		}
 
@@ -794,7 +780,6 @@
 	 */
 	function handleSessionReady_streaming(sessionIdReceived: string) {
 		sessionId = sessionIdReceived;
-		console.log('[STREAMING] Session ready:', sessionId);
 	}
 
 	/**
@@ -818,7 +803,6 @@
 				break;
 
 			case 'session_ended':
-				console.log('[STREAMING] Session ended by server:', message.session_id);
 				sessionId = null;
 				break;
 		}
@@ -1135,7 +1119,6 @@
 
 	// Stop recording
 	async function stopRecording() {
-		console.log('[STOP] Stopping recording...');
 		isRecording = false;
 		isVadActive = false;
 		isSpeaking = false;
@@ -1153,17 +1136,12 @@
 		// Pause and destroy VAD - will be recreated on next start
 		if (vad) {
 			try {
-				console.log('[STOP] Pausing VAD...');
 				const vadInstance: MicVAD = vad as MicVAD;
 				await vadInstance.pause();
-				console.log('[STOP] ✓ VAD paused');
-
-				console.log('[STOP] Destroying VAD...');
 				vad.destroy();
-				console.log('[STOP] ✓ VAD destroyed');
 				vad = null;
 			} catch (error) {
-				console.error('[STOP] Error stopping VAD:', error);
+				console.error('Error stopping VAD:', error);
 			}
 		}
 
@@ -1172,7 +1150,6 @@
 
 		// Send stop message
 		if (ws && ws.readyState === WebSocket.OPEN && sessionId) {
-			console.log('[STOP] Sending stop message to server');
 			sendMessage({ type: 'stop' });
 		}
 
@@ -1180,27 +1157,21 @@
 		// Server needs time to process remaining buffer (< 15s) before finalizing
 		const isOffline = isOfflineModel(selectedLanguage);
 		const waitTime = isOffline ? 3000 : 1000; // 3s for offline, 1s for streaming
-		console.log(`[STOP] Waiting ${waitTime}ms for final transcription results...`);
 		await new Promise(resolve => setTimeout(resolve, waitTime));
 
 		// Combine final and partial transcripts
 		const finalText = (transcript + ' ' + partialTranscript).trim();
 
 		if (finalText) {
-			console.log('[STOP] Saving recording to past recordings:', finalText);
 			const newRecording: Recording = {
 				id: Date.now().toString(),
 				text: finalText,
 				timestamp: new Date()
 			};
 			pastRecordings = [newRecording, ...pastRecordings];
-			console.log('[STOP] ✓ Saved. Past recordings count:', pastRecordings.length);
 			transcript = '';
 			partialTranscript = '';
-		} else {
-			console.log('[STOP] No transcript to save (empty)');
 		}
-		console.log('[STOP] Recording stopped');
 	}
 
 	// Clear transcript

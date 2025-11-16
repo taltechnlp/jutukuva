@@ -151,7 +151,6 @@ export function subtitleSegmentationPlugin(onSegmentComplete?: (segment: Subtitl
 				// Track if recording ended
 				if (tr.getMeta('recordingEnded')) {
 					recordingEnded = true;
-					console.log('[SUBTITLE-SEGMENTATION] Recording ended flag set');
 				}
 
 				// Update segment list on document changes
@@ -165,7 +164,6 @@ export function subtitleSegmentationPlugin(onSegmentComplete?: (segment: Subtitl
 				// The transaction from appendTransaction has metadata but doesn't change the doc
 				const segmentCompleteMeta = tr.getMeta('segmentComplete');
 				if (segmentCompleteMeta && onSegmentComplete) {
-					console.log('[SUBTITLE-SEGMENTATION] Apply: Processing segment with', segmentCompleteMeta.words.length, 'words');
 					onSegmentComplete(segmentCompleteMeta);
 					segments = [...segments, segmentCompleteMeta];
 
@@ -178,7 +176,6 @@ export function subtitleSegmentationPlugin(onSegmentComplete?: (segment: Subtitl
 						newEmittedWordIds.add(word.id);
 					});
 					emittedWordIds = newEmittedWordIds;
-					console.log('[SUBTITLE-SEGMENTATION] Apply: Updated emittedWordIds, now has', emittedWordIds.size, 'IDs');
 				}
 
 				return {
@@ -221,13 +218,6 @@ export function subtitleSegmentationPlugin(onSegmentComplete?: (segment: Subtitl
 					const approvedTextLength = unemittedApprovedWords.reduce((sum, w) => sum + w.text.length, 0);
 					const approvedWordCount = unemittedApprovedWords.length;
 
-					console.log('[SUBTITLE-SEGMENTATION] Word approved, checking emission:', {
-						unemittedCount: approvedWordCount,
-						textLength: approvedTextLength,
-						totalWords: allWords.length,
-						emittedCount: pluginState.emittedWordIds.size
-					});
-
 					// Emit segment more frequently since we're not splitting paragraphs
 					// Criteria: 30+ chars OR 5+ words OR sentence ending OR any approved words if recording ended
 					const shouldEmit =
@@ -236,7 +226,6 @@ export function subtitleSegmentationPlugin(onSegmentComplete?: (segment: Subtitl
 						(unemittedApprovedWords.length > 0 && /[.!?]$/.test(unemittedApprovedWords[unemittedApprovedWords.length - 1].text.trim()));
 
 					if (shouldEmit) {
-						console.log('[SUBTITLE-SEGMENTATION] Word approved, emitting segment with', unemittedApprovedWords.length, 'unemitted words,', approvedTextLength, 'chars');
 						const segmentIndex = pluginState.segments.length + 1;
 						const segment = wordsToSegment(unemittedApprovedWords, segmentIndex);
 						tr.setMeta('segmentComplete', segment);
@@ -267,8 +256,6 @@ export function subtitleSegmentationPlugin(onSegmentComplete?: (segment: Subtitl
 					const unemittedApprovedWords = allWords.filter(
 						(w) => w.approved && !pluginState.emittedWordIds.has(w.id)
 					);
-
-					console.log('[SUBTITLE-SEGMENTATION] All words approved signal received, creating final segment with', unemittedApprovedWords.length, 'unemitted words');
 
 					if (unemittedApprovedWords.length > 0) {
 						const segmentIndex = pluginState.segments.length + 1;
@@ -302,16 +289,9 @@ export function subtitleSegmentationPlugin(onSegmentComplete?: (segment: Subtitl
 						(w) => w.approved && !pluginState.emittedWordIds.has(w.id)
 					);
 
-					console.log('[SUBTITLE-SEGMENTATION] Recording ended signal, final check:', {
-						totalWords: allWords.length,
-						unemittedApproved: unemittedApprovedWords.length,
-						alreadyEmittedCount: pluginState.emittedWordIds.size
-					});
-
 					if (unemittedApprovedWords.length > 0) {
 						const segmentIndex = pluginState.segments.length + 1;
 						const segment = wordsToSegment(unemittedApprovedWords, segmentIndex);
-						console.log('[SUBTITLE-SEGMENTATION] Creating final segment with', unemittedApprovedWords.length, 'unemitted words');
 						tr.setMeta('segmentComplete', segment);
 						modified = true;
 					}
