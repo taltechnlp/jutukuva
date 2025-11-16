@@ -17,6 +17,7 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(',') || ['*'];
 // Session tracking
 const activeSessions = new Map(); // roomName -> { createdAt, connections, metadata }
 const docs = new Map(); // roomName -> Y.Doc
+const awarenessInstances = new Map(); // roomName -> Awareness
 
 // Message types
 const messageSync = 0;
@@ -31,10 +32,20 @@ const getYDoc = (roomName) => {
 	return docs.get(roomName);
 };
 
+// Get or create Awareness instance for a room
+const getAwareness = (roomName) => {
+	if (!awarenessInstances.has(roomName)) {
+		const doc = getYDoc(roomName);
+		const awareness = new awarenessProtocol.Awareness(doc);
+		awarenessInstances.set(roomName, awareness);
+	}
+	return awarenessInstances.get(roomName);
+};
+
 // Setup WebSocket connection for Yjs
 const setupWSConnection = (conn, req, roomName) => {
 	const doc = getYDoc(roomName);
-	const awareness = new awarenessProtocol.Awareness(doc);
+	const awareness = getAwareness(roomName);
 
 	conn.binaryType = 'arraybuffer';
 
@@ -120,12 +131,22 @@ const setupWSConnection = (conn, req, roomName) => {
 		});
 	});
 
+	// Store client ID for cleanup
+	let clientID = null;
+	awareness.on('update', ({ added }) => {
+		if (added.length > 0 && clientID === null) {
+			clientID = added[0];
+		}
+	});
+
 	conn.on('message', messageListener);
 
 	conn.on('close', () => {
 		doc.off('update', broadcastMessage);
 		awareness.off('update', broadcastMessage);
-		awarenessProtocol.removeAwarenessStates(awareness, [doc.clientID], 'disconnect');
+		if (clientID !== null) {
+			awarenessProtocol.removeAwarenessStates(awareness, [clientID], 'disconnect');
+		}
 	});
 };
 
@@ -257,6 +278,9 @@ wss.on('connection', (ws, req) => {
 			session.connections--;
 			if (session.connections <= 0) {
 				activeSessions.delete(roomName);
+				// Clean up document and awareness for this room
+				docs.delete(roomName);
+				awarenessInstances.delete(roomName);
 				console.log(`[${new Date().toISOString()}] Room closed: ${roomName}`);
 			}
 		}
