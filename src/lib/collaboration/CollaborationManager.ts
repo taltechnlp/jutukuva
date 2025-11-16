@@ -44,12 +44,17 @@ export class CollaborationManager {
 		this.onConnectionStatusChange = callbacks?.onConnectionStatusChange;
 
 		// Connect to WebSocket provider
+		console.log('[CollaborationManager] Connecting to:', sessionInfo.serverUrl, 'room:', sessionInfo.roomName);
 		this.provider = new WebsocketProvider(
 			sessionInfo.serverUrl,
 			sessionInfo.roomName,
 			this.ydoc,
 			{
-				connect: true
+				connect: true,
+				// Add reconnection parameters
+				maxBackoffTime: 5000,
+				// Disable BC channel for Electron compatibility
+				disableBc: true
 			}
 		);
 
@@ -70,7 +75,13 @@ export class CollaborationManager {
 		// Listen to connection status
 		this.provider.on('status', ({ status }: { status: string }) => {
 			const connected = status === 'connected';
+			console.log('[CollaborationManager] Connection status:', status);
 			this.onConnectionStatusChange?.(connected);
+		});
+
+		// Listen for connection errors
+		this.provider.on('connection-error', (error: Error) => {
+			console.error('[CollaborationManager] Connection error:', error);
 		});
 
 		// Set user info in awareness
