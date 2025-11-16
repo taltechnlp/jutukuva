@@ -8,6 +8,7 @@
 	import { SpeechEditor, ReadOnlyEditorPreview, ShareSessionModal, SessionStatus } from '$lib/components/prosemirror-speech';
 	import type { SubtitleSegment, Word } from '$lib/components/prosemirror-speech/utils/types';
 	import { AudioSourceManager, type AudioSourceType, type AudioDevice } from '$lib/audioSourceManager';
+	import MacOSAudioSetup from '$lib/components/MacOSAudioSetup.svelte';
 	import { CollaborationManager } from '$lib/collaboration/CollaborationManager';
 	import { generateSessionCode, normalizeSessionCode, isValidSessionCode } from '$lib/collaboration/sessionCode';
 	import type { SessionInfo, Participant } from '$lib/collaboration/types';
@@ -51,6 +52,10 @@
 	let systemAudioAvailable = $state(false);
 	let isAudioSourceSwitching = $state(false);
 	let customAudioStream: MediaStream | null = null;
+
+	// macOS audio setup
+	let showMacOSSetup = $state(false);
+	let hasVirtualDevice = $state(false);
 
 	// Pre-speech circular buffer
 	const PRE_SPEECH_BUFFER_MS = 300; // 300ms pre-speech buffer
@@ -322,6 +327,21 @@
 		}
 	}
 
+	async function checkMacOSSetupNeeds() {
+		if (!audioSourceManager) return;
+
+		// Only check if on macOS and using system audio
+		if (audioSourceManager.getPlatform() === 'darwin' && audioSourceType === 'system') {
+			hasVirtualDevice = await audioSourceManager.hasVirtualAudioDevice();
+
+			// Show setup wizard if no virtual device found
+			if (!hasVirtualDevice) {
+				console.log('[AUDIO] No virtual audio device found on macOS, showing setup wizard');
+				showMacOSSetup = true;
+			}
+		}
+	}
+
 	async function switchAudioSource(newType: AudioSourceType, deviceId: string | null = null) {
 		if (!audioSourceManager || isAudioSourceSwitching) return;
 
@@ -379,6 +399,9 @@
 					customAudioStream = null;
 				}
 			}
+
+			// Check for macOS setup needs
+			await checkMacOSSetupNeeds();
 
 			// Save preference
 			if (window.electronAPI) {
@@ -1744,5 +1767,13 @@
 		{sessionInfo}
 		{participants}
 		onClose={() => (showShareModal = false)}
+	/>
+{/if}
+
+<!-- macOS Audio Setup Modal -->
+{#if showMacOSSetup}
+	<MacOSAudioSetup
+		{hasVirtualDevice}
+		onClose={() => (showMacOSSetup = false)}
 	/>
 {/if}
