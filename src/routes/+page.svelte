@@ -198,13 +198,13 @@
 	 * Initialize collaboration manager and connect
 	 */
 	function initializeCollaboration() {
-		if (!sessionInfo || !speechEditor) return;
+		if (!sessionInfo) return;
 
 		collaborationManager = new CollaborationManager();
 
 		collaborationManager.connect(
 			sessionInfo,
-			speechEditor.editorView,
+			speechEditor?.editorView || null,
 			{
 				onParticipantsChange: (p) => {
 					participants = p;
