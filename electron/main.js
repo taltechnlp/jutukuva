@@ -120,8 +120,8 @@ app.whenReady().then(() => {
 	});
 
 	// Set up IPC handlers for transcription sessions
-	ipcMain.handle('db:createSession', async (event, id, name) => {
-		return dbOperations.createSession(id, name);
+	ipcMain.handle('db:createSession', async (event, id, name, scheduledDate, description) => {
+		return dbOperations.createSession(id, name, scheduledDate, description);
 	});
 
 	ipcMain.handle('db:updateSession', async (event, id, data) => {
@@ -140,6 +140,35 @@ app.whenReady().then(() => {
 	ipcMain.handle('db:deleteSession', async (event, id) => {
 		dbOperations.deleteSession(id);
 		return true;
+	});
+
+	// Session lifecycle handlers
+	ipcMain.handle('db:getSessionsByStatus', async (event, status) => {
+		return dbOperations.getSessionsByStatus(status);
+	});
+
+	ipcMain.handle('db:getUpcomingSessions', async () => {
+		return dbOperations.getUpcomingSessions();
+	});
+
+	ipcMain.handle('db:getPastSessions', async () => {
+		return dbOperations.getPastSessions();
+	});
+
+	ipcMain.handle('db:activateSession', async (event, id) => {
+		return dbOperations.activateSession(id);
+	});
+
+	ipcMain.handle('db:completeSession', async (event, id) => {
+		return dbOperations.completeSession(id);
+	});
+
+	ipcMain.handle('db:cancelSession', async (event, id) => {
+		return dbOperations.cancelSession(id);
+	});
+
+	ipcMain.handle('db:updateSessionStatus', async (event, id, status) => {
+		return dbOperations.updateSessionStatus(id, status);
 	});
 
 	ipcMain.handle('db:addTranscript', async (event, sessionId, segmentIndex, text, srtText, startTime, endTime) => {

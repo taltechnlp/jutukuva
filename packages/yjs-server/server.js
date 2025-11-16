@@ -61,15 +61,18 @@ const setupWSConnection = (conn, req, roomName) => {
 
 			switch (messageType) {
 				case messageSync: {
+					console.log(`[${new Date().toISOString()}] [${roomName}] Received sync message, size: ${uint8Array.length}`);
 					const encoder = encoding.createEncoder();
 					encoding.writeVarUint(encoder, messageSync);
 					syncProtocol.readSyncMessage(decoder, encoder, doc, conn);
 					if (encoding.length(encoder) > 1) {
+						console.log(`[${new Date().toISOString()}] [${roomName}] Sending sync response, size: ${encoding.length(encoder)}`);
 						conn.send(encoding.toUint8Array(encoder));
 					}
 					break;
 				}
 				case messageAwareness:
+					console.log(`[${new Date().toISOString()}] [${roomName}] Received awareness update`);
 					awarenessProtocol.applyAwarenessUpdate(awareness, decoding.readVarUint8Array(decoder), conn);
 					break;
 			}
@@ -86,18 +89,35 @@ const setupWSConnection = (conn, req, roomName) => {
 	};
 
 	doc.on('update', (update, origin) => {
+		console.log(`[${new Date().toISOString()}] [${roomName}] Document updated, broadcasting to other clients`);
 		const encoder = encoding.createEncoder();
 		encoding.writeVarUint(encoder, messageSync);
 		syncProtocol.writeUpdate(encoder, update);
-		broadcastMessage(encoding.toUint8Array(encoder), origin);
+		const message = encoding.toUint8Array(encoder);
+
+		// Broadcast to all clients in this room
+		wss.clients.forEach(client => {
+			if (client !== conn && client.readyState === 1 && client._roomName === roomName) {
+				console.log(`[${new Date().toISOString()}] [${roomName}] Broadcasting update to client`);
+				client.send(message);
+			}
+		});
 	});
 
 	awareness.on('update', ({ added, updated, removed }, origin) => {
 		const changedClients = added.concat(updated).concat(removed);
+		console.log(`[${new Date().toISOString()}] [${roomName}] Awareness updated, broadcasting to other clients`);
 		const encoder = encoding.createEncoder();
 		encoding.writeVarUint(encoder, messageAwareness);
 		encoding.writeVarUint8Array(encoder, awarenessProtocol.encodeAwarenessUpdate(awareness, changedClients));
-		broadcastMessage(encoding.toUint8Array(encoder), origin);
+		const message = encoding.toUint8Array(encoder);
+
+		// Broadcast to all clients in this room
+		wss.clients.forEach(client => {
+			if (client !== conn && client.readyState === 1 && client._roomName === roomName) {
+				client.send(message);
+			}
+		});
 	});
 
 	conn.on('message', messageListener);
@@ -213,6 +233,9 @@ wss.on('connection', (ws, req) => {
 	const roomName = parsedUrl.pathname?.slice(1) || 'default';
 
 	console.log(`[${new Date().toISOString()}] New connection to room: ${roomName} from ${req.socket.remoteAddress}`);
+
+	// Store room name on the WebSocket connection
+	ws._roomName = roomName;
 
 	// Track session
 	if (!activeSessions.has(roomName)) {

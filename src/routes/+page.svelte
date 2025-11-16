@@ -91,6 +91,7 @@
 	let collaborationConnected = $state(false);
 	let showShareModal = $state(false);
 	let joinSessionCode = $state('');
+	let currentDbSession = $state<TranscriptionSession | null>(null);
 
 	// ═══════════════════════════════════════════════════════════════
 	// MODEL TYPE HELPERS
@@ -154,7 +155,7 @@
 	/**
 	 * Start a new collaborative session as host
 	 */
-	function startCollaborativeSession() {
+	async function startCollaborativeSession(dbSessionId?: string) {
 		const code = generateSessionCode();
 		const serverUrl = import.meta.env.VITE_YJS_SERVER_URL || 'wss://tekstiks.ee/kk';
 
@@ -167,6 +168,33 @@
 			roomName: code,
 			serverUrl
 		};
+
+		// Create or load session in database
+		if (window.db && browser) {
+			try {
+				if (dbSessionId) {
+					// Load existing session from DB
+					currentDbSession = await window.db.getSession(dbSessionId);
+					if (currentDbSession) {
+						// Use the session code from DB if available
+						if (currentDbSession.session_code) {
+							sessionInfo.code = currentDbSession.session_code;
+							sessionInfo.roomName = currentDbSession.session_code;
+						}
+						// Activate the session
+						await window.db.activateSession(dbSessionId);
+						currentDbSession = await window.db.getSession(dbSessionId);
+					}
+				} else {
+					// Create new session in database
+					const sessionName = `Session ${new Date().toLocaleString()}`;
+					const sessionId = await window.db.createSession(code, sessionName, null, null);
+					currentDbSession = await window.db.getSession(sessionId);
+				}
+			} catch (err) {
+				console.error('[DB] Failed to create/load session:', err);
+			}
+		}
 
 		// Create and initialize CollaborationManager immediately
 		if (collaborationManager) {
@@ -1191,11 +1219,22 @@
 			}
 		}
 
-		// Check for join session URL parameter
+		// Check for URL parameters
 		if (browser) {
 			const urlParams = new URLSearchParams(window.location.search);
+
+			// Check for session ID (from Sessions page)
+			const sessionId = urlParams.get('session');
+			if (sessionId) {
+				// Load and activate session from database
+				setTimeout(async () => {
+					await startCollaborativeSession(sessionId);
+				}, 500);
+			}
+
+			// Check for join code (from external link)
 			const joinCode = urlParams.get('join');
-			if (joinCode) {
+			if (joinCode && !sessionId) {
 				joinSessionCode = joinCode;
 				// Auto-join after a short delay to ensure editor is ready
 				setTimeout(() => {
@@ -1233,7 +1272,17 @@
 	<div class="container mx-auto px-4 py-8 max-w-4xl xl:max-w-7xl">
 	<!-- Header -->
 	<div class="mb-8">
-		<h1 class="text-4xl font-bold mb-4">{$_('dictate.pageHeading')}</h1>
+		<div class="flex justify-between items-start mb-4">
+			<h1 class="text-4xl font-bold">{$_('dictate.pageHeading')}</h1>
+			{#if browser && window.db}
+				<a href="/sessions" class="btn btn-outline btn-sm">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+					</svg>
+					Manage Sessions
+				</a>
+			{/if}
+		</div>
 		<div class="prose max-w-none">
 			<p class="mb-2">{$_('dictate.intro1')}</p>
 			<p class="mb-2">{$_('dictate.intro2')}</p>

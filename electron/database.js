@@ -34,8 +34,61 @@ export function initDatabase() {
 			is_collaborative INTEGER DEFAULT 0,
 			session_code TEXT,
 			collaboration_role TEXT,
-			participants TEXT
+			participants TEXT,
+			scheduled_date DATETIME,
+			completed_at DATETIME,
+			cancelled_at DATETIME
 		)
+	`);
+
+	// Run migrations to add new columns if they don't exist
+	// Add older columns that might be missing from pre-existing databases
+	try {
+		db.exec('ALTER TABLE transcription_sessions ADD COLUMN is_collaborative INTEGER DEFAULT 0');
+	} catch (e) {
+		// Column already exists
+	}
+	try {
+		db.exec('ALTER TABLE transcription_sessions ADD COLUMN session_code TEXT');
+	} catch (e) {
+		// Column already exists
+	}
+	try {
+		db.exec('ALTER TABLE transcription_sessions ADD COLUMN collaboration_role TEXT');
+	} catch (e) {
+		// Column already exists
+	}
+	try {
+		db.exec('ALTER TABLE transcription_sessions ADD COLUMN participants TEXT');
+	} catch (e) {
+		// Column already exists
+	}
+
+	// Add new session management columns
+	try {
+		db.exec('ALTER TABLE transcription_sessions ADD COLUMN scheduled_date DATETIME');
+	} catch (e) {
+		// Column already exists
+	}
+	try {
+		db.exec('ALTER TABLE transcription_sessions ADD COLUMN completed_at DATETIME');
+	} catch (e) {
+		// Column already exists
+	}
+	try {
+		db.exec('ALTER TABLE transcription_sessions ADD COLUMN cancelled_at DATETIME');
+	} catch (e) {
+		// Column already exists
+	}
+
+	// Create indexes for better query performance
+	db.exec(`
+		CREATE INDEX IF NOT EXISTS idx_sessions_status
+		ON transcription_sessions(status)
+	`);
+	db.exec(`
+		CREATE INDEX IF NOT EXISTS idx_sessions_scheduled
+		ON transcription_sessions(scheduled_date)
 	`);
 
 	// Create transcripts table (stores the actual text and subtitles)
@@ -101,12 +154,15 @@ export const dbOperations = {
 	},
 
 	// Transcription session operations
-	createSession: (id, name) => {
+	createSession: (id, name, scheduledDate = null, description = null) => {
 		const stmt = db.prepare(`
-			INSERT INTO transcription_sessions (id, name)
-			VALUES (?, ?)
+			INSERT INTO transcription_sessions (id, name, scheduled_date, status, is_collaborative, session_code)
+			VALUES (?, ?, ?, ?, ?, ?)
 		`);
-		stmt.run(id, name);
+		const status = scheduledDate ? 'planned' : 'active';
+		const isCollaborative = 1; // New sessions are collaborative by default
+		const sessionCode = id; // Use ID as session code for simplicity
+		stmt.run(id, name, scheduledDate, status, isCollaborative, sessionCode);
 		return id;
 	},
 
@@ -133,6 +189,30 @@ export const dbOperations = {
 		if (data.status !== undefined) {
 			fields.push('status = ?');
 			values.push(data.status);
+		}
+		if (data.scheduled_date !== undefined) {
+			fields.push('scheduled_date = ?');
+			values.push(data.scheduled_date);
+		}
+		if (data.completed_at !== undefined) {
+			fields.push('completed_at = ?');
+			values.push(data.completed_at);
+		}
+		if (data.cancelled_at !== undefined) {
+			fields.push('cancelled_at = ?');
+			values.push(data.cancelled_at);
+		}
+		if (data.session_code !== undefined) {
+			fields.push('session_code = ?');
+			values.push(data.session_code);
+		}
+		if (data.collaboration_role !== undefined) {
+			fields.push('collaboration_role = ?');
+			values.push(data.collaboration_role);
+		}
+		if (data.participants !== undefined) {
+			fields.push('participants = ?');
+			values.push(data.participants);
 		}
 
 		if (fields.length > 0) {
@@ -165,6 +245,70 @@ export const dbOperations = {
 		// Then delete session
 		const deleteSession = db.prepare('DELETE FROM transcription_sessions WHERE id = ?');
 		deleteSession.run(id);
+	},
+
+	// Session lifecycle operations
+	getSessionsByStatus: (status) => {
+		const stmt = db.prepare('SELECT * FROM transcription_sessions WHERE status = ? ORDER BY scheduled_date DESC, created_at DESC');
+		return stmt.all(status);
+	},
+
+	getUpcomingSessions: () => {
+		const stmt = db.prepare(`
+			SELECT * FROM transcription_sessions
+			WHERE status = 'planned' AND scheduled_date >= datetime('now')
+			ORDER BY scheduled_date ASC
+		`);
+		return stmt.all();
+	},
+
+	getPastSessions: () => {
+		const stmt = db.prepare(`
+			SELECT * FROM transcription_sessions
+			WHERE status IN ('completed', 'cancelled') OR (status = 'planned' AND scheduled_date < datetime('now'))
+			ORDER BY scheduled_date DESC, created_at DESC
+		`);
+		return stmt.all();
+	},
+
+	activateSession: (id) => {
+		const stmt = db.prepare(`
+			UPDATE transcription_sessions
+			SET status = 'active', updated_at = CURRENT_TIMESTAMP
+			WHERE id = ?
+		`);
+		stmt.run(id);
+		return db.prepare('SELECT * FROM transcription_sessions WHERE id = ?').get(id);
+	},
+
+	completeSession: (id) => {
+		const stmt = db.prepare(`
+			UPDATE transcription_sessions
+			SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+			WHERE id = ?
+		`);
+		stmt.run(id);
+		return db.prepare('SELECT * FROM transcription_sessions WHERE id = ?').get(id);
+	},
+
+	cancelSession: (id) => {
+		const stmt = db.prepare(`
+			UPDATE transcription_sessions
+			SET status = 'cancelled', cancelled_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+			WHERE id = ?
+		`);
+		stmt.run(id);
+		return db.prepare('SELECT * FROM transcription_sessions WHERE id = ?').get(id);
+	},
+
+	updateSessionStatus: (id, status) => {
+		const stmt = db.prepare(`
+			UPDATE transcription_sessions
+			SET status = ?, updated_at = CURRENT_TIMESTAMP
+			WHERE id = ?
+		`);
+		stmt.run(status, id);
+		return db.prepare('SELECT * FROM transcription_sessions WHERE id = ?').get(id);
 	},
 
 	// Transcript operations
