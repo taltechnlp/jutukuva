@@ -21,7 +21,7 @@ declare global {
 			getAllSettings: () => Promise<Array<{ key: string; value: string }>>;
 
 			// Transcription sessions
-			createSession: (id: string, name: string) => Promise<string>;
+			createSession: (id: string, name: string, scheduledDate?: string | null, description?: string | null) => Promise<string>;
 			updateSession: (
 				id: string,
 				data: {
@@ -29,32 +29,27 @@ declare global {
 					duration_seconds?: number;
 					word_count?: number;
 					subtitle_count?: number;
-					status?: string;
+					status?: 'planned' | 'active' | 'completed' | 'cancelled';
+					scheduled_date?: string | null;
+					completed_at?: string | null;
+					cancelled_at?: string | null;
+					session_code?: string;
+					collaboration_role?: string;
+					participants?: string;
 				}
 			) => Promise<boolean>;
-			getSession: (id: string) => Promise<{
-				id: string;
-				name: string;
-				created_at: string;
-				updated_at: string;
-				duration_seconds: number;
-				word_count: number;
-				subtitle_count: number;
-				status: string;
-			} | null>;
-			getAllSessions: () => Promise<
-				Array<{
-					id: string;
-					name: string;
-					created_at: string;
-					updated_at: string;
-					duration_seconds: number;
-					word_count: number;
-					subtitle_count: number;
-					status: string;
-				}>
-			>;
+			getSession: (id: string) => Promise<TranscriptionSession | null>;
+			getAllSessions: () => Promise<Array<TranscriptionSession>>;
 			deleteSession: (id: string) => Promise<boolean>;
+
+			// Session lifecycle
+			getSessionsByStatus: (status: 'planned' | 'active' | 'completed' | 'cancelled') => Promise<Array<TranscriptionSession>>;
+			getUpcomingSessions: () => Promise<Array<TranscriptionSession>>;
+			getPastSessions: () => Promise<Array<TranscriptionSession>>;
+			activateSession: (id: string) => Promise<TranscriptionSession>;
+			completeSession: (id: string) => Promise<TranscriptionSession>;
+			cancelSession: (id: string) => Promise<TranscriptionSession>;
+			updateSessionStatus: (id: string, status: 'planned' | 'active' | 'completed' | 'cancelled') => Promise<TranscriptionSession>;
 
 			// Transcripts
 			addTranscript: (
@@ -105,6 +100,24 @@ declare global {
 			setSetting: (key: string, value: string) => Promise<void>;
 			getSetting: (key: string) => Promise<string | null>;
 		};
+	}
+
+	interface TranscriptionSession {
+		id: string;
+		name: string;
+		created_at: string;
+		updated_at: string;
+		duration_seconds: number;
+		word_count: number;
+		subtitle_count: number;
+		status: 'planned' | 'active' | 'completed' | 'cancelled';
+		is_collaborative: number;
+		session_code: string | null;
+		collaboration_role: string | null;
+		participants: string | null;
+		scheduled_date: string | null;
+		completed_at: string | null;
+		cancelled_at: string | null;
 	}
 }
 

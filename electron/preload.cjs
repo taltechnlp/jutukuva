@@ -25,11 +25,20 @@ contextBridge.exposeInMainWorld('db', {
 	getAllSettings: () => ipcRenderer.invoke('db:getAllSettings'),
 
 	// Transcription sessions
-	createSession: (id, name) => ipcRenderer.invoke('db:createSession', id, name),
+	createSession: (id, name, scheduledDate, description) => ipcRenderer.invoke('db:createSession', id, name, scheduledDate, description),
 	updateSession: (id, data) => ipcRenderer.invoke('db:updateSession', id, data),
 	getSession: (id) => ipcRenderer.invoke('db:getSession', id),
 	getAllSessions: () => ipcRenderer.invoke('db:getAllSessions'),
 	deleteSession: (id) => ipcRenderer.invoke('db:deleteSession', id),
+
+	// Session lifecycle
+	getSessionsByStatus: (status) => ipcRenderer.invoke('db:getSessionsByStatus', status),
+	getUpcomingSessions: () => ipcRenderer.invoke('db:getUpcomingSessions'),
+	getPastSessions: () => ipcRenderer.invoke('db:getPastSessions'),
+	activateSession: (id) => ipcRenderer.invoke('db:activateSession', id),
+	completeSession: (id) => ipcRenderer.invoke('db:completeSession', id),
+	cancelSession: (id) => ipcRenderer.invoke('db:cancelSession', id),
+	updateSessionStatus: (id, status) => ipcRenderer.invoke('db:updateSessionStatus', id, status),
 
 	// Transcripts
 	addTranscript: (sessionId, segmentIndex, text, srtText, startTime, endTime) =>
