@@ -53,14 +53,12 @@
 				...yjsPlugins,
 				...basePlugins
 			];
-			console.log('[EDITOR] Collaborative mode enabled, role:', collaborationManager.sessionInfo?.role, 'readOnly:', readOnly);
 		} else {
 			// Solo mode: use regular history
 			plugins = [
 				history(),
 				...basePlugins
 			];
-			console.log('[EDITOR] Solo mode enabled');
 		}
 
 		const state = EditorState.create({
@@ -154,17 +152,8 @@
 
 	// Public API: Insert streaming text
 	export function insertStreamingText(event: StreamingTextEvent) {
-		console.log('[EDITOR] insertStreamingText called:', {
-			hasEditorView: !!editorView,
-			text: event.text.substring(0, 50) + '...',
-			isFinal: event.isFinal,
-			start: event.start,
-			end: event.end,
-			recordingStartTime: recordingStartTime
-		});
-
 		if (!editorView) {
-			console.error('[EDITOR] No editorView available!');
+			console.error('No editorView available!');
 			return;
 		}
 
@@ -178,7 +167,6 @@
 				start: elapsedSeconds - 0.5, // Estimate start slightly before current time
 				end: elapsedSeconds
 			};
-			console.log('[EDITOR] Enhanced timing:', { start: enhancedEvent.start, end: enhancedEvent.end });
 		}
 
 		insertStreamingTextCommand(editorView.state, (tr) => {
