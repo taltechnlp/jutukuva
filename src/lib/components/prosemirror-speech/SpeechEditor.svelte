@@ -61,13 +61,21 @@
 			];
 		}
 
-		const state = EditorState.create({
+		// Create editor state
+		// In collaborative mode, don't provide initial doc - let ySyncPlugin manage it
+		const stateConfig: any = {
 			schema: speechSchema,
-			doc: speechSchema.node('doc', null, [
-				speechSchema.node('paragraph', null, [])
-			]),
 			plugins
-		});
+		};
+
+		// Only provide initial doc in solo mode
+		if (!collaborationManager) {
+			stateConfig.doc = speechSchema.node('doc', null, [
+				speechSchema.node('paragraph', null, [])
+			]);
+		}
+
+		const state = EditorState.create(stateConfig);
 
 		editorView = new EditorView(editorElement, {
 			state,
