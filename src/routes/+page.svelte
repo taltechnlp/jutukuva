@@ -940,8 +940,6 @@
 	 * Main server message handler - delegates to streaming or offline handlers.
 	 */
 	function handleServerMessage(message: any) {
-		console.log('Received message:', message);
-
 		// Delegate to appropriate handler based on model type
 		if (isOfflineModel(selectedLanguage)) {
 			handleServerMessage_offline(message);
