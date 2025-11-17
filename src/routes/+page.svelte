@@ -288,7 +288,7 @@
 	}
 
 	// Audio source management functions
-	async function loadAudioDevices() {
+	async function loadAudioDevices(skipDesktopSources = false) {
 		if (!audioSourceManager) return;
 		try {
 			// Request permission first to get device labels
@@ -300,7 +300,7 @@
 			}
 
 			// Enumerate devices filtered by current source type
-			availableAudioDevices = await audioSourceManager.enumerateAudioDevices(audioSourceType);
+			availableAudioDevices = await audioSourceManager.enumerateAudioDevices(audioSourceType, skipDesktopSources);
 			console.log(
 				`[AUDIO] Found ${availableAudioDevices.length} ${audioSourceType} device(s)`
 			);
@@ -431,8 +431,8 @@
 			systemAudioAvailable = await audioSourceManager.checkSystemAudioSupport();
 			console.log('[INIT-AUDIO] System audio available:', systemAudioAvailable);
 
-			// Load available audio devices
-			await loadAudioDevices();
+			// Load available audio devices (skip desktop sources to avoid screen sharing permission)
+			await loadAudioDevices(true);
 
 			// Fall back to microphone if system audio is selected but not available
 			if (audioSourceType === 'system' && !systemAudioAvailable) {
@@ -1202,8 +1202,8 @@
 			if (savedType) {
 				audioSourceType = savedType as AudioSourceType;
 				console.log('[AUDIO] Restored audio source type:', audioSourceType);
-				// Reload device list for the restored type
-				await loadAudioDevices();
+				// Reload device list for the restored type (skip desktop sources to avoid permission dialog)
+				await loadAudioDevices(true);
 			}
 			if (savedDeviceId) {
 				selectedDeviceId = savedDeviceId;
