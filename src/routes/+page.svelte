@@ -167,9 +167,10 @@
 		console.log('[COLLAB] Starting session with server URL:', serverUrl);
 		console.log('[COLLAB] Environment variable VITE_YJS_SERVER_URL:', import.meta.env.VITE_YJS_SERVER_URL);
 
-		sessionInfo = {
+		// Prepare session info (but don't set it yet to avoid triggering editor remount)
+		let tempSessionInfo = {
 			code,
-			role: 'host',
+			role: 'host' as const,
 			roomName: code,
 			serverUrl
 		};
@@ -183,8 +184,8 @@
 					if (currentDbSession) {
 						// Use the session code from DB if available
 						if (currentDbSession.session_code) {
-							sessionInfo.code = currentDbSession.session_code;
-							sessionInfo.roomName = currentDbSession.session_code;
+							tempSessionInfo.code = currentDbSession.session_code;
+							tempSessionInfo.roomName = currentDbSession.session_code;
 						}
 						// Activate the session
 						await window.db.activateSession(dbSessionId);
@@ -201,25 +202,28 @@
 			}
 		}
 
-		// Create and initialize CollaborationManager immediately
+		// Create and initialize CollaborationManager BEFORE setting sessionInfo
 		if (collaborationManager) {
 			collaborationManager.disconnect();
 		}
 		collaborationManager = new CollaborationManager();
 
 		// Initialize the provider now (without editor) so plugins can be created
-		console.log('[COLLAB] About to call initializeProvider with sessionInfo:', sessionInfo);
-		collaborationManager.initializeProvider(sessionInfo, {
-			onParticipantsChange: (p) => {
+		console.log('[COLLAB] About to call initializeProvider with sessionInfo:', tempSessionInfo);
+		collaborationManager.initializeProvider(tempSessionInfo, {
+			onParticipantsChange: (p: any) => {
 				participants = p;
 			},
-			onConnectionStatusChange: (connected) => {
+			onConnectionStatusChange: (connected: any) => {
 				collaborationConnected = connected;
 				console.log('[COLLAB] Connection status changed:', connected);
 			}
 		});
 
-		console.log('[COLLAB] Started session as host:', code);
+		// Now set sessionInfo to trigger editor remount with collaborationManager ready
+		sessionInfo = tempSessionInfo;
+
+		console.log('[COLLAB] Started session as host:', tempSessionInfo.code);
 	}
 
 	/**
@@ -235,29 +239,33 @@
 
 		const serverUrl = import.meta.env.VITE_YJS_SERVER_URL || 'wss://tekstiks.ee/kk';
 
-		sessionInfo = {
+		// Prepare session info (but don't set it yet to avoid triggering editor remount)
+		const tempSessionInfo = {
 			code: normalizedCode,
-			role: 'guest',
+			role: 'guest' as const,
 			roomName: normalizedCode,
 			serverUrl
 		};
 
-		// Create and initialize CollaborationManager immediately
+		// Create and initialize CollaborationManager BEFORE setting sessionInfo
 		if (collaborationManager) {
 			collaborationManager.disconnect();
 		}
 		collaborationManager = new CollaborationManager();
 
 		// Initialize the provider now (without editor) so plugins can be created
-		collaborationManager.initializeProvider(sessionInfo, {
-			onParticipantsChange: (p) => {
+		collaborationManager.initializeProvider(tempSessionInfo, {
+			onParticipantsChange: (p: any) => {
 				participants = p;
 			},
-			onConnectionStatusChange: (connected) => {
+			onConnectionStatusChange: (connected: any) => {
 				collaborationConnected = connected;
 				console.log('[COLLAB] Connection status changed:', connected);
 			}
 		});
+
+		// Now set sessionInfo to trigger editor remount with collaborationManager ready
+		sessionInfo = tempSessionInfo;
 
 		console.log('[COLLAB] Joined session as guest:', normalizedCode);
 	}
