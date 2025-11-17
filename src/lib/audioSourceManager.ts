@@ -84,7 +84,7 @@ export class AudioSourceManager {
 	 * Enumerate all audio input devices
 	 * @param sourceType Optional filter: 'microphone' returns only mics, 'system' returns only monitors
 	 */
-	async enumerateAudioDevices(sourceType?: AudioSourceType): Promise<AudioDevice[]> {
+	async enumerateAudioDevices(sourceType?: AudioSourceType, skipDesktopSources = false): Promise<AudioDevice[]> {
 		const devices = await navigator.mediaDevices.enumerateDevices();
 		const allAudioInputs = devices
 			.filter((d) => d.kind === 'audioinput')
@@ -106,7 +106,8 @@ export class AudioSourceManager {
 		if (sourceType === 'system') {
 			// On all desktop platforms, prefer desktop sources over monitor/loopback devices
 			// Desktop sources allow selecting specific windows/screens and work consistently
-			if (window.electronAPI) {
+			// Skip desktop sources during initial load to avoid screen sharing permission dialog
+			if (window.electronAPI && !skipDesktopSources) {
 				const desktopSources = await this.getDesktopSourcesAsDevices();
 				if (desktopSources.length > 0) {
 					console.log('[AudioSourceManager] Found', desktopSources.length, 'desktop sources');
@@ -346,7 +347,7 @@ export class AudioSourceManager {
 
 		console.log('[AudioSourceManager] Using desktop source:', sourceName, 'ID:', selectedSourceId);
 
-		// Request screen capture with audio
+		// Request screen capture with audio only (no video to avoid screen recording permission)
 		console.log('[AudioSourceManager] Requesting desktop capture...');
 		const stream = await navigator.mediaDevices.getUserMedia({
 			audio: {
@@ -354,22 +355,13 @@ export class AudioSourceManager {
 					chromeMediaSource: 'desktop',
 					chromeMediaSourceId: selectedSourceId
 				}
-			} as any,
-			video: {
-				mandatory: {
-					chromeMediaSource: 'desktop',
-					chromeMediaSourceId: selectedSourceId,
-					maxWidth: 1,
-					maxHeight: 1
-				}
 			} as any
 		});
 
 		console.log('[AudioSourceManager] Got stream, checking tracks...');
 		console.log('[AudioSourceManager] Audio tracks:', stream.getAudioTracks().length);
-		console.log('[AudioSourceManager] Video tracks:', stream.getVideoTracks().length);
 
-		// Extract only audio tracks
+		// Extract audio tracks
 		const audioTracks = stream.getAudioTracks();
 		if (audioTracks.length === 0) {
 			console.error('[AudioSourceManager] No audio tracks found in desktop capture!');
@@ -381,9 +373,6 @@ export class AudioSourceManager {
 		}
 
 		console.log('[AudioSourceManager] Audio track details:', audioTracks[0].getSettings());
-
-		// Stop video tracks (we don't need them)
-		stream.getVideoTracks().forEach((track) => track.stop());
 
 		return new MediaStream(audioTracks);
 	}
