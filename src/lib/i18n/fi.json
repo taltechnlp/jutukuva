@@ -459,7 +459,6 @@
     "transcript": "Transkriptio",
     "listeningForSpeech": "🔊 Kuunnellaan puhetta...",
     "speakingDetected": "🎤 Puhe havaittu - nauhoitetaan...",
-    "pastRecordings": "Aikaisemmat tallenteet",
     "failedToConnect": "Palvelimeen yhdistäminen epäonnistui",
     "failedToLoadVadModel": "Äänentunnistusmallin lataaminen epäonnistui",
     "vadError": "VAD-virhe",

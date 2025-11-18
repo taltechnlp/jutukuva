@@ -474,7 +474,6 @@
     "transcript": "Transkriptsioon",
     "listeningForSpeech": "🔊 Kuulan kõnet...",
     "speakingDetected": "🎤 Kõne tuvastatud - salvestamine käib...",
-    "pastRecordings": "Varasemad salvestused",
     "failedToConnect": "Serveriga ühendamine ebaõnnestus",
     "failedToLoadVadModel": "Häältuvastuse mudeli laadimine ebaõnnestus",
     "vadError": "VAD viga",
