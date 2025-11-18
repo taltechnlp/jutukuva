@@ -7,7 +7,6 @@
 		settings: DisplaySettings;
 		lastUpdated: number | null;
 		minimized: boolean;
-		prefersReducedMotion: boolean;
 		onToggleMinimize: () => void;
 		onOpenSettings: () => void;
 	}
@@ -17,7 +16,6 @@
 		settings,
 		lastUpdated,
 		minimized,
-		prefersReducedMotion,
 		onToggleMinimize,
 		onOpenSettings
 	}: Props = $props();
@@ -40,7 +38,6 @@
 			{text}
 			{settings}
 			{lastUpdated}
-			{prefersReducedMotion}
 			variant="overlay"
 		/>
 	{/if}
