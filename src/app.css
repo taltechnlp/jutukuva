@@ -83,12 +83,12 @@
 
 /* Word styling */
 .word-pending {
-	background-color: rgba(251, 191, 36, 0.2);
+	background-color: transparent;
 	border-radius: 0.125rem;
 }
 
 .word-active {
-	background-color: rgba(59, 130, 246, 0.3);
+	background-color: transparent;
 	border-radius: 0.125rem;
 }
 
