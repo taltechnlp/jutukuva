@@ -488,7 +488,6 @@
     "transcript": "Transcript",
     "listeningForSpeech": "🔊 Listening for speech...",
     "speakingDetected": "🎤 Speaking detected - Recording...",
-    "pastRecordings": "Past Recordings",
     "failedToConnect": "Failed to connect to server",
     "failedToLoadVadModel": "Failed to load voice detection model",
     "vadError": "VAD error",

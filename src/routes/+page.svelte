@@ -5,7 +5,7 @@
 	import { page } from '$app/stores';
 	import { MicVAD } from '@ricky0123/vad-web';
 	import * as ort from 'onnxruntime-web';
-	import { SpeechEditor, ReadOnlyEditorPreview, ShareSessionModal, SessionStatus } from '$lib/components/prosemirror-speech';
+	import { SpeechEditor, ShareSessionModal, SessionStatus } from '$lib/components/prosemirror-speech';
 	import type { SubtitleSegment, Word } from '$lib/components/prosemirror-speech/utils/types';
 	import { AudioSourceManager, type AudioSourceType, type AudioDevice } from '$lib/audioSourceManager';
 	import MacOSAudioSetup from '$lib/components/MacOSAudioSetup.svelte';
@@ -119,39 +119,6 @@
 		return language !== 'et' && language !== 'en';
 	}
 
-	// Past recordings
-	interface Recording {
-		id: string;
-		text: string;
-		timestamp: Date;
-	}
-	let pastRecordings = $state<Recording[]>([]);
-
-	// Format timestamp for display
-	function formatTimestamp(date: Date): string {
-		return date.toLocaleString(undefined, {
-			year: 'numeric',
-			month: '2-digit',
-			day: '2-digit',
-			hour: '2-digit',
-			minute: '2-digit',
-			second: '2-digit'
-		});
-	}
-
-	// Copy text to clipboard
-	async function copyToClipboard(text: string) {
-		try {
-			await navigator.clipboard.writeText(text);
-		} catch (error) {
-			console.error('Failed to copy text:', error);
-		}
-	}
-
-	// Delete a past recording
-	function deleteRecording(id: string) {
-		pastRecordings = pastRecordings.filter((r) => r.id !== id);
-	}
 
 	// ═══════════════════════════════════════════════════════════════
 	// COLLABORATION FUNCTIONS
@@ -1164,20 +1131,6 @@
 		const isOffline = isOfflineModel(selectedLanguage);
 		const waitTime = isOffline ? 3000 : 1000; // 3s for offline, 1s for streaming
 		await new Promise(resolve => setTimeout(resolve, waitTime));
-
-		// Combine final and partial transcripts
-		const finalText = (transcript + ' ' + partialTranscript).trim();
-
-		if (finalText) {
-			const newRecording: Recording = {
-				id: Date.now().toString(),
-				text: finalText,
-				timestamp: new Date()
-			};
-			pastRecordings = [newRecording, ...pastRecordings];
-			transcript = '';
-			partialTranscript = '';
-		}
 	}
 
 	// Clear transcript
@@ -1643,98 +1596,20 @@
 		</div>
 	</div>
 
-<!-- Speech Editor and Subtitle Preview -->
-<div class="flex flex-col xl:flex-row xl:items-start gap-6 mb-6">
-	<!-- Speech Editor -->
-	<div class="xl:flex-[2] flex-1 min-w-[500px]">
-		{#key sessionInfo?.code || 'solo'}
-			<SpeechEditor
-				bind:this={speechEditor}
-				collaborationManager={collaborationManager}
-				config={{
-					fontSize: 16,
-					onWordApproved: handleWordApproved,
-					onSubtitleEmit: handleSubtitleEmit
-				}}
-			/>
-		{/key}
-	</div>
-
-	<!-- Read-Only Editor Preview -->
-	<div class="xl:flex-[1] flex-1 min-w-[500px]">
-		<ReadOnlyEditorPreview
+<!-- Speech Editor -->
+<div class="mb-6">
+	{#key sessionInfo?.code || 'solo'}
+		<SpeechEditor
+			bind:this={speechEditor}
 			collaborationManager={collaborationManager}
-			class="h-[600px]"
+			config={{
+				fontSize: 16,
+				onWordApproved: handleWordApproved,
+				onSubtitleEmit: handleSubtitleEmit
+			}}
 		/>
-	</div>
+	{/key}
 </div>
-
-	<!-- Past Recordings -->
-	{#if pastRecordings.length > 0}
-		<div class="mt-6 space-y-4">
-			<h2 class="text-2xl font-bold">{$_('dictate.pastRecordings')}</h2>
-			{#each pastRecordings as recording (recording.id)}
-				<div class="card bg-base-200 shadow-xl">
-					<div class="card-body">
-						<div class="flex justify-between items-start mb-2">
-							<div class="text-sm text-base-content/60">
-								{formatTimestamp(recording.timestamp)}
-							</div>
-							<div class="flex gap-2">
-								<!-- Copy Button -->
-								<button
-									class="btn btn-sm btn-ghost btn-circle"
-									onclick={() => copyToClipboard(recording.text)}
-									title="Copy to clipboard"
-								>
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										class="h-4 w-4"
-										fill="none"
-										viewBox="0 0 24 24"
-										stroke="currentColor"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-										/>
-									</svg>
-								</button>
-								<!-- Delete Button -->
-								<button
-									class="btn btn-sm btn-ghost btn-circle"
-									onclick={() => deleteRecording(recording.id)}
-									title="Delete recording"
-								>
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										class="h-4 w-4"
-										fill="none"
-										viewBox="0 0 24 24"
-										stroke="currentColor"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-										/>
-									</svg>
-								</button>
-							</div>
-						</div>
-						<div
-							class="bg-base-100 rounded-lg p-4 font-mono text-sm whitespace-pre-wrap"
-						>
-							{recording.text}
-						</div>
-					</div>
-				</div>
-			{/each}
-		</div>
-	{/if}
 	</div>
 </div>
 
