@@ -45,69 +45,23 @@
 
 	const stageStyle = $derived(`padding-bottom: ${settings.verticalPosition}vh;`);
 
-	// Extract text from ProseMirror document
+	// Extract text from ProseMirror document stored in Yjs
 	function extractTextFromYDoc() {
-		if (!collaborationManager) return '';
+		if (!collaborationManager) {
+			return '';
+		}
 
 		try {
 			const xmlFrag = collaborationManager.ydoc.getXmlFragment('prosemirror');
 
-			// Convert XML fragment to text
-			let extractedText = '';
-			const paragraphs: string[] = [];
+			// Use textContent property to extract plain text from the entire fragment
+			const text = xmlFrag.toString();
 
-			function extractFromNode(node: any, depth = 0): string {
-				if (!node) return '';
+			// Extract text content from the XML string using a simple regex
+			// This will get text between tags, removing all XML markup
+			const textOnly = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
-				const nodeType = node.constructor.name;
-
-				// Handle YXmlText - actual text content
-				if (nodeType === 'YXmlText') {
-					return node.toString();
-				}
-
-				// Handle YXmlElement - structural elements
-				if (nodeType === 'YXmlElement') {
-					const nodeName = node.nodeName;
-					let text = '';
-
-					// Recursively process children
-					let child = node._first;
-					while (child) {
-						if (child.content) {
-							text += extractFromNode(child.content, depth + 1);
-						}
-						child = child._right;
-					}
-
-					// Add space after words, newline after paragraphs
-					if (nodeName === 'word') {
-						return text + ' ';
-					} else if (nodeName === 'paragraph') {
-						return text + '\n';
-					}
-
-					return text;
-				}
-
-				// Handle YXmlFragment
-				if (nodeType === 'YXmlFragment' || node.toArray) {
-					let text = '';
-					let child = node._first;
-					while (child) {
-						if (child.content) {
-							text += extractFromNode(child.content, depth + 1);
-						}
-						child = child._right;
-					}
-					return text;
-				}
-
-				return '';
-			}
-
-			extractedText = extractFromNode(xmlFrag);
-			return extractedText.trim();
+			return textOnly;
 		} catch (err) {
 			console.error('[WEB-VIEWER] Error extracting text from Yjs:', err);
 			return '';
@@ -147,19 +101,32 @@
 
 			// Listen for Yjs document updates to refresh text
 			collaborationManager.ydoc.on('update', (update: Uint8Array, origin: any) => {
+				console.log('[WEB-VIEWER] Yjs update event fired', { updateSize: update.length, origin });
 				const newText = extractTextFromYDoc();
+				console.log('[WEB-VIEWER] Extracted text from update:', newText.substring(0, 100));
 				if (newText !== text) {
 					text = newText;
 					lastUpdated = Date.now();
-					console.log('[WEB-VIEWER] Text updated:', text.substring(0, 100));
+					console.log('[WEB-VIEWER] Text state updated:', text.substring(0, 100));
 				}
 			});
 
-			// Initial text extraction
-			setTimeout(() => {
-				text = extractTextFromYDoc();
-				if (text) {
+			// Initial text extraction - try multiple times
+			let attempts = 0;
+			const extractInterval = setInterval(() => {
+				attempts++;
+				console.log('[WEB-VIEWER] Attempting initial text extraction, attempt:', attempts);
+				const extractedText = extractTextFromYDoc();
+				console.log('[WEB-VIEWER] Extracted:', extractedText.substring(0, 100));
+
+				if (extractedText) {
+					text = extractedText;
 					lastUpdated = Date.now();
+					clearInterval(extractInterval);
+					console.log('[WEB-VIEWER] Initial text extraction successful');
+				} else if (attempts >= 10) {
+					clearInterval(extractInterval);
+					console.log('[WEB-VIEWER] Gave up on initial text extraction after 10 attempts');
 				}
 			}, 500);
 		} catch (err) {
