@@ -6,7 +6,6 @@
 		text: string;
 		settings: DisplaySettings;
 		lastUpdated: number | null;
-		prefersReducedMotion: boolean;
 		placeholder?: string;
 		variant?: 'fullscreen' | 'overlay';
 		autoscrollEnabled?: boolean;
@@ -16,28 +15,14 @@
 		text,
 		settings,
 		lastUpdated,
-		prefersReducedMotion,
 		placeholder = 'Waiting for transcription…',
 		variant = 'fullscreen',
 		autoscrollEnabled = false
 	}: Props = $props();
 
-	let animate = $state(false);
 	let containerElement: HTMLElement | null = $state(null);
 
 	const displayText = $derived(text.trim() || placeholder);
-
-	// Trigger animation when text changes
-	$effect(() => {
-		if (prefersReducedMotion) {
-			return;
-		}
-		displayText; // Track dependency
-		animate = true;
-		setTimeout(() => {
-			animate = false;
-		}, 220);
-	});
 
 	// Autoscroll when text changes and autoscroll is enabled
 	$effect(() => {
@@ -73,7 +58,7 @@
 	style={shellStyle}
 	aria-live="polite"
 >
-	<p class="subtitle-text {animate && !prefersReducedMotion ? 'fade-in' : ''}">
+	<p class="subtitle-text">
 		{displayText}
 	</p>
 	{#if lastUpdated}

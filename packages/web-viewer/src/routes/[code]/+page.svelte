@@ -260,7 +260,6 @@
 			{settings}
 			{lastUpdated}
 			minimized={overlayMinimized}
-			prefersReducedMotion={$prefersReducedMotion}
 			onToggleMinimize={() => (overlayMinimized = !overlayMinimized)}
 			onOpenSettings={() => (drawerOpen = true)}
 		/>
@@ -284,7 +283,6 @@
 				{text}
 				{settings}
 				{lastUpdated}
-				prefersReducedMotion={$prefersReducedMotion}
 				variant="fullscreen"
 				autoscrollEnabled={autoscrollEnabled}
 			/>
