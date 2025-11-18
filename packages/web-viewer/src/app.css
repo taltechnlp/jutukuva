@@ -130,7 +130,7 @@ button {
   transition:
     background-color var(--transition-fast),
     transform var(--transition-fast);
-  z-index: 100;
+  z-index: 5;
   cursor: pointer;
 }
 
