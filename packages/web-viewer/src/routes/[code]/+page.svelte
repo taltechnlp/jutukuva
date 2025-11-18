@@ -34,6 +34,9 @@
 	let collaborationManager: CollaborationManager | null = $state(null);
 	let sessionInfo = $state<SessionInfo | null>(null);
 	let participants = $state<Participant[]>([]);
+	let autoscrollEnabled = $state(true);
+	let showAutoscrollControl = $state(false);
+	let hideControlTimeout: number | null = $state(null);
 
 	const isOverlayMode = $derived(settings.mode === 'overlay');
 
@@ -190,6 +193,34 @@
 			}, 100);
 		}
 	}
+
+	function handleMouseMove() {
+		if (!isOverlayMode) {
+			showAutoscrollControl = true;
+			if (hideControlTimeout !== null) {
+				clearTimeout(hideControlTimeout);
+			}
+			hideControlTimeout = window.setTimeout(() => {
+				showAutoscrollControl = false;
+			}, 3000);
+		}
+	}
+
+	function handleTouchStart() {
+		if (!isOverlayMode) {
+			showAutoscrollControl = true;
+			if (hideControlTimeout !== null) {
+				clearTimeout(hideControlTimeout);
+			}
+			hideControlTimeout = window.setTimeout(() => {
+				showAutoscrollControl = false;
+			}, 3000);
+		}
+	}
+
+	function toggleAutoscroll() {
+		autoscrollEnabled = !autoscrollEnabled;
+	}
 </script>
 
 <svelte:head>
@@ -242,16 +273,59 @@
 			/>
 		{/if}
 	{:else}
-		<div class="subtitle-stage" style={stageStyle}>
+		<div
+			class="subtitle-stage"
+			style={stageStyle}
+			onmousemove={handleMouseMove}
+			ontouchstart={handleTouchStart}
+			role="main"
+		>
 			<SubtitleDisplay
 				{text}
 				{settings}
 				{lastUpdated}
 				prefersReducedMotion={$prefersReducedMotion}
 				variant="fullscreen"
+				autoscrollEnabled={autoscrollEnabled}
 			/>
 			{#if connectionState !== 'connected'}
 				<StatusLayer state={connectionState} onReconnect={reconnect} {errorMessage} />
+			{/if}
+			{#if showAutoscrollControl}
+				<button
+					type="button"
+					class="autoscroll-toggle"
+					onclick={toggleAutoscroll}
+					aria-label={autoscrollEnabled ? 'Disable autoscroll' : 'Enable autoscroll'}
+				>
+					{#if autoscrollEnabled}
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							height="24px"
+							viewBox="0 -960 960 960"
+							width="24px"
+							fill="#e3e3e3"
+						>
+							<path
+								d="M480-80 280-280l56-58 104 104v-526H320l160-160 160 160H520v526l104-104 56 58L480-80Z"
+							/>
+						</svg>
+						<span>Autoscroll On</span>
+					{:else}
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							height="24px"
+							viewBox="0 -960 960 960"
+							width="24px"
+							fill="#e3e3e3"
+						>
+							<path
+								d="m633-267-56-57 103-103H360v-80h320L577-610l56-57 200 200-200 200ZM480-80 280-280l56-58 104 104v-166h80v166l104-104 56 58L480-80Z"
+							/>
+						</svg>
+						<span>Autoscroll Off</span>
+					{/if}
+				</button>
 			{/if}
 		</div>
 	{/if}
