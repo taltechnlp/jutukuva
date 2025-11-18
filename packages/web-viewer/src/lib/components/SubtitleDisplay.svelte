@@ -9,6 +9,7 @@
 		prefersReducedMotion: boolean;
 		placeholder?: string;
 		variant?: 'fullscreen' | 'overlay';
+		autoscrollEnabled?: boolean;
 	}
 
 	let {
@@ -17,10 +18,12 @@
 		lastUpdated,
 		prefersReducedMotion,
 		placeholder = 'Waiting for transcription…',
-		variant = 'fullscreen'
+		variant = 'fullscreen',
+		autoscrollEnabled = false
 	}: Props = $props();
 
 	let animate = $state(false);
+	let containerElement: HTMLElement | null = $state(null);
 
 	const displayText = $derived(text.trim() || placeholder);
 
@@ -34,6 +37,19 @@
 		setTimeout(() => {
 			animate = false;
 		}, 220);
+	});
+
+	// Autoscroll when text changes and autoscroll is enabled
+	$effect(() => {
+		if (autoscrollEnabled && text && variant === 'fullscreen') {
+			text; // Track text changes
+			tick().then(() => {
+				window.scrollTo({
+					top: document.documentElement.scrollHeight,
+					behavior: 'smooth'
+				});
+			});
+		}
 	});
 
 	const shellStyle = $derived(
@@ -52,6 +68,7 @@
 </script>
 
 <section
+	bind:this={containerElement}
 	class="subtitle-shell {variant === 'overlay' ? 'overlay' : ''}"
 	style={shellStyle}
 	aria-live="polite"
