@@ -241,7 +241,7 @@
 		{#if connectionState !== 'connected'}
 			<StatusLayer
 				state={connectionState}
-				{onReconnect: reconnect}
+				onReconnect={reconnect}
 				{errorMessage}
 				variant="global"
 			/>
@@ -256,7 +256,7 @@
 				variant="fullscreen"
 			/>
 			{#if connectionState !== 'connected'}
-				<StatusLayer state={connectionState} {onReconnect: reconnect} {errorMessage} />
+				<StatusLayer state={connectionState} onReconnect={reconnect} {errorMessage} />
 			{/if}
 		</div>
 	{/if}
