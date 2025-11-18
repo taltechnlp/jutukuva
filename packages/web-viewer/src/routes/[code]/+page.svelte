@@ -1,31 +1,100 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/stores';
-	import { _ } from 'svelte-i18n';
 	import { browser } from '$app/environment';
 
+	// Import new UI components
+	import SubtitleDisplay from '$lib/components/SubtitleDisplay.svelte';
+	import OverlayBar from '$lib/components/OverlayBar.svelte';
+	import SettingsDrawer from '$lib/components/SettingsDrawer.svelte';
+	import ConnectionIndicator from '$lib/components/ConnectionIndicator.svelte';
+	import StatusLayer from '$lib/components/StatusLayer.svelte';
+	import type { ConnectionState } from '$lib/components/ConnectionIndicator.svelte';
+
+	// Import stores and types
+	import { prefersReducedMotion } from '$lib/stores/reduced-motion.ts';
+	import { defaultSettings, type DisplaySettings } from '$lib/types/display-settings';
+
 	// Import shared components
-	import { SpeechEditor, ReadOnlyEditorPreview, SessionStatus } from '$shared/components/prosemirror-speech';
 	import { CollaborationManager } from '$shared/collaboration/CollaborationManager';
 	import { normalizeSessionCode } from '$shared/collaboration/sessionCode';
 	import type { SessionInfo, Participant } from '$shared/collaboration/types';
-	import type { SubtitleSegment, Word } from '$shared/components/prosemirror-speech/utils/types';
 
 	// Get session code from URL
 	const sessionCode = $derived(normalizeSessionCode($page.params.code));
 
 	// State
-	let speechEditor: any = $state(null);
-	let subtitleSegments = $state<SubtitleSegment[]>([]);
+	let settings = $state<DisplaySettings>(defaultSettings);
+	let drawerOpen = $state(false);
+	let overlayMinimized = $state(false);
+	let text = $state('');
+	let lastUpdated = $state<number | null>(null);
+	let connectionState = $state<ConnectionState>('connecting');
+	let errorMessage = $state<string | null>(null);
 	let collaborationManager: CollaborationManager | null = $state(null);
 	let sessionInfo = $state<SessionInfo | null>(null);
 	let participants = $state<Participant[]>([]);
-	let collaborationConnected = $state(false);
-	let isInitializing = $state(true);
-	let error = $state('');
-	let editorReady = $state(false);
 
-	// Initialize collaboration BEFORE editor mounts
+	const isOverlayMode = $derived(settings.mode === 'overlay');
+
+	const backgroundStyle = $derived(
+		isOverlayMode
+			? 'background-color: #000000;'
+			: `background-color: ${settings.backgroundColor};`
+	);
+
+	const stageStyle = $derived(`padding-bottom: ${settings.verticalPosition}vh;`);
+
+	// Extract text from ProseMirror document
+	function extractTextFromYDoc() {
+		if (!collaborationManager) return '';
+
+		try {
+			const xmlFrag = collaborationManager.ydoc.getXmlFragment('prosemirror');
+
+			// Convert XML fragment to text
+			let extractedText = '';
+
+			function extractFromNode(node: any): void {
+				if (!node) return;
+
+				// If it's a text node, add its content
+				if (node.constructor.name === 'YText' || typeof node.toString === 'function') {
+					const textContent = node.toString();
+					if (textContent && textContent !== '[object Object]') {
+						extractedText += textContent;
+					}
+				}
+
+				// If it has children, recursively extract from them
+				if (node.toArray) {
+					const children = node.toArray();
+					children.forEach((child: any, index: number) => {
+						extractFromNode(child);
+						// Add newline between paragraphs
+						if (index < children.length - 1) {
+							extractedText += '\n';
+						}
+					});
+				} else if (node._first) {
+					// Iterate through linked list of children
+					let current = node._first;
+					while (current) {
+						extractFromNode(current.content);
+						current = current._right;
+					}
+				}
+			}
+
+			extractFromNode(xmlFrag);
+			return extractedText.trim();
+		} catch (err) {
+			console.error('[WEB-VIEWER] Error extracting text from Yjs:', err);
+			return '';
+		}
+	}
+
+	// Initialize collaboration
 	onMount(async () => {
 		if (!browser) return;
 
@@ -44,39 +113,39 @@
 			// Initialize and connect collaboration manager
 			collaborationManager = new CollaborationManager();
 
-			// Connect the collaboration manager (editorView not used in connect())
+			// Connect the collaboration manager
 			collaborationManager.connect(sessionInfo, null as any, {
 				onParticipantsChange: (p) => {
 					participants = p;
 					console.log('[WEB-VIEWER] Participants changed:', p);
 				},
 				onConnectionStatusChange: (connected) => {
-					collaborationConnected = connected;
+					connectionState = connected ? 'connected' : 'disconnected';
 					console.log('[WEB-VIEWER] Connection status:', connected);
-					if (connected) {
-						isInitializing = false;
-					}
 				}
 			});
 
-			// Render editor immediately - ySyncPlugin will handle sync when editor is created
-			editorReady = true;
-			console.log('[WEB-VIEWER] Collaboration manager ready, rendering editor');
-
-			// Listen for Yjs document updates to log sync activity
+			// Listen for Yjs document updates to refresh text
 			collaborationManager.ydoc.on('update', (update: Uint8Array, origin: any) => {
-				const xmlFrag = collaborationManager.ydoc.getXmlFragment('prosemirror');
-				console.log('[WEB-VIEWER] Yjs document updated:', {
-					updateSize: update.length,
-					origin: origin?.constructor?.name,
-					xmlFragmentLength: xmlFrag.length,
-					xmlContent: xmlFrag.toString().substring(0, 200)
-				});
+				const newText = extractTextFromYDoc();
+				if (newText !== text) {
+					text = newText;
+					lastUpdated = Date.now();
+					console.log('[WEB-VIEWER] Text updated:', text.substring(0, 100));
+				}
 			});
+
+			// Initial text extraction
+			setTimeout(() => {
+				text = extractTextFromYDoc();
+				if (text) {
+					lastUpdated = Date.now();
+				}
+			}, 500);
 		} catch (err) {
 			console.error('[WEB-VIEWER] Failed to setup collaboration:', err);
-			error = 'Failed to setup collaboration: ' + (err as Error).message;
-			isInitializing = false;
+			errorMessage = 'Failed to setup collaboration: ' + (err as Error).message;
+			connectionState = 'error';
 		}
 	});
 
@@ -86,12 +155,45 @@
 		}
 	});
 
-	function handleWordApproved(word: Word) {
-		console.log('[WEB-VIEWER] Word approved:', word.text);
+	// Handle keyboard shortcuts
+	$effect(() => {
+		if (!browser || !drawerOpen) return;
+
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (event.key === 'Escape') {
+				drawerOpen = false;
+			}
+		};
+
+		window.addEventListener('keydown', onKeyDown);
+		return () => window.removeEventListener('keydown', onKeyDown);
+	});
+
+	function handleSettingsChange(nextSettings: DisplaySettings) {
+		settings = nextSettings;
 	}
 
-	function handleSubtitleEmit(srt: string, segment: SubtitleSegment) {
-		console.log('[WEB-VIEWER] Subtitle emitted:', segment);
+	function handleReset() {
+		settings = defaultSettings;
+		overlayMinimized = false;
+	}
+
+	function reconnect() {
+		if (collaborationManager) {
+			collaborationManager.disconnect();
+			setTimeout(() => {
+				if (sessionInfo) {
+					collaborationManager?.connect(sessionInfo, null as any, {
+						onParticipantsChange: (p) => {
+							participants = p;
+						},
+						onConnectionStatusChange: (connected) => {
+							connectionState = connected ? 'connected' : 'disconnected';
+						}
+					});
+				}
+			}, 100);
+		}
 	}
 </script>
 
@@ -99,127 +201,63 @@
 	<title>Session {sessionCode} - Kirikaja</title>
 </svelte:head>
 
-<div class="container mx-auto p-4">
-	<!-- Header -->
-	<div class="mb-6">
-		<div class="flex items-center justify-between mb-4">
-			<div>
-				<h1 class="text-3xl font-bold">Kirikaja</h1>
-				<p class="text-sm text-base-content/60">
-					{$_('web_viewer.web_mode', { default: 'Web Viewer (Guest Mode)' })}
-				</p>
-			</div>
-
-			<!-- Desktop app link -->
-			<a
-				href="/"
-				class="btn btn-sm btn-outline"
-				title={$_('web_viewer.back_to_home', { default: 'Back to home' })}
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-4 w-4"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M10 19l-7-7m0 0l7-7m-7 7h18"
-					/>
-				</svg>
-				{$_('web_viewer.home', { default: 'Home' })}
-			</a>
-		</div>
-
-		<!-- Session Status -->
-		{#if sessionInfo}
-			<SessionStatus
-				{sessionInfo}
-				{participants}
-				connected={collaborationConnected}
-			/>
-		{/if}
-
-		<!-- Initializing/Error Messages -->
-		{#if isInitializing}
-			<div class="alert alert-info mt-4">
-				<span class="loading loading-spinner loading-sm"></span>
-				<span>{$_('web_viewer.connecting', { default: 'Connecting to session...' })}</span>
-			</div>
-		{:else if error}
-			<div class="alert alert-error mt-4">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="stroke-current shrink-0 h-6 w-6"
-					fill="none"
-					viewBox="0 0 24 24"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-					/>
-				</svg>
-				<span>{error}</span>
-			</div>
-		{/if}
-
-		<!-- Web Viewer Info Banner -->
-		<div class="alert alert-warning mt-4">
+<div class="app-root" data-mode={settings.mode} style={backgroundStyle}>
+	{#if !drawerOpen}
+		<button type="button" class="gear-button" aria-label="Open settings" onclick={() => (drawerOpen = true)}>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
-				class="stroke-current shrink-0 h-6 w-6"
-				fill="none"
-				viewBox="0 0 24 24"
+				height="24px"
+				viewBox="0 -960 960 960"
+				width="24px"
+				fill="#e3e3e3"
 			>
 				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+					d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z"
 				/>
 			</svg>
-			<span>
-				{$_('web_viewer.guest_limitations', {
-					default:
-						'You are viewing as a guest. You can edit text and confirm words, but cannot record audio. To use recording features, download the desktop app.'
-				})}
-			</span>
-		</div>
-	</div>
+		</button>
+	{/if}
 
-	<!-- Editor and Preview -->
-	<div class="flex flex-col xl:flex-row xl:items-start gap-6">
-		<!-- Speech Editor -->
-		<div class="xl:flex-[2] flex-1 min-w-[500px]">
-			{#if editorReady && collaborationManager}
-				<SpeechEditor
-					bind:this={speechEditor}
-					collaborationManager={collaborationManager}
-					config={{
-						fontSize: 16,
-						onWordApproved: handleWordApproved,
-						onSubtitleEmit: handleSubtitleEmit
-					}}
-				/>
-			{:else if !error}
-				<div class="alert alert-info">
-					<span class="loading loading-spinner loading-sm"></span>
-					<span>Loading editor...</span>
-				</div>
+	<ConnectionIndicator state={connectionState} />
+
+	<SettingsDrawer
+		open={drawerOpen}
+		{settings}
+		onClose={() => (drawerOpen = false)}
+		onChange={handleSettingsChange}
+		onReset={handleReset}
+	/>
+
+	{#if isOverlayMode}
+		<OverlayBar
+			{text}
+			{settings}
+			{lastUpdated}
+			minimized={overlayMinimized}
+			prefersReducedMotion={$prefersReducedMotion}
+			onToggleMinimize={() => (overlayMinimized = !overlayMinimized)}
+			onOpenSettings={() => (drawerOpen = true)}
+		/>
+		{#if connectionState !== 'connected'}
+			<StatusLayer
+				state={connectionState}
+				{onReconnect: reconnect}
+				{errorMessage}
+				variant="global"
+			/>
+		{/if}
+	{:else}
+		<div class="subtitle-stage" style={stageStyle}>
+			<SubtitleDisplay
+				{text}
+				{settings}
+				{lastUpdated}
+				prefersReducedMotion={$prefersReducedMotion}
+				variant="fullscreen"
+			/>
+			{#if connectionState !== 'connected'}
+				<StatusLayer state={connectionState} {onReconnect: reconnect} {errorMessage} />
 			{/if}
 		</div>
-
-		<!-- Read-Only Editor Preview -->
-		<div class="xl:flex-[1] flex-1 min-w-[500px]">
-			<ReadOnlyEditorPreview
-				collaborationManager={collaborationManager}
-				class="h-[600px]"
-			/>
-		</div>
-	</div>
+	{/if}
 </div>
