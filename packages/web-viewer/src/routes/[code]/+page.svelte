@@ -54,12 +54,20 @@
 		try {
 			const xmlFrag = collaborationManager.ydoc.getXmlFragment('prosemirror');
 
-			// Use textContent property to extract plain text from the entire fragment
+			// Convert XML fragment to string
 			const text = xmlFrag.toString();
 
-			// Extract text content from the XML string using a simple regex
-			// This will get text between tags, removing all XML markup
-			const textOnly = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+			// Extract text content while preserving paragraph structure
+			// 1. Replace closing paragraph tags with single newlines
+			// 2. Strip all other XML tags
+			// 3. Clean up spaces but preserve newlines
+			const textOnly = text
+				.replace(/<\/paragraph>/g, '\n')
+				.replace(/<[^>]*>/g, '')
+				.replace(/ +/g, ' ')
+				.replace(/\n /g, '\n')
+				.replace(/ \n/g, '\n')
+				.trim();
 
 			return textOnly;
 		} catch (err) {
