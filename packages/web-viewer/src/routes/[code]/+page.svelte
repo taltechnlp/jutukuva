@@ -54,39 +54,59 @@
 
 			// Convert XML fragment to text
 			let extractedText = '';
+			const paragraphs: string[] = [];
 
-			function extractFromNode(node: any): void {
-				if (!node) return;
+			function extractFromNode(node: any, depth = 0): string {
+				if (!node) return '';
 
-				// If it's a text node, add its content
-				if (node.constructor.name === 'YText' || typeof node.toString === 'function') {
-					const textContent = node.toString();
-					if (textContent && textContent !== '[object Object]') {
-						extractedText += textContent;
-					}
+				const nodeType = node.constructor.name;
+
+				// Handle YXmlText - actual text content
+				if (nodeType === 'YXmlText') {
+					return node.toString();
 				}
 
-				// If it has children, recursively extract from them
-				if (node.toArray) {
-					const children = node.toArray();
-					children.forEach((child: any, index: number) => {
-						extractFromNode(child);
-						// Add newline between paragraphs
-						if (index < children.length - 1) {
-							extractedText += '\n';
+				// Handle YXmlElement - structural elements
+				if (nodeType === 'YXmlElement') {
+					const nodeName = node.nodeName;
+					let text = '';
+
+					// Recursively process children
+					let child = node._first;
+					while (child) {
+						if (child.content) {
+							text += extractFromNode(child.content, depth + 1);
 						}
-					});
-				} else if (node._first) {
-					// Iterate through linked list of children
-					let current = node._first;
-					while (current) {
-						extractFromNode(current.content);
-						current = current._right;
+						child = child._right;
 					}
+
+					// Add space after words, newline after paragraphs
+					if (nodeName === 'word') {
+						return text + ' ';
+					} else if (nodeName === 'paragraph') {
+						return text + '\n';
+					}
+
+					return text;
 				}
+
+				// Handle YXmlFragment
+				if (nodeType === 'YXmlFragment' || node.toArray) {
+					let text = '';
+					let child = node._first;
+					while (child) {
+						if (child.content) {
+							text += extractFromNode(child.content, depth + 1);
+						}
+						child = child._right;
+					}
+					return text;
+				}
+
+				return '';
 			}
 
-			extractFromNode(xmlFrag);
+			extractedText = extractFromNode(xmlFrag);
 			return extractedText.trim();
 		} catch (err) {
 			console.error('[WEB-VIEWER] Error extracting text from Yjs:', err);
