@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { DisplaySettings, DisplayMode } from '$lib/types/display-settings';
+	import type { DisplaySettings } from '$lib/types/display-settings';
 
 	interface Props {
 		open: boolean;
@@ -42,16 +42,12 @@
 		onChange({ ...settings, [key]: value });
 	}
 
-	function handleModeChange(mode: DisplayMode) {
-		handleSettingChange('mode', mode);
-	}
-
 	function handlePresetApply(textColor: string, backgroundColor: string) {
 		onChange({ ...settings, textColor, backgroundColor });
 	}
 </script>
 
-<aside
+<div
 	class="settings-drawer {open ? 'open' : ''}"
 	role="dialog"
 	aria-modal="true"
@@ -142,68 +138,70 @@
 		</section>
 
 		<section class="drawer-section">
-			<h2 class="section-title">Position</h2>
-			<label class="slider-control" for="position-slider">
-				<div>
-					Vertical Offset
-					<span class="value-chip">{settings.verticalPosition}%</span>
+
+			<h2 class="section-title">Horizontal Alignment</h2>
+			<div class="control-group">
+				<div class="stack" role="group" aria-label="Horizontal alignment">
+					<button
+						type="button"
+						class="preset-chip {settings.horizontalAlignment === 'full' ? 'active' : ''}"
+						aria-pressed={settings.horizontalAlignment === 'full'}
+						onclick={() => handleSettingChange('horizontalAlignment', 'full')}
+					>
+						Full
+					</button>
+					<button
+						type="button"
+						class="preset-chip {settings.horizontalAlignment === 'left' ? 'active' : ''}"
+						aria-pressed={settings.horizontalAlignment === 'left'}
+						onclick={() => handleSettingChange('horizontalAlignment', 'left')}
+					>
+						Left
+					</button>
+					<button
+						type="button"
+						class="preset-chip {settings.horizontalAlignment === 'middle' ? 'active' : ''}"
+						aria-pressed={settings.horizontalAlignment === 'middle'}
+						onclick={() => handleSettingChange('horizontalAlignment', 'middle')}
+					>
+						Middle
+					</button>
+					<button
+						type="button"
+						class="preset-chip {settings.horizontalAlignment === 'right' ? 'active' : ''}"
+						aria-pressed={settings.horizontalAlignment === 'right'}
+						onclick={() => handleSettingChange('horizontalAlignment', 'right')}
+					>
+						Right
+					</button>
 				</div>
-				<input
-					id="position-slider"
-					type="range"
-					min={10}
-					max={50}
-					step={1}
-					value={settings.verticalPosition}
-					oninput={(event) =>
-						handleSettingChange('verticalPosition', Number(event.currentTarget.value))}
-				/>
-			</label>
+			</div>
 		</section>
 
 		<section class="drawer-section">
-			<h2 class="section-title">Display</h2>
-			<div class="stack" role="group" aria-label="Display mode">
+			<h2 class="section-title">View Mode</h2>
+			<div class="stack" role="group" aria-label="View mode">
 				<button
 					type="button"
-					class="preset-chip {settings.mode === 'fullscreen' ? 'active' : ''}"
-					aria-pressed={settings.mode === 'fullscreen'}
-					onclick={() => handleModeChange('fullscreen')}
+					class="preset-chip {settings.viewMode === 'text' ? 'active' : ''}"
+					aria-pressed={settings.viewMode === 'text'}
+					onclick={() => handleSettingChange('viewMode', 'text')}
 				>
-					Fullscreen
+					Text
 				</button>
 				<button
 					type="button"
-					class="preset-chip {settings.mode === 'overlay' ? 'active' : ''}"
-					aria-pressed={settings.mode === 'overlay'}
-					onclick={() => handleModeChange('overlay')}
+					class="preset-chip {settings.viewMode === 'captions' ? 'active' : ''}"
+					aria-pressed={settings.viewMode === 'captions'}
+					onclick={() => handleSettingChange('viewMode', 'captions')}
 				>
-					Overlay
+					Captions
 				</button>
 			</div>
-
-			<label class="slider-control" for="opacity-slider">
-				<div>
-					Overlay opacity
-					<span class="value-chip">
-						{Math.round(settings.overlayOpacity * 100)}%
-					</span>
-				</div>
-				<input
-					id="opacity-slider"
-					type="range"
-					min={0.5}
-					max={1}
-					step={0.05}
-					value={settings.overlayOpacity}
-					oninput={(event) =>
-						handleSettingChange('overlayOpacity', Number(event.currentTarget.value))}
-				/>
-			</label>
 		</section>
 
 		{#if onReset}
 			<button type="button" class="reset-button" onclick={onReset}> Reset to default </button>
 		{/if}
 	</div>
-</aside>
+</div>
