@@ -64,7 +64,7 @@
 	
 	const contentStyle = $derived(
 		`align-items: ${alignmentMap[settings.horizontalAlignment]}; ` +
-		`padding-bottom: ${settings.viewMode === 'text' ? '2rem' : settings.verticalPosition + 'vh'};`
+		`padding-bottom: ${settings.viewMode === 'text' ? '2rem' : '0'};`
 	);
 
 	// ... (keep extractTextFromYDoc and onMount/onDestroy) ...
