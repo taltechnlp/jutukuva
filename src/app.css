@@ -96,6 +96,15 @@
 	background-color: transparent;
 }
 
+/* Text snippet ghost text styling */
+.snippet-ghost-text {
+	color: #9ca3af;
+	opacity: 0.6;
+	font-style: italic;
+	pointer-events: none;
+	user-select: none;
+}
+
 /* Subtitle preview styles */
 .playing {
 	color: oklch(var(--p));

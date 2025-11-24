@@ -521,9 +521,17 @@
   "collaboration": {
     "collaborative_session": "Yhteistyöistunto",
     "session_active": "Aktiivinen istunto",
+    "choose_option": "Valitse vaihtoehto aloittaaksesi",
+    "join_existing": "Liity olemassa olevaan istuntoon",
+    "join_existing_desc": "Syötä 6-merkkinen koodi liittyäksesi live-istuntoon muiden kanssa",
+    "quick_start": "Pikakäynnistys",
+    "quick_start_desc": "Aloita uusi yhteistyöistunto ja jaa koodi muiden kanssa",
+    "manage_sessions": "Suunnittele ja hallinnoi istuntoja",
+    "manage_sessions_desc": "Tarkastele, suunnittele ja järjestä tulevia transkriptioistuntoja",
     "join_session": "Liity istuntoon",
     "enter_code": "Syötä 6-merkkinen koodi",
     "join": "Liity",
+    "or": "TAI",
     "start_session": "Aloita uusi istunto",
     "guest_cannot_record": "Vain isäntä voi nauhoittaa"
   }

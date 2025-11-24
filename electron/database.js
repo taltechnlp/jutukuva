@@ -91,6 +91,39 @@ export function initDatabase() {
 		ON transcription_sessions(scheduled_date)
 	`);
 
+	// Create autocomplete dictionaries table
+	db.exec(`
+		CREATE TABLE IF NOT EXISTS autocomplete_dictionaries (
+			id TEXT PRIMARY KEY,
+			name TEXT NOT NULL,
+			is_active INTEGER DEFAULT 1,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)
+	`);
+
+	// Create autocomplete entries table
+	db.exec(`
+		CREATE TABLE IF NOT EXISTS autocomplete_entries (
+			id TEXT PRIMARY KEY,
+			dictionary_id TEXT NOT NULL,
+			trigger TEXT NOT NULL,
+			replacement TEXT NOT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (dictionary_id) REFERENCES autocomplete_dictionaries(id) ON DELETE CASCADE
+		)
+	`);
+
+	// Create indexes for autocomplete
+	db.exec(`
+		CREATE INDEX IF NOT EXISTS idx_entries_dictionary
+		ON autocomplete_entries(dictionary_id)
+	`);
+	db.exec(`
+		CREATE INDEX IF NOT EXISTS idx_entries_trigger
+		ON autocomplete_entries(trigger COLLATE NOCASE)
+	`);
+
 	// Create transcripts table (stores the actual text and subtitles)
 	db.exec(`
 		CREATE TABLE IF NOT EXISTS transcripts (
@@ -330,5 +363,119 @@ export const dbOperations = {
 		const stmt = db.prepare('SELECT COUNT(*) as count FROM transcripts WHERE session_id = ?');
 		const row = stmt.get(sessionId);
 		return row ? row.count : 0;
+	},
+
+	// Autocomplete dictionary operations
+	createDictionary: (id, name, isActive = 1) => {
+		const stmt = db.prepare(`
+			INSERT INTO autocomplete_dictionaries (id, name, is_active)
+			VALUES (?, ?, ?)
+		`);
+		stmt.run(id, name, isActive);
+		return db.prepare('SELECT * FROM autocomplete_dictionaries WHERE id = ?').get(id);
+	},
+
+	getDictionary: (id) => {
+		const stmt = db.prepare('SELECT * FROM autocomplete_dictionaries WHERE id = ?');
+		return stmt.get(id);
+	},
+
+	getAllDictionaries: () => {
+		const stmt = db.prepare('SELECT * FROM autocomplete_dictionaries ORDER BY created_at DESC');
+		return stmt.all();
+	},
+
+	updateDictionary: (id, data) => {
+		const fields = [];
+		const values = [];
+
+		if (data.name !== undefined) {
+			fields.push('name = ?');
+			values.push(data.name);
+		}
+		if (data.is_active !== undefined) {
+			fields.push('is_active = ?');
+			values.push(data.is_active);
+		}
+
+		if (fields.length > 0) {
+			fields.push('updated_at = CURRENT_TIMESTAMP');
+			values.push(id);
+			const stmt = db.prepare(`
+				UPDATE autocomplete_dictionaries
+				SET ${fields.join(', ')}
+				WHERE id = ?
+			`);
+			stmt.run(...values);
+		}
+		return db.prepare('SELECT * FROM autocomplete_dictionaries WHERE id = ?').get(id);
+	},
+
+	deleteDictionary: (id) => {
+		// Entries will be deleted automatically due to CASCADE
+		const stmt = db.prepare('DELETE FROM autocomplete_dictionaries WHERE id = ?');
+		stmt.run(id);
+	},
+
+	// Autocomplete entry operations
+	createEntry: (id, dictionaryId, trigger, replacement) => {
+		const stmt = db.prepare(`
+			INSERT INTO autocomplete_entries (id, dictionary_id, trigger, replacement)
+			VALUES (?, ?, ?, ?)
+		`);
+		stmt.run(id, dictionaryId, trigger, replacement);
+		return db.prepare('SELECT * FROM autocomplete_entries WHERE id = ?').get(id);
+	},
+
+	getEntry: (id) => {
+		const stmt = db.prepare('SELECT * FROM autocomplete_entries WHERE id = ?');
+		return stmt.get(id);
+	},
+
+	getDictionaryEntries: (dictionaryId) => {
+		const stmt = db.prepare('SELECT * FROM autocomplete_entries WHERE dictionary_id = ? ORDER BY trigger');
+		return stmt.all(dictionaryId);
+	},
+
+	updateEntry: (id, data) => {
+		const fields = [];
+		const values = [];
+
+		if (data.trigger !== undefined) {
+			fields.push('trigger = ?');
+			values.push(data.trigger);
+		}
+		if (data.replacement !== undefined) {
+			fields.push('replacement = ?');
+			values.push(data.replacement);
+		}
+
+		if (fields.length > 0) {
+			values.push(id);
+			const stmt = db.prepare(`
+				UPDATE autocomplete_entries
+				SET ${fields.join(', ')}
+				WHERE id = ?
+			`);
+			stmt.run(...values);
+		}
+		return db.prepare('SELECT * FROM autocomplete_entries WHERE id = ?').get(id);
+	},
+
+	deleteEntry: (id) => {
+		const stmt = db.prepare('DELETE FROM autocomplete_entries WHERE id = ?');
+		stmt.run(id);
+	},
+
+	// Get all entries from active dictionaries (for the editor)
+	getActiveEntries: () => {
+		const stmt = db.prepare(`
+			SELECT e.id, e.trigger, e.replacement, e.dictionary_id, d.name as dictionary_name
+			FROM autocomplete_entries e
+			INNER JOIN autocomplete_dictionaries d ON e.dictionary_id = d.id
+			WHERE d.is_active = 1
+			ORDER BY LENGTH(e.trigger) DESC, e.trigger
+		`);
+		return stmt.all();
 	}
 };
