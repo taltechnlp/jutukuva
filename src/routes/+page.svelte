@@ -1167,8 +1167,16 @@
 				await loadAudioDevices();
 			}
 			if (savedDeviceId) {
-				selectedDeviceId = savedDeviceId;
-				console.log('[AUDIO] Restored device ID:', selectedDeviceId);
+				// Only restore device ID if it exists in the available devices
+				const deviceExists = availableAudioDevices.some(d => d.deviceId === savedDeviceId);
+				if (deviceExists) {
+					selectedDeviceId = savedDeviceId;
+					console.log('[AUDIO] Restored device ID:', selectedDeviceId);
+				} else {
+					// Device no longer available, default to null (Default)
+					selectedDeviceId = null;
+					console.log('[AUDIO] Saved device not found, using default');
+				}
 			}
 		}
 
@@ -1386,17 +1394,17 @@
 	</div>
 
 	<!-- Recording Controls -->
-	<div style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; margin-bottom: 1.5rem;">
+	<div class="bg-base-100 border border-base-300 rounded-lg overflow-hidden mb-6">
 		<!-- Header -->
-		<div style="padding: 12px 16px; background-color: #fafafa; border-bottom: 1px solid #ddd;">
-			<h2 style="font-size: 16px; font-weight: 600; margin: 0; color: #424242;">Eesti keele kõnetuvastus</h2>
+		<div class="px-4 py-3 bg-base-200 border-b border-base-300">
+			<h2 class="text-base font-semibold m-0 text-base-content">Eesti keele kõnetuvastus</h2>
 		</div>
 
 		<!-- Body -->
-		<div style="padding: 2rem;">
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-8" style="position: relative;">
+		<div class="p-8">
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-8 relative">
 				<!-- Column Divider (only visible on desktop) -->
-				<div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: #e0e0e0; display: none;" class="md:block"></div>
+				<div class="absolute left-1/2 top-0 bottom-0 w-px bg-base-300 hidden md:block"></div>
 
 				<!-- Left Column: Status and Controls -->
 				<div class="flex flex-col gap-4">
@@ -1472,8 +1480,7 @@
 							<span class="label-text font-semibold">{$_('dictate.audioSource')}</span>
 						</label>
 						<select
-							class="select w-full"
-							style="border: 1px solid #ddd; border-radius: 6px; background-color: white; padding: 8px 12px; font-size: 14px;"
+							class="select select-bordered w-full"
 							bind:value={audioSourceType}
 							onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
 							disabled={isAudioSourceSwitching || !isWasmReady}
@@ -1496,8 +1503,7 @@
 								</span>
 							</label>
 							<select
-								class="select w-full"
-								style="border: 1px solid #ddd; border-radius: 6px; background-color: white; padding: 8px 12px; font-size: 14px;"
+								class="select select-bordered w-full"
 								bind:value={selectedDeviceId}
 								onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
 								disabled={isAudioSourceSwitching || !isWasmReady}

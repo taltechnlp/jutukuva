@@ -68,9 +68,9 @@
 			<h2 class="card-title text-lg">
 				{session.name}
 			</h2>
-			<div class={`badge ${getStatusColor(session.status)}`}>
+			<span class={`badge ${getStatusColor(session.status)} px-3 py-1`}>
 				{getStatusText(session.status)}
-			</div>
+			</span>
 		</div>
 
 		<!-- Session Info -->
@@ -83,9 +83,9 @@
 					<span class={isPastDue() ? 'text-error' : ''}>
 						{formatDate(session.scheduled_date)}
 						{#if isPastDue()}
-							<span class="badge badge-error badge-xs ml-1">Past Due</span>
+							<span class="badge badge-error badge-xs ml-1 px-2 py-1">Past Due</span>
 						{:else if isUpcoming()}
-							<span class="badge badge-info badge-xs ml-1">Upcoming</span>
+							<span class="badge badge-info badge-xs ml-1 px-2 py-1">Upcoming</span>
 						{/if}
 					</span>
 				</div>
