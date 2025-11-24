@@ -289,6 +289,7 @@
 			<label class="auto-scroll-toggle">
 				<input
 					type="checkbox"
+					class="checkbox checkbox-sm"
 					checked={autoScroll}
 					onchange={handleAutoScrollChange}
 					aria-label={$_('dictate.autoScroll')}
