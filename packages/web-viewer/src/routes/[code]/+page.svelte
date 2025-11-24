@@ -1,18 +1,14 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, tick } from 'svelte';
 	import { page } from '$app/stores';
 	import { browser } from '$app/environment';
 
 	// Import new UI components
 	import SubtitleDisplay from '$lib/components/SubtitleDisplay.svelte';
-	import OverlayBar from '$lib/components/OverlayBar.svelte';
 	import SettingsDrawer from '$lib/components/SettingsDrawer.svelte';
-	import ConnectionIndicator from '$lib/components/ConnectionIndicator.svelte';
-	import StatusLayer from '$lib/components/StatusLayer.svelte';
-	import type { ConnectionState } from '$lib/components/ConnectionIndicator.svelte';
+	import ConnectionStatus from '$lib/components/ConnectionStatus.svelte';
 
 	// Import stores and types
-	import { prefersReducedMotion } from '$lib/stores/reduced-motion.ts';
 	import { defaultSettings, type DisplaySettings } from '$lib/types/display-settings';
 
 	// Import shared components
@@ -20,35 +16,59 @@
 	import { normalizeSessionCode } from '$shared/collaboration/sessionCode';
 	import type { SessionInfo, Participant } from '$shared/collaboration/types';
 
+	import { AutoScroller } from '$lib/actions/autoscroll.svelte';
+
 	// Get session code from URL
-	const sessionCode = $derived(normalizeSessionCode($page.params.code));
+	const sessionCode = $derived(normalizeSessionCode($page.params.code || ''));
 
 	// State
 	let settings = $state<DisplaySettings>(defaultSettings);
 	let drawerOpen = $state(false);
-	let overlayMinimized = $state(false);
+	// Overlay minimized state removed as overlay mode is gone
 	let text = $state('');
 	let lastUpdated = $state<number | null>(null);
-	let connectionState = $state<ConnectionState>('connecting');
 	let errorMessage = $state<string | null>(null);
+	let connectionState = $state<'connected' | 'disconnected' | 'error'>('disconnected');
 	let collaborationManager: CollaborationManager | null = $state(null);
 	let sessionInfo = $state<SessionInfo | null>(null);
 	let participants = $state<Participant[]>([]);
+	// Autoscroll is always enabled in smart mode
 	let autoscrollEnabled = $state(true);
-	let showAutoscrollControl = $state(false);
-	let hideControlTimeout: number | null = $state(null);
+	// Store observer and interval for cleanup
+	let xmlFragmentObserver: (() => void) | null = null;
+	let extractInterval: ReturnType<typeof setInterval> | null = null;
+	let updateHandler: ((update: Uint8Array, origin: any) => void) | null = null;
 
-	const isOverlayMode = $derived(settings.mode === 'overlay');
+	// AutoScroller instance
+	const scroller = new AutoScroller({ enabled: true });
 
-	const backgroundStyle = $derived(
-		isOverlayMode
-			? 'background-color: #000000;'
-			: `background-color: ${settings.backgroundColor};`
+	$effect(() => {
+		scroller.enabled = autoscrollEnabled;
+	});
+
+	// Trigger autoscroll update when text changes
+	$effect(() => {
+		text; // dependency
+		tick().then(() => scroller.update());
+	});
+
+	const backgroundStyle = $derived(`background-color: ${settings.backgroundColor};`);
+
+	// Apply alignment and padding to the content wrapper
+	const alignmentMap = {
+		full: 'stretch',
+		left: 'flex-start',
+		middle: 'center',
+		right: 'flex-end'
+	};
+	
+	const contentStyle = $derived(
+		`align-items: ${alignmentMap[settings.horizontalAlignment]}; ` +
+		`padding-bottom: ${settings.viewMode === 'text' ? '2rem' : '0'};`
 	);
 
-	const stageStyle = $derived(`padding-bottom: ${settings.verticalPosition}vh;`);
+	// ... (keep extractTextFromYDoc and onMount/onDestroy) ...
 
-	// Extract text from ProseMirror document stored in Yjs
 	function extractTextFromYDoc() {
 		if (!collaborationManager) {
 			return '';
@@ -58,13 +78,21 @@
 			const xmlFrag = collaborationManager.ydoc.getXmlFragment('prosemirror');
 
 			// Convert XML fragment to string
-			const text = xmlFrag.toString();
+			const rawText = xmlFrag.toString();
+			
+			// Debug: log the raw XML to understand structure
+			console.log('[WEB-VIEWER] XML fragment toString length:', rawText.length);
+			if (rawText && rawText.length > 0) {
+				console.log('[WEB-VIEWER] Raw XML fragment:', rawText.substring(0, 500));
+			} else {
+				console.log('[WEB-VIEWER] XML fragment is empty');
+			}
 
 			// Extract text content while preserving paragraph structure
 			// 1. Replace closing paragraph tags with single newlines
 			// 2. Strip all other XML tags
 			// 3. Clean up spaces but preserve newlines
-			const textOnly = text
+			const textOnly = rawText
 				.replace(/<\/paragraph>/g, '\n')
 				.replace(/<[^>]*>/g, '')
 				.replace(/ +/g, ' ')
@@ -110,34 +138,59 @@
 				}
 			});
 
-			// Listen for Yjs document updates to refresh text
-			collaborationManager.ydoc.on('update', (update: Uint8Array, origin: any) => {
-				console.log('[WEB-VIEWER] Yjs update event fired', { updateSize: update.length, origin });
+			// Get XML fragment and observe it for changes
+			const xmlFrag = collaborationManager.ydoc.getXmlFragment('prosemirror');
+			
+			// Function to update text from XML fragment
+			const updateTextFromFragment = () => {
 				const newText = extractTextFromYDoc();
-				console.log('[WEB-VIEWER] Extracted text from update:', newText.substring(0, 100));
 				if (newText !== text) {
 					text = newText;
 					lastUpdated = Date.now();
-					console.log('[WEB-VIEWER] Text state updated:', text.substring(0, 100));
+					console.log('[WEB-VIEWER] Text updated from XML fragment:', newText.substring(0, 100));
 				}
-			});
+			};
 
-			// Initial text extraction - try multiple times
+			// Observe XML fragment for changes (more reliable than polling)
+			const observer = () => {
+				console.log('[WEB-VIEWER] XML fragment changed');
+				updateTextFromFragment();
+			};
+			xmlFrag.observe(observer);
+			xmlFragmentObserver = () => xmlFrag.unobserve(observer);
+
+			// Also listen for Yjs document updates as a fallback
+			updateHandler = (update: Uint8Array, origin: any) => {
+				console.log('[WEB-VIEWER] Yjs update event fired', { updateSize: update.length, origin });
+				// Small delay to ensure XML fragment is updated
+				setTimeout(() => {
+					updateTextFromFragment();
+				}, 10);
+			};
+			collaborationManager.ydoc.on('update', updateHandler);
+
+			// Initial text extraction - try a few times after connection
+			// Wait for provider to sync first
 			let attempts = 0;
-			const extractInterval = setInterval(() => {
+			extractInterval = setInterval(() => {
 				attempts++;
-				console.log('[WEB-VIEWER] Attempting initial text extraction, attempt:', attempts);
 				const extractedText = extractTextFromYDoc();
-				console.log('[WEB-VIEWER] Extracted:', extractedText.substring(0, 100));
+				console.log('[WEB-VIEWER] Initial extraction attempt:', attempts, 'text length:', extractedText.length);
 
 				if (extractedText) {
 					text = extractedText;
 					lastUpdated = Date.now();
-					clearInterval(extractInterval);
+					if (extractInterval) {
+						clearInterval(extractInterval);
+						extractInterval = null;
+					}
 					console.log('[WEB-VIEWER] Initial text extraction successful');
-				} else if (attempts >= 10) {
-					clearInterval(extractInterval);
-					console.log('[WEB-VIEWER] Gave up on initial text extraction after 10 attempts');
+				} else if (attempts >= 20) {
+					if (extractInterval) {
+						clearInterval(extractInterval);
+						extractInterval = null;
+					}
+					console.log('[WEB-VIEWER] Initial extraction complete (will update when content arrives)');
 				}
 			}, 500);
 		} catch (err) {
@@ -148,6 +201,19 @@
 	});
 
 	onDestroy(() => {
+		// Clean up observers and intervals
+		if (xmlFragmentObserver) {
+			xmlFragmentObserver();
+			xmlFragmentObserver = null;
+		}
+		if (extractInterval) {
+			clearInterval(extractInterval);
+			extractInterval = null;
+		}
+		if (collaborationManager && updateHandler) {
+			collaborationManager.ydoc.off('update', updateHandler);
+			updateHandler = null;
+		}
 		if (collaborationManager) {
 			collaborationManager.disconnect();
 		}
@@ -173,7 +239,6 @@
 
 	function handleReset() {
 		settings = defaultSettings;
-		overlayMinimized = false;
 	}
 
 	function reconnect() {
@@ -193,41 +258,13 @@
 			}, 100);
 		}
 	}
-
-	function handleMouseMove() {
-		if (!isOverlayMode) {
-			showAutoscrollControl = true;
-			if (hideControlTimeout !== null) {
-				clearTimeout(hideControlTimeout);
-			}
-			hideControlTimeout = window.setTimeout(() => {
-				showAutoscrollControl = false;
-			}, 3000);
-		}
-	}
-
-	function handleTouchStart() {
-		if (!isOverlayMode) {
-			showAutoscrollControl = true;
-			if (hideControlTimeout !== null) {
-				clearTimeout(hideControlTimeout);
-			}
-			hideControlTimeout = window.setTimeout(() => {
-				showAutoscrollControl = false;
-			}, 3000);
-		}
-	}
-
-	function toggleAutoscroll() {
-		autoscrollEnabled = !autoscrollEnabled;
-	}
 </script>
 
 <svelte:head>
 	<title>Session {sessionCode} - Kirikaja</title>
 </svelte:head>
 
-<div class="app-root" data-mode={settings.mode} style={backgroundStyle}>
+<div class="app-root" data-mode={settings.viewMode} style={backgroundStyle}>
 	{#if !drawerOpen}
 		<button type="button" class="gear-button" aria-label="Open settings" onclick={() => (drawerOpen = true)}>
 			<svg
@@ -244,7 +281,7 @@
 		</button>
 	{/if}
 
-	<ConnectionIndicator state={connectionState} />
+	<ConnectionStatus state={connectionState} />
 
 	<SettingsDrawer
 		open={drawerOpen}
@@ -254,77 +291,27 @@
 		onReset={handleReset}
 	/>
 
-	{#if isOverlayMode}
-		<OverlayBar
-			{text}
-			{settings}
-			{lastUpdated}
-			minimized={overlayMinimized}
-			onToggleMinimize={() => (overlayMinimized = !overlayMinimized)}
-			onOpenSettings={() => (drawerOpen = true)}
-		/>
-		{#if connectionState !== 'connected'}
-			<StatusLayer
-				state={connectionState}
-				onReconnect={reconnect}
-				{errorMessage}
-				variant="global"
-			/>
-		{/if}
-	{:else}
-		<div
-			class="subtitle-stage"
-			style={stageStyle}
-			onmousemove={handleMouseMove}
-			ontouchstart={handleTouchStart}
-			role="main"
-		>
-			<SubtitleDisplay
-				{text}
-				{settings}
-				{lastUpdated}
-				variant="fullscreen"
-				autoscrollEnabled={autoscrollEnabled}
-			/>
-			{#if connectionState !== 'connected'}
-				<StatusLayer state={connectionState} onReconnect={reconnect} {errorMessage} />
-			{/if}
-			{#if showAutoscrollControl}
-				<button
-					type="button"
-					class="autoscroll-toggle"
-					onclick={toggleAutoscroll}
-					aria-label={autoscrollEnabled ? 'Disable autoscroll' : 'Enable autoscroll'}
-				>
-					{#if autoscrollEnabled}
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							height="24px"
-							viewBox="0 -960 960 960"
-							width="24px"
-							fill="#e3e3e3"
-						>
-							<path
-								d="M480-80 280-280l56-58 104 104v-526H320l160-160 160 160H520v526l104-104 56 58L480-80Z"
-							/>
-						</svg>
-						<span>Autoscroll On</span>
-					{:else}
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							height="24px"
-							viewBox="0 -960 960 960"
-							width="24px"
-							fill="#e3e3e3"
-						>
-							<path
-								d="m633-267-56-57 103-103H360v-80h320L577-610l56-57 200 200-200 200ZM480-80 280-280l56-58 104 104v-166h80v166l104-104 56 58L480-80Z"
-							/>
-						</svg>
-						<span>Autoscroll Off</span>
-					{/if}
-				</button>
-			{/if}
+	<div class="subtitle-stage" role="main" use:scroller.action>
+		<div class="subtitle-content" style={contentStyle}>
+			<SubtitleDisplay {text} {settings} {lastUpdated} />
 		</div>
+	</div>
+
+	{#if scroller.isScrolledUp}
+		<button
+			type="button"
+			class="scroll-to-bottom"
+			aria-label="Scroll to bottom"
+			onclick={scroller.scrollToBottom}
+		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				viewBox="0 0 24 24"
+				fill="currentColor"
+			>
+				<path d="M12 16l-6-6h12z" transform="rotate(0 12 12)" />
+			</svg>
+		</button>
 	{/if}
 </div>
+
