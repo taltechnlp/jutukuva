@@ -8,6 +8,7 @@
 	import { keyboardShortcutsPlugin } from './plugins/keyboardShortcuts';
 	import { streamingTextPlugin, insertStreamingTextCommand, signalVadSpeechEndCommand } from './plugins/streamingText';
 	import { subtitleSegmentationPlugin, subtitleSegmentationKey } from './plugins/subtitleSegmentation';
+	import { textSnippetsPlugin, updateTextSnippetEntries, type TextSnippetEntry } from './plugins/textSnippets';
 	import type { EditorConfig, StreamingTextEvent, SubtitleSegment, Word } from './utils/types';
 	import type { CollaborationManager } from '$lib/collaboration/CollaborationManager';
 	import Toolbar from './Toolbar.svelte';
@@ -31,14 +32,37 @@
 	let segments = $state<SubtitleSegment[]>([]);
 	let recordingStartTime = $state<number | null>(null);
 	let autoScroll = $state(true);
+	let textSnippetEntries = $state<TextSnippetEntry[]>([]);
+
+	// Load text snippet entries from database
+	async function loadTextSnippetEntries() {
+		if (typeof window !== 'undefined' && window.db) {
+			try {
+				const entries = await window.db.getActiveEntries();
+				textSnippetEntries = entries.map(entry => ({
+					trigger: entry.trigger,
+					replacement: entry.replacement,
+					dictionary_id: entry.dictionary_id,
+					dictionary_name: entry.dictionary_name
+				}));
+			} catch (error) {
+				console.error('Failed to load text snippet entries:', error);
+				textSnippetEntries = [];
+			}
+		}
+	}
 
 	// Initialize editor
-	onMount(() => {
+	onMount(async () => {
+		// Load text snippets first
+		await loadTextSnippetEntries();
+
 		// Determine plugins based on collaboration mode
 		const basePlugins = [
 			keyboardShortcutsPlugin(),
 			streamingTextPlugin(collaborationManager),
-			subtitleSegmentationPlugin(handleSegmentComplete)
+			subtitleSegmentationPlugin(handleSegmentComplete),
+			textSnippetsPlugin({ entries: textSnippetEntries })
 		];
 
 		// Add collaboration or history plugins
@@ -180,6 +204,14 @@
 		insertStreamingTextCommand(editorView.state, (tr) => {
 			editorView?.dispatch(tr);
 		}, enhancedEvent);
+	}
+
+	// Public API: Reload text snippet entries from database
+	export async function reloadTextSnippetEntries() {
+		await loadTextSnippetEntries();
+		if (editorView) {
+			updateTextSnippetEntries(editorView, textSnippetEntries);
+		}
 	}
 
 	// Public API: Signal VAD speech end (to create new paragraph on next text)

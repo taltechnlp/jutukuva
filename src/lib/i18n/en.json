@@ -2,13 +2,21 @@
   "app": {
     "title": "Speech Recognition"
   },
+  "nav": {
+    "sessions": "Sessions",
+    "textSnippets": "Text Snippets"
+  },
   "sign_in": "Sign in",
   "sign_up": "Sign up",
   "common": {
     "close": "Close",
     "apply": "Apply",
     "reject": "Reject",
-    "error": "Error"
+    "error": "Error",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel"
   },
   "error": {
     "404": {
@@ -535,6 +543,9 @@
       "redo": "Redo",
       "selectNextWord": "Select next word",
       "selectPreviousWord": "Select previous word",
+      "textSnippets": "Text Snippets",
+      "applySnippet": "Apply snippet (when ghost text shown)",
+      "cancelSnippet": "Cancel snippet and insert space",
       "close": "Close",
       "or": "or"
     },
@@ -552,10 +563,52 @@
   "collaboration": {
     "collaborative_session": "Collaborative Session",
     "session_active": "Active Session",
+    "choose_option": "Choose an option to get started",
+    "join_existing": "Join Existing Session",
+    "join_existing_desc": "Enter a 6-character code to join a live session with others",
+    "quick_start": "Quick Start Session",
+    "quick_start_desc": "Start a new collaborative session and share the code with others",
+    "manage_sessions": "Plan & Manage Sessions",
+    "manage_sessions_desc": "View, plan, and organize your upcoming transcription sessions",
     "join_session": "Join Session",
     "enter_code": "Enter 6-character code",
     "join": "Join",
+    "or": "OR",
     "start_session": "Start New Session",
     "guest_cannot_record": "Only the host can record"
+  },
+  "settings": {
+    "dictionaries": {
+      "title": "Text Snippet Dictionaries",
+      "description": "Manage your text snippet dictionaries. Create custom shortcuts that automatically expand as you type.",
+      "myDictionaries": "My Dictionaries",
+      "new": "New Dictionary",
+      "noDictionaries": "No dictionaries yet",
+      "createFirst": "Create your first dictionary to get started",
+      "createdAt": "Created",
+      "delete": "Delete",
+      "confirmDelete": "Are you sure you want to delete this dictionary? All entries will be deleted.",
+      "selectDictionary": "Select a dictionary to manage entries",
+      "newDictionaryTitle": "Create New Dictionary",
+      "dictionaryName": "Dictionary Name",
+      "namePlaceholder": "e.g., Medical Terms",
+      "create": "Create",
+      "entries": "entries",
+      "searchPlaceholder": "Search snippets...",
+      "addEntry": "Add",
+      "noResults": "No entries match your search",
+      "noEntries": "No entries yet. Add your first snippet!",
+      "trigger": "Trigger",
+      "replacement": "Replacement",
+      "addedOn": "Added",
+      "confirmDeleteEntry": "Delete this entry?",
+      "addNewEntry": "Add New Snippet",
+      "triggerPlaceholder": "e.g., amb",
+      "triggerHelp": "The text you type to trigger the replacement",
+      "replacementPlaceholder": "e.g., ambulance",
+      "replacementHelp": "The text that will replace the trigger",
+      "add": "Add",
+      "duplicateTrigger": "A snippet with this trigger already exists"
+    }
   }
 }

@@ -1233,17 +1233,7 @@
 	<div class="container mx-auto px-4 py-8 max-w-4xl xl:max-w-7xl">
 	<!-- Header -->
 	<div class="mb-8">
-		<div class="flex justify-between items-start mb-4">
-			<h1 class="text-4xl font-bold">{$_('dictate.pageHeading')}</h1>
-			{#if browser && window.db}
-				<a href="/sessions" class="btn btn-outline btn-sm">
-					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-					</svg>
-					Manage Sessions
-				</a>
-			{/if}
-		</div>
+		<h1 class="text-4xl font-bold mb-4">{$_('dictate.pageHeading')}</h1>
 		<div class="prose max-w-none">
 			<p class="mb-2">{$_('dictate.intro1')}</p>
 			<p class="mb-2">{$_('dictate.intro2')}</p>
@@ -1310,40 +1300,49 @@
 	{/if}
 
 	<!-- Collaboration Controls -->
-	<div class="mb-6">
-		<div class="collapse collapse-arrow bg-base-200">
-			<input type="checkbox" />
-			<div class="collapse-title text-lg font-semibold">
+	<div class="bg-base-100 border border-base-300 rounded-lg overflow-hidden mb-6">
+		<!-- Header -->
+		<div class="px-4 py-3 bg-base-200 border-b border-base-300">
+			<h2 class="text-base font-semibold m-0 text-base-content">
 				{#if sessionInfo}
 					{$_('collaboration.session_active', { default: 'Active Session' })}
 				{:else}
 					{$_('collaboration.collaborative_session', { default: 'Collaborative Session' })}
 				{/if}
-			</div>
-			<div class="collapse-content">
-				{#if sessionInfo}
-					<!-- Session Status -->
-					<SessionStatus
-						{sessionInfo}
-						{participants}
-						connected={collaborationConnected}
-						onShowShareModal={() => (showShareModal = true)}
-					/>
-				{:else}
-					<!-- Join/Start Session UI -->
-					<div class="flex gap-4 p-4 bg-base-100 rounded-lg">
-						<!-- Join Session -->
-						<div class="flex-1">
-							<label class="label">
-								<span class="label-text font-semibold">
-									{$_('collaboration.join_session', { default: 'Join Session' })}
-								</span>
-							</label>
+			</h2>
+		</div>
+
+		<!-- Body -->
+		<div class="p-6">
+			{#if sessionInfo}
+				<!-- Session Status -->
+				<SessionStatus
+					{sessionInfo}
+					{participants}
+					connected={collaborationConnected}
+					onShowShareModal={() => (showShareModal = true)}
+				/>
+			{:else}
+				<!-- Three Options -->
+				<p class="text-sm text-base-content/70 mb-6">{$_('collaboration.choose_option')}</p>
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<!-- Option 1: Join Existing Session -->
+					<div class="card bg-base-200 border border-base-300 hover:border-secondary transition-colors">
+						<div class="card-body p-5">
+							<div class="flex items-center gap-3 mb-3">
+								<div class="p-2 rounded-lg bg-secondary/20">
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+									</svg>
+								</div>
+								<h3 class="card-title text-base m-0">{$_('collaboration.join_existing')}</h3>
+							</div>
+							<p class="text-sm text-base-content/70 mb-4">{$_('collaboration.join_existing_desc')}</p>
 							<div class="flex gap-2">
 								<input
 									type="text"
-									placeholder={$_('collaboration.enter_code', { default: 'Enter 6-character code' })}
-									class="input input-bordered flex-1 font-mono uppercase"
+									placeholder={$_('collaboration.enter_code')}
+									class="input input-sm input-bordered flex-1 font-mono uppercase"
 									maxlength="6"
 									bind:value={joinSessionCode}
 									oninput={(e) => {
@@ -1356,40 +1355,61 @@
 									}}
 								/>
 								<button
-									class="btn btn-secondary"
+									class="btn btn-sm btn-secondary"
 									disabled={joinSessionCode.length !== 6}
 									onclick={() => joinCollaborativeSession(joinSessionCode)}
 								>
-									{$_('collaboration.join', { default: 'Join' })}
+									{$_('collaboration.join')}
 								</button>
 							</div>
 						</div>
+					</div>
 
-						<div class="divider divider-horizontal">OR</div>
-
-						<!-- Start New Session -->
-						<div class="flex-1 flex items-end">
-							<button class="btn btn-primary w-full" onclick={startCollaborativeSession}>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									class="h-5 w-5"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M12 4v16m8-8H4"
-									/>
+					<!-- Option 2: Quick Start Session -->
+					<div class="card bg-base-200 border border-base-300 hover:border-primary transition-colors">
+						<div class="card-body p-5">
+							<div class="flex items-center gap-3 mb-3">
+								<div class="p-2 rounded-lg bg-primary/20">
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+									</svg>
+								</div>
+								<h3 class="card-title text-base m-0">{$_('collaboration.quick_start')}</h3>
+							</div>
+							<p class="text-sm text-base-content/70 mb-4">{$_('collaboration.quick_start_desc')}</p>
+							<button class="btn btn-sm btn-primary w-full" onclick={() => startCollaborativeSession()}>
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
 								</svg>
-								{$_('collaboration.start_session', { default: 'Start New Session' })}
+								{$_('collaboration.start_session')}
 							</button>
 						</div>
 					</div>
-				{/if}
-			</div>
+
+					<!-- Option 3: Manage Sessions -->
+					{#if browser && window.db}
+						<div class="card bg-base-200 border border-base-300 hover:border-accent transition-colors">
+							<div class="card-body p-5">
+								<div class="flex items-center gap-3 mb-3">
+									<div class="p-2 rounded-lg bg-accent/20">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+										</svg>
+									</div>
+									<h3 class="card-title text-base m-0">{$_('collaboration.manage_sessions')}</h3>
+								</div>
+								<p class="text-sm text-base-content/70 mb-4">{$_('collaboration.manage_sessions_desc')}</p>
+								<a href="/sessions" class="btn btn-sm btn-accent w-full">
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+									</svg>
+									{$_('collaboration.manage_sessions')}
+								</a>
+							</div>
+						</div>
+					{/if}
+				</div>
+			{/if}
 		</div>
 	</div>
 

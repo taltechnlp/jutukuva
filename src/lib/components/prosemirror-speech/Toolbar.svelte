@@ -115,6 +115,23 @@
 								<kbd class="kbd kbd-sm">Shift</kbd> + <kbd class="kbd kbd-sm">Tab</kbd>
 							</td>
 						</tr>
+
+						<!-- Text Snippets -->
+						<tr class="bg-base-200">
+							<td colspan="2" class="font-semibold">{$_('dictate.shortcuts.textSnippets', { default: 'Text Snippets' })}</td>
+						</tr>
+						<tr>
+							<td>{$_('dictate.shortcuts.applySnippet', { default: 'Apply snippet (when ghost text shown)' })}</td>
+							<td>
+								<kbd class="kbd kbd-sm">Space</kbd>
+							</td>
+						</tr>
+						<tr>
+							<td>{$_('dictate.shortcuts.cancelSnippet', { default: 'Cancel snippet and insert space' })}</td>
+							<td>
+								<kbd class="kbd kbd-sm">Esc</kbd>
+							</td>
+						</tr>
 					</tbody>
 				</table>
 			</div>
