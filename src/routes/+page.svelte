@@ -263,19 +263,23 @@
 	}
 
 	// Audio source management functions
-	async function loadAudioDevices() {
+	async function loadAudioDevices(skipDesktopSources: boolean = false) {
 		if (!audioSourceManager) return;
 		try {
-			// Request permission first to get device labels
-			try {
-				const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-				stream.getTracks().forEach((track) => track.stop());
-			} catch (e) {
-				console.warn('[AUDIO] Could not get permission for device enumeration:', e);
+			// Request permission first to get device labels (only for microphone)
+			// Skip this for system audio to avoid triggering permission dialogs
+			if (audioSourceType === 'microphone') {
+				try {
+					const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+					stream.getTracks().forEach((track) => track.stop());
+				} catch (e) {
+					console.warn('[AUDIO] Could not get permission for device enumeration:', e);
+				}
 			}
 
 			// Enumerate devices filtered by current source type
-			availableAudioDevices = await audioSourceManager.enumerateAudioDevices(audioSourceType);
+			// Skip desktop sources during initialization to avoid permission prompts
+			availableAudioDevices = await audioSourceManager.enumerateAudioDevices(audioSourceType, skipDesktopSources);
 			console.log(
 				`[AUDIO] Found ${availableAudioDevices.length} ${audioSourceType} device(s)`
 			);
@@ -406,8 +410,9 @@
 			systemAudioAvailable = await audioSourceManager.checkSystemAudioSupport();
 			console.log('[INIT-AUDIO] System audio available:', systemAudioAvailable);
 
-			// Load available audio devices
-			await loadAudioDevices();
+			// Load available audio devices, but skip desktop sources during initialization
+			// This prevents the screen sharing permission dialog from appearing on startup
+			await loadAudioDevices(true);
 
 			// Fall back to microphone if system audio is selected but not available
 			if (audioSourceType === 'system' && !systemAudioAvailable) {
@@ -425,6 +430,13 @@
 
 		// Initialize audio source manager if not already done
 		await initializeAudioSourceManager();
+
+		// Now load desktop sources if needed (user is actually starting to record)
+		// This ensures desktop sources are only requested when user clicks record
+		if (audioSourceType === 'system' && availableAudioDevices.length === 0) {
+			console.log('[INIT-VAD] Loading desktop sources for system audio...');
+			await loadAudioDevices(false); // Don't skip desktop sources this time
+		}
 
 		// Get custom audio stream based on selected source
 		try {
@@ -1163,8 +1175,8 @@
 			if (savedType) {
 				audioSourceType = savedType as AudioSourceType;
 				console.log('[AUDIO] Restored audio source type:', audioSourceType);
-				// Reload device list for the restored type
-				await loadAudioDevices();
+				// Reload device list for the restored type, but skip desktop sources on init
+				await loadAudioDevices(true);
 			}
 			if (savedDeviceId) {
 				// Only restore device ID if it exists in the available devices
