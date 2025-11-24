@@ -533,6 +533,8 @@
       "editing": "Editing",
       "undo": "Undo",
       "redo": "Redo",
+      "selectNextWord": "Select next word",
+      "selectPreviousWord": "Select previous word",
       "close": "Close",
       "or": "or"
     },

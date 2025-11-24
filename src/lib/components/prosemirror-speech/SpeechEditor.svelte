@@ -234,7 +234,7 @@
 	}
 </script>
 
-<div class="speech-editor-container {className}">
+<div class="flex flex-col bg-base-100 border border-base-300 rounded-lg overflow-hidden {className}">
 	{#if !readOnly}
 		<!-- Toolbar -->
 		<Toolbar
@@ -268,14 +268,6 @@
 </div>
 
 <style>
-	.speech-editor-container {
-		display: flex;
-		flex-direction: column;
-		border: 1px solid #ddd;
-		border-radius: 8px;
-		overflow: hidden;
-		background: white;
-	}
 
 	.speech-editor {
 		min-height: 300px;
@@ -289,10 +281,10 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 8px 16px;
-		background-color: #f5f5f5;
-		border-top: 1px solid #ddd;
+		background-color: var(--fallback-b2, oklch(var(--b2) / 1));
+		border-top: 1px solid var(--fallback-b3, oklch(var(--b3) / 1));
 		font-size: 13px;
-		color: #666;
+		color: var(--fallback-bc, oklch(var(--bc) / 0.6));
 	}
 
 	.auto-scroll-toggle {
@@ -300,7 +292,7 @@
 		align-items: center;
 		gap: 6px;
 		font-size: 13px;
-		color: #666;
+		color: var(--fallback-bc, oklch(var(--bc) / 0.6));
 		cursor: pointer;
 		user-select: none;
 	}
