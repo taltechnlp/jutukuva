@@ -66,27 +66,30 @@ button {
 }
 
 .subtitle-stage {
-  flex: 1;
   position: relative;
-  padding: 1.5rem;
+  width: 100%;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.subtitle-content {
+  min-height: 100%;
   display: flex;
+  flex-direction: column;
   justify-content: center;
-  align-items: flex-end;
+  align-items: stretch;
+  padding: 1.5rem;
+  transition: align-items var(--transition-fast);
 }
 
 .subtitle-shell {
   width: min(80vw, 1200px);
-  padding: 1rem 1.5rem;
-  border-radius: 18px;
-  background-color: rgba(0, 0, 0, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition:
-    background-color var(--transition-fast),
-    transform var(--transition-medium);
+  max-width: 100%;
 }
 
-.subtitle-shell.overlay {
-  width: clamp(320px, 80vw, 100%);
+.subtitle-shell.full {
+  width: 100%;
 }
 
 .subtitle-text {
@@ -140,8 +143,8 @@ button {
 }
 
 .gear-button:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-  transform: scale(1.02);
+  transform: scale(1.04);
+  background-color: rgba(41, 41, 41, 0.8);
 }
 
 .connection-indicator {
@@ -389,61 +392,6 @@ button {
   background-color: rgba(74, 144, 226, 0.15);
 }
 
-.overlay-shell {
-  width: 100%;
-  min-height: 120px;
-  padding: 1rem 2rem;
-  background-color: rgba(0, 0, 0, 0.9);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  transition:
-    opacity var(--transition-fast),
-    transform var(--transition-fast);
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 2;
-}
-
-.overlay-shell.minimized {
-  min-height: 48px;
-  padding: 0.5rem 1rem;
-  justify-content: center;
-}
-
-.overlay-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-  gap: 1rem;
-}
-
-.overlay-controls button {
-  background-color: rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 0.4rem 0.75rem;
-  font-size: 0.85rem;
-  min-height: 44px;
-}
-
-.status-overlay {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background-color: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(6px);
-  z-index: 5;
-}
-
-.status-overlay.global {
-  position: fixed;
-  inset: 0;
-}
-
 .status-message {
   text-align: center;
   font-size: 1rem;
@@ -477,20 +425,18 @@ button {
   border: 0;
 }
 
-.autoscroll-toggle {
+.scroll-to-bottom {
   position: fixed;
   bottom: 2rem;
   right: 2rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  border-radius: 999px;
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
   background-color: rgba(26, 26, 26, 0.9);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
-  font-size: 0.9rem;
-  font-weight: 500;
   cursor: pointer;
   transition:
     background-color var(--transition-fast),
@@ -499,21 +445,21 @@ button {
   z-index: 50;
   backdrop-filter: blur(12px);
   animation: fadeIn 200ms ease-out;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.autoscroll-toggle:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  transform: scale(1.05);
+.scroll-to-bottom:hover {
+  transform: scale(1.08);
 }
 
-.autoscroll-toggle:focus-visible {
+.scroll-to-bottom:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.autoscroll-toggle svg {
-  width: 24px;
-  height: 24px;
+.scroll-to-bottom svg {
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
 }
 
@@ -522,24 +468,28 @@ button {
     width: 95vw;
   }
 
+  .subtitle-shell.full {
+    width: 100%;
+  }
+
+  .subtitle-content {
+    padding: 1rem;
+  }
+
   .gear-button,
   .connection-indicator {
     position: fixed;
   }
 
-  .overlay-shell {
-    padding: 1rem;
-  }
-
-  .autoscroll-toggle {
+  .scroll-to-bottom {
     bottom: 1rem;
     right: 1rem;
-    padding: 0.6rem 1rem;
-    font-size: 0.85rem;
+    width: 48px;
+    height: 48px;
   }
 
-  .autoscroll-toggle svg {
-    width: 20px;
-    height: 20px;
+  .scroll-to-bottom svg {
+    width: 24px;
+    height: 24px;
   }
 }
