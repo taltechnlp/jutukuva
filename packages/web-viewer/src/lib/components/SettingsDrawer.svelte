@@ -70,13 +70,35 @@
 	function handlePresetApply(textColor: string, backgroundColor: string) {
 		onChange({ ...settings, textColor, backgroundColor });
 	}
+
+	function handleBackdropKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			onClose();
+		}
+	}
 </script>
+
+
+
+{#if open}
+
+	<div
+		class="drawer-backdrop"
+		onclick={onClose}
+		onkeydown={handleBackdropKeydown}
+		tabindex="-1"
+		aria-hidden="true"
+	></div>
+{/if}
 
 <div
 	class="settings-drawer {open ? 'open' : ''}"
 	role="dialog"
 	aria-modal="true"
 	aria-label="Settings panel"
+	tabindex="-1"
+	onclick={(e) => e.stopPropagation()}
+	onkeydown={(e) => e.stopPropagation()}
 >
 	<div class="drawer-header">
 		<div class="header-content">
