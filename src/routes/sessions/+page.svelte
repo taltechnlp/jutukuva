@@ -4,6 +4,7 @@
 	import { _ } from 'svelte-i18n';
 	import CreateSessionModal from '$lib/components/sessions/CreateSessionModal.svelte';
 	import CancelConfirmationModal from '$lib/components/sessions/CancelConfirmationModal.svelte';
+	import SharePlannedSessionModal from '$lib/components/sessions/SharePlannedSessionModal.svelte';
 	import SessionCard from '$lib/components/sessions/SessionCard.svelte';
 
 	type ViewMode = 'upcoming' | 'active' | 'past' | 'all';
@@ -13,7 +14,9 @@
 	let viewMode = $state<ViewMode>('upcoming');
 	let showCreateModal = $state(false);
 	let showCancelModal = $state(false);
+	let showShareModal = $state(false);
 	let sessionToCancel = $state<TranscriptionSession | null>(null);
+	let sessionToShare = $state<TranscriptionSession | null>(null);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 
@@ -122,6 +125,11 @@
 	async function handleEditSession(session: TranscriptionSession) {
 		// TODO: Implement edit functionality
 		console.log('Edit session:', session);
+	}
+
+	function handleShareSession(session: TranscriptionSession) {
+		sessionToShare = session;
+		showShareModal = true;
 	}
 
 	async function handleSessionCreated() {
@@ -262,6 +270,7 @@
 							onComplete={() => handleCompleteSession(session)}
 							onCancel={() => handleCancelSession(session)}
 							onEdit={() => handleEditSession(session)}
+							onShare={() => handleShareSession(session)}
 						/>
 					{/each}
 				</div>
@@ -285,6 +294,16 @@
 		onCancel={() => {
 			showCancelModal = false;
 			sessionToCancel = null;
+		}}
+	/>
+{/if}
+
+{#if showShareModal && sessionToShare}
+	<SharePlannedSessionModal
+		session={sessionToShare}
+		onClose={() => {
+			showShareModal = false;
+			sessionToShare = null;
 		}}
 	/>
 {/if}

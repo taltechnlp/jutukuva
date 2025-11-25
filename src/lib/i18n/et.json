@@ -571,6 +571,24 @@
     "end_session": "Lõpeta sessioon",
     "leave": "Lahku sessioonist"
   },
+  "share_session": {
+    "title": "Jaga sessiooni",
+    "code_label": "Sessiooni kood",
+    "code_help": "Jaga seda koodi teistega, et nad saaksid liituda",
+    "web_url_label": "Veebilehe URL",
+    "web_url_help": "Töötab igas seadmes veebilehitsejaga",
+    "desktop_url_label": "Töölauarakenduse URL",
+    "desktop_url_help": "Kasutajatele, kellel on töölauarakendus paigaldatud",
+    "qr_label": "QR-kood",
+    "qr_help": "Skaneeri mobiilseadmega liitumiseks",
+    "copy": "Kopeeri",
+    "copied": "Kopeeritud!",
+    "participants": "Ühendatud osalejad",
+    "host": "Haldaja",
+    "guest": "Külaline",
+    "no_participants": "Teisi osalejaid pole veel",
+    "close": "Sulge"
+  },
   "collaboration": {
     "collaborative_session": "Ühissessioon",
     "session_active": "Aktiivne sessioon",
@@ -624,7 +642,8 @@
       "complete": "Lõpeta",
       "open": "Ava",
       "view": "Vaata",
-      "cancelled": "Tühistatud"
+      "cancelled": "Tühistatud",
+      "share": "Jaga"
     },
     "errors": {
       "loadFailed": "Sessioonide laadimine ebaõnnestus",

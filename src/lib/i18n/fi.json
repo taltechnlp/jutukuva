@@ -534,6 +534,24 @@
       "wordsApprovedStatus": "{approved} / {total} sanaa hyväksytty"
     }
   },
+  "share_session": {
+    "title": "Jaa istunto",
+    "code_label": "Istuntokoodi",
+    "code_help": "Jaa tämä koodi muiden kanssa istuntoon liittymistä varten",
+    "web_url_label": "Verkkokatselimen URL",
+    "web_url_help": "Toimii millä tahansa laitteella verkkoselaimella",
+    "desktop_url_label": "Työpöytäsovelluksen URL",
+    "desktop_url_help": "Käyttäjille, joilla on työpöytäsovellus asennettuna",
+    "qr_label": "QR-koodi",
+    "qr_help": "Skannaa mobiililaitteella liittyäksesi",
+    "copy": "Kopioi",
+    "copied": "Kopioitu!",
+    "participants": "Yhdistetyt osallistujat",
+    "host": "Isäntä",
+    "guest": "Vieras",
+    "no_participants": "Ei vielä muita osallistujia",
+    "close": "Sulje"
+  },
   "collaboration": {
     "collaborative_session": "Yhteistyöistunto",
     "session_active": "Aktiivinen istunto",
@@ -587,7 +605,8 @@
       "complete": "Valmis",
       "open": "Avaa",
       "view": "Näytä",
-      "cancelled": "Peruutettu"
+      "cancelled": "Peruutettu",
+      "share": "Jaa"
     },
     "errors": {
       "loadFailed": "Istuntojen lataaminen epäonnistui",
