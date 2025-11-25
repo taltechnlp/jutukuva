@@ -104,11 +104,11 @@
 <style>
 	.speaker-dropdown {
 		position: absolute;
-		z-index: 50;
-		background-color: var(--fallback-b1, oklch(var(--b1) / 1));
-		border: 1px solid var(--fallback-b3, oklch(var(--b3) / 1));
+		z-index: 1000;
+		background: oklch(var(--b1));
+		border: 1px solid oklch(var(--b3));
 		border-radius: 0.5rem;
-		box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+		box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.15);
 		min-width: 220px;
 		padding: 0.5rem;
 		left: 0;
@@ -140,11 +140,11 @@
 	}
 
 	.speaker-list li:hover {
-		background-color: var(--fallback-b2, oklch(var(--b2) / 1));
+		background: oklch(var(--b2));
 	}
 
 	.speaker-list li.selected {
-		background-color: var(--fallback-p, oklch(var(--p) / 0.2));
+		background: oklch(var(--p) / 0.2);
 		font-weight: 500;
 	}
 

@@ -351,19 +351,19 @@
 		position: absolute;
 		top: 100%;
 		left: 0;
-		z-index: 50;
+		z-index: 1000;
 		min-width: 280px;
-		background-color: var(--fallback-b1, oklch(var(--b1) / 1));
-		border: 1px solid var(--fallback-b3, oklch(var(--b3) / 1));
+		background: oklch(var(--b1));
+		border: 1px solid oklch(var(--b3));
 		border-radius: 0.5rem;
-		box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+		box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.15);
 		margin-top: 4px;
 	}
 
 	.dropdown-header {
 		padding: 0.75rem 1rem;
-		background-color: var(--fallback-b1, oklch(var(--b1) / 1));
-		border-bottom: 1px solid var(--fallback-b3, oklch(var(--b3) / 1));
+		background: oklch(var(--b1));
+		border-bottom: 1px solid oklch(var(--b3));
 	}
 
 	.dropdown-header h4 {
@@ -376,22 +376,22 @@
 		display: flex;
 		gap: 0.5rem;
 		padding: 0.75rem 1rem;
-		background-color: var(--fallback-b1, oklch(var(--b1) / 1));
-		border-bottom: 1px solid var(--fallback-b3, oklch(var(--b3) / 1));
+		background: oklch(var(--b1));
+		border-bottom: 1px solid oklch(var(--b3));
 	}
 
 	.speaker-list {
 		max-height: 240px;
 		overflow-y: auto;
-		background-color: var(--fallback-b1, oklch(var(--b1) / 1));
+		background: oklch(var(--b1));
 	}
 
 	.no-speakers {
 		padding: 1rem;
 		text-align: center;
-		color: var(--fallback-bc, oklch(var(--bc) / 0.5));
+		color: oklch(var(--bc) / 0.5);
 		font-size: 0.875rem;
-		background-color: var(--fallback-b1, oklch(var(--b1) / 1));
+		background: oklch(var(--b1));
 	}
 
 	.speaker-item {
@@ -399,8 +399,8 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.5rem 1rem;
-		background-color: var(--fallback-b1, oklch(var(--b1) / 1));
-		border-bottom: 1px solid var(--fallback-b2, oklch(var(--b2) / 1));
+		background: oklch(var(--b1));
+		border-bottom: 1px solid oklch(var(--b2));
 	}
 
 	.speaker-item:last-child {
@@ -408,7 +408,7 @@
 	}
 
 	.speaker-item:hover {
-		background-color: var(--fallback-b2, oklch(var(--b2) / 1));
+		background: oklch(var(--b2));
 	}
 
 	.speaker-color {
