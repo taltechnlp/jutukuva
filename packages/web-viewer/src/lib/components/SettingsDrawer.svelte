@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import type { DisplaySettings } from '$lib/types/display-settings';
 	import AlignmentIcons from './AlignmentIcons.svelte';
 
@@ -11,6 +12,27 @@
 	}
 
 	let { open, settings, onClose, onChange, onReset }: Props = $props();
+
+	// Detect mobile device using media query
+	let isMobile = $state(false);
+
+	$effect(() => {
+		if (!browser) return;
+
+		const checkMobile = () => {
+			isMobile = window.matchMedia('(max-width: 768px)').matches;
+		};
+
+		checkMobile();
+		const mediaQuery = window.matchMedia('(max-width: 768px)');
+		mediaQuery.addEventListener('change', checkMobile);
+
+		return () => mediaQuery.removeEventListener('change', checkMobile);
+	});
+
+	const fontSizeMin = $derived(isMobile ? 16 : 48);
+	const fontSizeMax = $derived(isMobile ? 72 : 96);
+	const fontSizeStep = $derived(isMobile ? 2 : 2);
 
 	const fontWeightOptions: Array<{
 		label: string;
@@ -126,16 +148,16 @@
 					<input
 						id="font-size-slider"
 						type="range"
-						min={48}
-						max={96}
-						step={2}
+						min={fontSizeMin}
+						max={fontSizeMax}
+						step={fontSizeStep}
 						value={settings.fontSize}
 						oninput={(event) =>
 							handleSettingChange('fontSize', Number(event.currentTarget.value))}
 					/>
 					<div class="slider-labels">
-						<span>48px</span>
-						<span>96px</span>
+						<span>{fontSizeMin}px</span>
+						<span>{fontSizeMax}px</span>
 					</div>
 				</label>
 
