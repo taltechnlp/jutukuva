@@ -6,7 +6,7 @@ import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import type { EditorView } from 'prosemirror-view';
 import { ySyncPlugin, yCursorPlugin, yUndoPlugin, prosemirrorJSONToYXmlFragment } from 'y-prosemirror';
-import { speechSchema } from '$lib/components/prosemirror-speech/schema';
+import { speechSchema } from '../components/prosemirror-speech/schema';
 import type { SessionInfo, SessionRole, Participant, WordApprovalData, SessionMetadata, Speaker } from './types';
 import { v4 as uuidv4 } from 'uuid';
 

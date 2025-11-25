@@ -16,6 +16,7 @@ const config = {
     },
     alias: {
       $shared: "../../src/lib",
+      $lib: "../../src/lib",
     },
   },
 };
