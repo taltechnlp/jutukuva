@@ -173,9 +173,29 @@ export class CollaborationManager {
 		const type = this.ydoc.getXmlFragment('prosemirror');
 		const includeCursor = options?.includeCursor ?? true;
 
+		// Custom cursor builder for proper inline cursor display
+		const cursorBuilder = (user: { name: string; color: string }) => {
+			const cursor = document.createElement('span');
+			cursor.classList.add('collaboration-cursor');
+			cursor.style.setProperty('--cursor-color', user.color);
+
+			// Cursor caret line
+			const caret = document.createElement('span');
+			caret.classList.add('collaboration-cursor-caret');
+			cursor.appendChild(caret);
+
+			// User name label
+			const label = document.createElement('span');
+			label.classList.add('collaboration-cursor-label');
+			label.textContent = user.name;
+			cursor.appendChild(label);
+
+			return cursor;
+		};
+
 		const plugins = [
 			ySyncPlugin(type),
-			...(includeCursor ? [yCursorPlugin(this.provider.awareness)] : []),
+			...(includeCursor ? [yCursorPlugin(this.provider.awareness, { cursorBuilder })] : []),
 			yUndoPlugin()
 		];
 
