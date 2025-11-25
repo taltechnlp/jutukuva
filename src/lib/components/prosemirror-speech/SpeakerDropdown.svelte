@@ -85,6 +85,7 @@
 			<ul class="speaker-list">
 				{#each speakers as speaker}
 					<li
+						class="hover:bg-base-200"
 						class:selected={speaker.id === selectedId}
 						onclick={() => handleSelect(speaker)}
 						onkeydown={(e) => e.key === 'Enter' && handleSelect(speaker)}
@@ -105,8 +106,6 @@
 	.speaker-dropdown {
 		position: absolute;
 		z-index: 1000;
-		background: oklch(var(--b1));
-		border: 1px solid oklch(var(--b3));
 		border-radius: 0.5rem;
 		box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.15);
 		min-width: 220px;
@@ -114,6 +113,19 @@
 		left: 0;
 		top: 100%;
 		margin-top: 4px;
+	}
+
+	/* Use :global to ensure Tailwind classes work with Svelte scoping */
+	:global(.speaker-dropdown) {
+		background-color: oklch(1 0 0);
+		border: 1px solid oklch(0.9 0 0);
+	}
+
+	/* Dark mode support */
+	:global([data-theme="dark"] .speaker-dropdown),
+	:global(.dark .speaker-dropdown) {
+		background-color: oklch(0.25 0 0);
+		border-color: oklch(0.35 0 0);
 	}
 
 	.dropdown-input {
@@ -139,12 +151,8 @@
 		border-radius: 0.25rem;
 	}
 
-	.speaker-list li:hover {
-		background: oklch(var(--b2));
-	}
-
 	.speaker-list li.selected {
-		background: oklch(var(--p) / 0.2);
+		background-color: oklch(0.8 0.1 250 / 0.2);
 		font-weight: 500;
 	}
 
