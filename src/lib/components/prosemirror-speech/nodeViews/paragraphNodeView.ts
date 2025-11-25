@@ -8,10 +8,10 @@ import type { Speaker } from '$lib/collaboration/types';
 import { speakerDropdownKey } from '../plugins/keyboardShortcuts';
 import SpeakerPrefix from '../SpeakerPrefix.svelte';
 import { mount, unmount } from 'svelte';
-import { writable } from 'svelte/store';
+import { writable, type Writable } from 'svelte/store';
 
 export interface ParagraphNodeViewContext {
-	getSpeakers: () => Speaker[];
+	speakersStore: Writable<Speaker[]>;
 	getSpeaker: (id: string) => Speaker | undefined;
 	addSpeaker: (name: string) => Speaker;
 	readOnly: boolean;
@@ -61,7 +61,8 @@ export function createParagraphNodeView(
 	const speakerIdStore = writable<string | null>(speakerId);
 	const speakerNameStore = writable(speaker?.name || '');
 	const speakerColorStore = writable(speaker?.color || '');
-	const speakersStore = writable<Speaker[]>(context.getSpeakers());
+	// Use the shared speakers store from context - all NodeViews share this store
+	const speakersStore = context.speakersStore;
 	const showDropdownStore = writable(false);
 
 	// Mount Svelte component with stores
@@ -93,7 +94,8 @@ export function createParagraphNodeView(
 		}
 	});
 
-	// Function to update store values
+	// Function to update store values for this specific paragraph
+	// Note: speakersStore is shared and updated automatically by the parent component
 	function updateStores() {
 		const speakerId = node.attrs.speakerId;
 		const speaker = speakerId ? context.getSpeaker(speakerId) : undefined;
@@ -101,7 +103,7 @@ export function createParagraphNodeView(
 		speakerIdStore.set(speakerId);
 		speakerNameStore.set(speaker?.name || '');
 		speakerColorStore.set(speaker?.color || '');
-		speakersStore.set(context.getSpeakers());
+		// speakersStore is shared and reactive - no need to update it here
 	}
 
 	return {

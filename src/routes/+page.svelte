@@ -5,7 +5,7 @@
 	import { page } from '$app/stores';
 	import { MicVAD } from '@ricky0123/vad-web';
 	import * as ort from 'onnxruntime-web';
-	import { SpeechEditor, ShareSessionModal, SessionStatus } from '$lib/components/prosemirror-speech';
+	import { SpeechEditor, ShareSessionModal, SessionStatus, EndSessionModal } from '$lib/components/prosemirror-speech';
 	import type { SubtitleSegment, Word } from '$lib/components/prosemirror-speech/utils/types';
 	import { AudioSourceManager, type AudioSourceType, type AudioDevice } from '$lib/audioSourceManager';
 	import MacOSAudioSetup from '$lib/components/MacOSAudioSetup.svelte';
@@ -95,6 +95,7 @@
 	let participants = $state<Participant[]>([]);
 	let collaborationConnected = $state(false);
 	let showShareModal = $state(false);
+	let showEndSessionModal = $state(false);
 	let joinSessionCode = $state('');
 	let currentDbSession = $state<TranscriptionSession | null>(null);
 
@@ -249,6 +250,39 @@
 		participants = [];
 		collaborationConnected = false;
 		showShareModal = false;
+	}
+
+	/**
+	 * Handle end session confirmation
+	 */
+	async function handleEndSession(deleteContent: boolean) {
+		showEndSessionModal = false;
+
+		// Stop recording if active
+		if (isRecording) {
+			await stopRecording();
+		}
+
+		// Save editor state before ending
+		if (speechEditor) {
+			await speechEditor.saveState();
+		}
+
+		// End session in database
+		if (currentDbSession && window.db) {
+			try {
+				await window.db.endSession(currentDbSession.id, deleteContent);
+				console.log('[SESSION] Session ended:', currentDbSession.id, 'deleteContent:', deleteContent);
+			} catch (error) {
+				console.error('[SESSION] Failed to end session:', error);
+			}
+		}
+
+		// Disconnect collaboration
+		disconnectCollaboration();
+
+		// Reset current db session
+		currentDbSession = null;
 	}
 
 	// Handle word approved
@@ -1333,6 +1367,7 @@
 					{participants}
 					connected={collaborationConnected}
 					onShowShareModal={() => (showShareModal = true)}
+					onEndSession={() => (showEndSessionModal = true)}
 				/>
 			{:else}
 				<!-- Three Options -->
@@ -1665,5 +1700,14 @@
 	<MacOSAudioSetup
 		{hasVirtualDevice}
 		onClose={() => (showMacOSSetup = false)}
+	/>
+{/if}
+
+<!-- End Session Modal -->
+{#if showEndSessionModal && sessionInfo}
+	<EndSessionModal
+		sessionName={currentDbSession?.name || sessionInfo.code}
+		onConfirm={handleEndSession}
+		onCancel={() => (showEndSessionModal = false)}
 	/>
 {/if}

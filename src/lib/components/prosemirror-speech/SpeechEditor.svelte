@@ -3,7 +3,9 @@
 	import { _ } from 'svelte-i18n';
 	import { EditorState } from 'prosemirror-state';
 	import { EditorView } from 'prosemirror-view';
+	import { Node } from 'prosemirror-model';
 	import { history, undo as pmUndo, redo as pmRedo } from 'prosemirror-history';
+	import { writable, type Writable } from 'svelte/store';
 	import { speechSchema } from './schema';
 	import { keyboardShortcutsPlugin, speakerDropdownPlugin, speakerDropdownKey } from './plugins/keyboardShortcuts';
 	import { streamingTextPlugin, insertStreamingTextCommand, signalVadSpeechEndCommand } from './plugins/streamingText';
@@ -15,6 +17,9 @@
 	import { speakerStore } from '$lib/stores/speakerStore';
 	import { createParagraphNodeView, type ParagraphNodeViewContext } from './nodeViews/paragraphNodeView';
 	import Toolbar from './Toolbar.svelte';
+
+	// Shared speaker store for all NodeViews - created at module level so all paragraphs share it
+	const sharedSpeakersStore: Writable<Speaker[]> = writable([]);
 
 	// Props
 	let {
@@ -34,6 +39,11 @@
 	// Speaker state
 	let speakers = $state<Speaker[]>([]);
 
+	// Keep shared store in sync with speakers state
+	$effect(() => {
+		sharedSpeakersStore.set(speakers);
+	});
+
 	// Editor state
 	let editorElement: HTMLDivElement;
 	let editorView: EditorView | null = $state(null);
@@ -41,6 +51,10 @@
 	let recordingStartTime = $state<number | null>(null);
 	let autoScroll = $state(true);
 	let textSnippetEntries = $state<TextSnippetEntry[]>([]);
+
+	// Auto-save state
+	let autoSaveInterval: ReturnType<typeof setInterval> | null = null;
+	const AUTO_SAVE_INTERVAL_MS = 30000; // 30 seconds
 
 	// Deduplication state (kept OUTSIDE editor to avoid race conditions)
 	// This tracks all words that have been "committed" (exist in previous paragraphs)
@@ -139,6 +153,20 @@
 		}
 	}
 
+	// Save editor state to database (for both modes as backup)
+	async function saveEditorState() {
+		if (!editorView || !sessionId) return;
+
+		if (typeof window !== 'undefined' && window.db) {
+			try {
+				const docJson = editorView.state.doc.toJSON();
+				await window.db.saveEditorState(sessionId, JSON.stringify(docJson));
+			} catch (error) {
+				console.error('Failed to save editor state:', error);
+			}
+		}
+	}
+
 	// Speaker management functions for NodeView context
 	function getSpeakers(): Speaker[] {
 		if (collaborationManager) {
@@ -189,7 +217,7 @@
 	// Create NodeView context
 	function createNodeViewContext(): ParagraphNodeViewContext {
 		return {
-			getSpeakers,
+			speakersStore: sharedSpeakersStore,
 			getSpeaker,
 			addSpeaker,
 			readOnly
@@ -208,6 +236,17 @@
 		if (collaborationManager) {
 			// Initial speakers from Yjs
 			speakers = collaborationManager.getSpeakers();
+
+			// Observe Yjs speaker changes (from remote collaborators)
+			if (collaborationManager.speakersMap) {
+				collaborationManager.speakersMap.observe(() => {
+					speakers = collaborationManager.getSpeakers();
+					// Also persist to local DB as backup
+					if (sessionId && typeof window !== 'undefined' && window.db) {
+						window.db.setSessionSpeakers(sessionId, speakers);
+					}
+				});
+			}
 		}
 
 		// Subscribe to speaker store changes in solo mode
@@ -253,9 +292,26 @@
 			plugins
 		};
 
-		// Only provide initial doc in solo mode
+		// Only provide initial doc in solo mode - try to restore from database first
 		if (!collaborationManager) {
-			stateConfig.doc = speechSchema.node('doc', null, [
+			let initialDoc = null;
+
+			// Try to restore editor state from database
+			if (sessionId && typeof window !== 'undefined' && window.db) {
+				try {
+					const savedState = await window.db.getEditorState(sessionId);
+					if (savedState) {
+						const docJson = JSON.parse(savedState);
+						initialDoc = Node.fromJSON(speechSchema, docJson);
+						console.log('[EDITOR] Restored state from database');
+					}
+				} catch (error) {
+					console.error('[EDITOR] Failed to restore state:', error);
+				}
+			}
+
+			// Use restored doc or create empty one
+			stateConfig.doc = initialDoc || speechSchema.node('doc', null, [
 				speechSchema.node('paragraph', null, [])
 			]);
 		}
@@ -309,6 +365,12 @@
 		// Initial state update
 		updateEditorState(state);
 
+		// Start auto-save interval (for both solo and collaborative modes)
+		// In collaborative mode, this serves as a local backup
+		if (sessionId) {
+			autoSaveInterval = setInterval(saveEditorState, AUTO_SAVE_INTERVAL_MS);
+		}
+
 		// Return cleanup function
 		return () => {
 			unsubscribeSpeakers();
@@ -316,6 +378,12 @@
 	});
 
 	onDestroy(() => {
+		// Clear auto-save interval
+		if (autoSaveInterval) {
+			clearInterval(autoSaveInterval);
+			autoSaveInterval = null;
+		}
+
 		if (editorView) {
 			editorView.destroy();
 		}
@@ -422,6 +490,11 @@
 			wordCount,
 			approvedCount
 		};
+	}
+
+	// Public API: Save editor state to database
+	export function saveState() {
+		return saveEditorState();
 	}
 
 	// Public API: Check if editor has content (for resume detection)

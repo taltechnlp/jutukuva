@@ -93,6 +93,14 @@ declare global {
 			// Speakers
 			getSessionSpeakers: (sessionId: string) => Promise<Array<SessionSpeaker>>;
 			setSessionSpeakers: (sessionId: string, speakers: Array<SessionSpeaker>) => Promise<boolean>;
+
+			// Editor state persistence
+			saveEditorState: (sessionId: string, editorState: string) => Promise<boolean>;
+			getEditorState: (sessionId: string) => Promise<string | null>;
+			clearEditorState: (sessionId: string) => Promise<boolean>;
+
+			// End session
+			endSession: (id: string, deleteContent: boolean) => Promise<TranscriptionSession>;
 		};
 		broadcast: {
 			start: (port: number) => Promise<boolean>;
@@ -137,6 +145,8 @@ declare global {
 		scheduled_date: string | null;
 		completed_at: string | null;
 		cancelled_at: string | null;
+		speakers: string | null;
+		editor_state: string | null;
 	}
 
 	interface AutocompleteDictionary {
