@@ -348,7 +348,7 @@ export class AudioSourceManager {
 
 		console.log('[AudioSourceManager] Using desktop source:', sourceName, 'ID:', selectedSourceId);
 
-		// Request screen capture with audio
+		// Request screen capture with audio only (no video to avoid screen recording permission)
 		console.log('[AudioSourceManager] Requesting desktop capture...');
 		const stream = await navigator.mediaDevices.getUserMedia({
 			audio: {
@@ -356,22 +356,13 @@ export class AudioSourceManager {
 					chromeMediaSource: 'desktop',
 					chromeMediaSourceId: selectedSourceId
 				}
-			} as any,
-			video: {
-				mandatory: {
-					chromeMediaSource: 'desktop',
-					chromeMediaSourceId: selectedSourceId,
-					maxWidth: 1,
-					maxHeight: 1
-				}
 			} as any
 		});
 
 		console.log('[AudioSourceManager] Got stream, checking tracks...');
 		console.log('[AudioSourceManager] Audio tracks:', stream.getAudioTracks().length);
-		console.log('[AudioSourceManager] Video tracks:', stream.getVideoTracks().length);
 
-		// Extract only audio tracks
+		// Extract audio tracks
 		const audioTracks = stream.getAudioTracks();
 		if (audioTracks.length === 0) {
 			console.error('[AudioSourceManager] No audio tracks found in desktop capture!');
@@ -383,9 +374,6 @@ export class AudioSourceManager {
 		}
 
 		console.log('[AudioSourceManager] Audio track details:', audioTracks[0].getSettings());
-
-		// Stop video tracks (we don't need them)
-		stream.getVideoTracks().forEach((track) => track.stop());
 
 		return new MediaStream(audioTracks);
 	}
