@@ -582,6 +582,24 @@
       "wordsApprovedStatus": "{approved} / {total} words approved"
     }
   },
+  "share_session": {
+    "title": "Share Session",
+    "code_label": "Session Code",
+    "code_help": "Share this code with others to join your session",
+    "web_url_label": "Web Viewer URL",
+    "web_url_help": "Works on any device with a web browser",
+    "desktop_url_label": "Desktop App URL",
+    "desktop_url_help": "For users with desktop app installed",
+    "qr_label": "QR Code",
+    "qr_help": "Scan with mobile device to join",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "participants": "Connected Participants",
+    "host": "Host",
+    "guest": "Guest",
+    "no_participants": "No other participants yet",
+    "close": "Close"
+  },
   "collaboration": {
     "collaborative_session": "Collaborative Session",
     "session_active": "Active Session",
@@ -635,7 +653,8 @@
       "complete": "Complete",
       "open": "Open",
       "view": "View",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "share": "Share"
     },
     "errors": {
       "loadFailed": "Failed to load sessions",
