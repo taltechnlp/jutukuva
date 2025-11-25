@@ -5,7 +5,8 @@
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import type { EditorView } from 'prosemirror-view';
-import { ySyncPlugin, yCursorPlugin, yUndoPlugin } from 'y-prosemirror';
+import { ySyncPlugin, yCursorPlugin, yUndoPlugin, prosemirrorJSONToYXmlFragment } from 'y-prosemirror';
+import { speechSchema } from '$lib/components/prosemirror-speech/schema';
 import type { SessionInfo, SessionRole, Participant, WordApprovalData, SessionMetadata, Speaker } from './types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -34,6 +35,8 @@ export class CollaborationManager {
 	 * Initialize the WebSocket provider (can be called before editor is ready)
 	 * @param sessionInfo - Session information (code, role, room name)
 	 * @param callbacks - Event callbacks
+	 * @param options - Additional options
+	 * @param options.initialContent - Initial ProseMirror document JSON to populate Yjs with (for preserving existing editor content)
 	 */
 	initializeProvider(
 		sessionInfo: SessionInfo,
@@ -41,12 +44,26 @@ export class CollaborationManager {
 			onParticipantsChange?: (participants: Participant[]) => void;
 			onConnectionStatusChange?: (connected: boolean) => void;
 			onSpeakersChange?: (speakers: Speaker[]) => void;
+		},
+		options?: {
+			initialContent?: object;
 		}
 	): void {
 		this.sessionInfo = sessionInfo;
 		this.onParticipantsChange = callbacks?.onParticipantsChange;
 		this.onConnectionStatusChange = callbacks?.onConnectionStatusChange;
 		this.onSpeakersChange = callbacks?.onSpeakersChange;
+
+		// If initial content is provided, populate the Yjs XmlFragment BEFORE connecting
+		// This ensures existing editor content is preserved when starting a session
+		if (options?.initialContent && sessionInfo.role === 'host') {
+			const xmlFragment = this.ydoc.getXmlFragment('prosemirror');
+			// Only populate if the fragment is empty (new session)
+			if (xmlFragment.length === 0) {
+				console.log('[CollaborationManager] Populating Yjs with initial content');
+				prosemirrorJSONToYXmlFragment(speechSchema, options.initialContent, xmlFragment);
+			}
+		}
 
 		// Connect to WebSocket provider
 		console.log('[CollaborationManager] Connecting to:', sessionInfo.serverUrl, 'room:', sessionInfo.roomName);
