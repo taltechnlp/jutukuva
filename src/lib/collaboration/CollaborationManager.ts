@@ -56,12 +56,16 @@ export class CollaborationManager {
 
 		// If initial content is provided, populate the Yjs XmlFragment BEFORE connecting
 		// This ensures existing editor content is preserved when starting a session
+		console.log('[CollaborationManager] options?.initialContent:', options?.initialContent);
+		console.log('[CollaborationManager] sessionInfo.role:', sessionInfo.role);
 		if (options?.initialContent && sessionInfo.role === 'host') {
 			const xmlFragment = this.ydoc.getXmlFragment('prosemirror');
+			console.log('[CollaborationManager] xmlFragment.length before:', xmlFragment.length);
 			// Only populate if the fragment is empty (new session)
 			if (xmlFragment.length === 0) {
 				console.log('[CollaborationManager] Populating Yjs with initial content');
 				prosemirrorJSONToYXmlFragment(speechSchema, options.initialContent, xmlFragment);
+				console.log('[CollaborationManager] xmlFragment.length after:', xmlFragment.length);
 			}
 		}
 
