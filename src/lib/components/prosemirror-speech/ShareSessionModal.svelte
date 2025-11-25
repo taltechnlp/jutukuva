@@ -26,7 +26,7 @@
 	const webViewerUrl = import.meta.env.VITE_WEB_VIEWER_URL || 'https://tekstiks.ee/kk';
 	const webJoinUrl = `${webViewerUrl}/${sessionInfo.code}`;
 	const electronJoinUrl = `kirikaja://join/${sessionInfo.code}`;
-	const desktopJoinUrl = isElectron ? `${window.location.origin}?join=${sessionInfo.code}` : electronJoinUrl;
+	const desktopJoinUrl = electronJoinUrl;
 
 	// Generate QR code on mount (always use web viewer URL for mobile compatibility)
 	onMount(async () => {

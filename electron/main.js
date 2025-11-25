@@ -16,6 +16,64 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let mainWindow;
+let pendingDeepLinkUrl = null;
+
+// Handle deep link URL
+function handleDeepLink(url) {
+	console.log('[Deep Link] Received URL:', url);
+
+	// Parse kirikaja://join/CODE format
+	const match = url.match(/^kirikaja:\/\/join\/([A-Z0-9]+)$/i);
+	if (match) {
+		const sessionCode = match[1].toUpperCase();
+		console.log('[Deep Link] Session code:', sessionCode);
+
+		if (mainWindow) {
+			// Send to renderer process
+			mainWindow.webContents.send('deep-link-join', sessionCode);
+			mainWindow.focus();
+		} else {
+			// Store for later when window is ready
+			pendingDeepLinkUrl = sessionCode;
+		}
+	}
+}
+
+// Register as default protocol handler for kirikaja://
+if (process.defaultApp) {
+	// Development: need to register with path to electron executable
+	if (process.argv.length >= 2) {
+		app.setAsDefaultProtocolClient('kirikaja', process.execPath, [path.resolve(process.argv[1])]);
+	}
+} else {
+	// Production
+	app.setAsDefaultProtocolClient('kirikaja');
+}
+
+// Handle protocol on macOS (app already running)
+app.on('open-url', (event, url) => {
+	event.preventDefault();
+	handleDeepLink(url);
+});
+
+// Handle protocol on Windows/Linux (single instance)
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+	app.quit();
+} else {
+	app.on('second-instance', (event, commandLine) => {
+		// Someone tried to run a second instance, focus our window
+		if (mainWindow) {
+			if (mainWindow.isMinimized()) mainWindow.restore();
+			mainWindow.focus();
+		}
+		// On Windows, the protocol URL is in commandLine
+		const url = commandLine.find(arg => arg.startsWith('kirikaja://'));
+		if (url) {
+			handleDeepLink(url);
+		}
+	});
+}
 
 // Register custom app:// protocol before app is ready
 protocol.registerSchemesAsPrivileged([
@@ -58,6 +116,15 @@ function createWindow() {
 
 	mainWindow.on('closed', () => {
 		mainWindow = null;
+	});
+
+	// Send pending deep link once page is loaded
+	mainWindow.webContents.on('did-finish-load', () => {
+		if (pendingDeepLinkUrl) {
+			console.log('[Deep Link] Sending pending session code:', pendingDeepLinkUrl);
+			mainWindow.webContents.send('deep-link-join', pendingDeepLinkUrl);
+			pendingDeepLinkUrl = null;
+		}
 	});
 
 	// Sync native theme with system preferences
