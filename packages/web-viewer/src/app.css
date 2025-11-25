@@ -881,11 +881,13 @@ button {
   }
 
   .subtitle-shell {
-    width: 95vw;
+    max-width: 80vw;
+    width: auto;
   }
 
   .subtitle-shell.full {
     width: 100%;
+    max-width: 100%;
   }
 
   .subtitle-content {
