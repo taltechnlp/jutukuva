@@ -81,6 +81,44 @@
 	margin: 0.5rem 0;
 }
 
+/* Collaborative cursor styles (y-prosemirror) */
+.yRemoteSelection {
+	background-color: var(--user-color, rgba(59, 130, 246, 0.3));
+}
+
+/* Custom collaboration cursor */
+.collaboration-cursor {
+	position: relative;
+	margin-left: -1px;
+	margin-right: -1px;
+	pointer-events: none;
+	user-select: none;
+}
+
+.collaboration-cursor-caret {
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 2px;
+	background-color: var(--cursor-color, #3b82f6);
+}
+
+.collaboration-cursor-label {
+	position: absolute;
+	left: -1px;
+	top: -1.4em;
+	font-size: 0.65rem;
+	font-weight: 600;
+	line-height: 1;
+	padding: 2px 4px;
+	border-radius: 3px 3px 3px 0;
+	background-color: var(--cursor-color, #3b82f6);
+	color: white;
+	white-space: nowrap;
+	z-index: 10;
+}
+
 /* Word styling */
 .word-pending {
 	background-color: transparent;
