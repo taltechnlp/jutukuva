@@ -105,8 +105,11 @@
 <style>
 	.speaker-prefix-container {
 		position: relative;
-		display: inline;
+		display: inline-block;
 		user-select: none;
+		width: 120px;
+		min-width: 120px;
+		flex-shrink: 0;
 	}
 
 	.speaker-prefix {
@@ -116,7 +119,8 @@
 		cursor: pointer;
 		padding: 2px 4px;
 		border-radius: 4px;
-		margin-right: 0.25rem;
+		max-width: 100%;
+		box-sizing: border-box;
 	}
 
 	.speaker-prefix:hover {
@@ -146,6 +150,10 @@
 	.speaker-name-text {
 		font-weight: 600;
 		color: var(--fallback-p, oklch(var(--p) / 1));
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 80px;
 	}
 
 	.speaker-colon {
@@ -157,5 +165,8 @@
 		font-style: italic;
 		color: var(--fallback-bc, oklch(var(--bc) / 0.4));
 		font-size: 0.9em;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 </style>
