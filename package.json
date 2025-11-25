@@ -1,6 +1,11 @@
 {
   "name": "kirikaja",
   "version": "0.0.1",
+  "description": "Real-time caption editing application for live streaming and transcription",
+  "author": {
+    "name": "Kirikaja",
+    "email": "kirikaja@example.com"
+  },
   "private": true,
   "type": "module",
   "main": "electron/main.js",

@@ -61,8 +61,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: List dist directory
+      - name: List dist directory (Unix)
+        if: matrix.platform != 'win'
         run: ls -la dist/ || echo "dist directory not found"
+
+      - name: List dist directory (Windows)
+        if: matrix.platform == 'win'
+        run: Get-ChildItem dist/ -Force || echo "dist directory not found"
+        shell: pwsh
 
       - name: Upload Linux artifacts
         if: matrix.platform == 'linux'

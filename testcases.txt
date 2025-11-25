@@ -1,0 +1,544 @@
+KIRIKAJA TESTJUHTUMID
+=====================
+
+Viimati uuendatud: 2025-11-26
+Sihtgrupp: Kirjutustõlgid (reaalajas subtiitrite loojad ja toimetajad)
+
+================================================================================
+1. SESSIOONI PLANEERIMINE
+================================================================================
+
+TC-1.1: Uue sessiooni loomine
+-----------------------------
+Eeltingimus: Kasutaja on sisse logitud
+Sammud:
+  1. Vajuta "Uus sessioon" nuppu
+  2. Sisesta sessiooni nimi
+  3. Määra sessiooni algusaeg ja eeldatav kestus
+  4. Salvesta sessioon
+Oodatav tulemus: Sessioon luuakse ja kuvatakse sessioonide nimekirjas
+
+TC-1.2: Sessiooni muutmine
+--------------------------
+Eeltingimus: Sessioon on loodud, kuid pole veel alanud
+Sammud:
+  1. Ava sessioonide nimekiri
+  2. Vali olemasolev sessioon
+  3. Muuda sessiooni nime või aega
+  4. Salvesta muudatused
+Oodatav tulemus: Muudatused salvestatakse ja kuvatakse korrektselt
+
+TC-1.3: Sessiooni kustutamine
+-----------------------------
+Eeltingimus: Sessioon on loodud, kuid pole veel alanud
+Sammud:
+  1. Ava sessioonide nimekiri
+  2. Vali sessioon
+  3. Vajuta "Kustuta"
+  4. Kinnita kustutamine
+Oodatav tulemus: Sessioon kustutatakse ja kaob nimekirjast
+
+TC-1.4: Sessiooni jagamislingi genereerimine
+--------------------------------------------
+Eeltingimus: Sessioon on loodud
+Sammud:
+  1. Ava sessiooni detailvaade
+  2. Vajuta "Genereeri jagamislink"
+  3. Kopeeri link
+Oodatav tulemus: Genereeritakse unikaalne URL, mida saab vaatajatega jagada
+
+================================================================================
+2. KOHANDATUD SÕNASTIK JA LÜHENDID (SNIPPETID)
+================================================================================
+
+TC-2.1: Uue snippeti lisamine
+-----------------------------
+Eeltingimus: Kasutaja on sessiooni seadetes
+Sammud:
+  1. Ava sõnastiku/snippetide sektsioon
+  2. Vajuta "Lisa uus"
+  3. Sisesta lühend (nt "kr" -> "Kirikaja")
+  4. Sisesta täistekst
+  5. Salvesta
+Oodatav tulemus: Snippet salvestatakse ja on kasutamiseks valmis
+
+TC-2.2: Snippeti kasutamine transkriptsioonis
+---------------------------------------------
+Eeltingimus: Snippet on loodud, sessioon on aktiivne
+Sammud:
+  1. Alusta transkriptsiooni
+  2. Sisesta snippeti lühend
+  3. Vajuta snippeti aktiveerimisklahvi (Tab/Enter)
+Oodatav tulemus: Lühend asendatakse täistekstiga
+
+TC-2.3: Snippeti muutmine
+-------------------------
+Eeltingimus: Snippet on olemas
+Sammud:
+  1. Ava sõnastiku sektsioon
+  2. Leia ja vali olemasolev snippet
+  3. Muuda lühendit või täisteksti
+  4. Salvesta
+Oodatav tulemus: Muudatused rakenduvad koheselt
+
+TC-2.4: Snippeti kustutamine
+----------------------------
+Eeltingimus: Snippet on olemas
+Sammud:
+  1. Ava sõnastiku sektsioon
+  2. Vali snippet
+  3. Vajuta "Kustuta"
+Oodatav tulemus: Snippet kustutatakse
+
+TC-2.5: Sõnastiku importimine failist
+-------------------------------------
+Eeltingimus: Kasutajal on ettevalmistatud sõnastiku fail
+Sammud:
+  1. Ava sõnastiku sektsioon
+  2. Vajuta "Impordi"
+  3. Vali fail
+  4. Kinnita import
+Oodatav tulemus: Kõik snippetid failist lisatakse sõnastikku
+
+TC-2.6: Sõnastiku eksportimine
+------------------------------
+Eeltingimus: Sõnastikus on snippete
+Sammud:
+  1. Ava sõnastiku sektsioon
+  2. Vajuta "Ekspordi"
+  3. Vali salvestuskoht
+Oodatav tulemus: Sõnastik salvestatakse failina
+
+================================================================================
+3. REAALAJAS ASR TEKSTI TOIMETAMINE
+================================================================================
+
+TC-3.1: ASR transkriptsiooni alustamine
+---------------------------------------
+Eeltingimus: Sessioon on loodud, mikrofon on ühendatud
+Sammud:
+  1. Ava sessioon
+  2. Vajuta "Alusta salvestamist"
+  3. Räägi mikrofoni
+Oodatav tulemus: ASR tuvastab kõne ja kuvab teksti reaalajas
+
+TC-3.2: Teksti parandamine reaalajas
+------------------------------------
+Eeltingimus: ASR transkriptsioon on aktiivne
+Sammud:
+  1. Tuvasta viga ASR tekstis
+  2. Kliki vigasel sõnal
+  3. Paranda tekst
+  4. Jätka transkriptsiooni
+Oodatav tulemus: Parandus salvestub ja sünkroniseerub koheselt
+
+TC-3.3: Uue lõigu loomine
+-------------------------
+Eeltingimus: Transkriptsioon on käimas
+Sammud:
+  1. Aseta kursor soovitud kohta
+  2. Vajuta Enter
+Oodatav tulemus: Luuakse uus lõik, tekst jaguneb kaheks
+
+TC-3.4: Lõikude ühendamine
+--------------------------
+Eeltingimus: Tekstis on mitu lõiku
+Sammud:
+  1. Aseta kursor lõigu algusesse
+  2. Vajuta Backspace
+Oodatav tulemus: Lõigud ühendatakse
+
+TC-3.5: Teksti kustutamine
+--------------------------
+Eeltingimus: Transkriptsioon sisaldab teksti
+Sammud:
+  1. Vali tekstiosa
+  2. Vajuta Delete või Backspace
+Oodatav tulemus: Valitud tekst kustutatakse
+
+TC-3.6: Tagasivõtmine (Undo)
+----------------------------
+Eeltingimus: Kasutaja on teinud muudatuse
+Sammud:
+  1. Vajuta Ctrl+Z
+Oodatav tulemus: Viimane muudatus tühistatakse
+
+TC-3.7: Uuesti tegemine (Redo)
+------------------------------
+Eeltingimus: Kasutaja on tühistanud muudatuse
+Sammud:
+  1. Vajuta Ctrl+Y või Ctrl+Shift+Z
+Oodatav tulemus: Tühistatud muudatus taastatakse
+
+================================================================================
+4. KÕNELEJATE HALDAMINE
+================================================================================
+
+TC-4.1: Kõneleja lisamine enne salvestamist
+-------------------------------------------
+Eeltingimus: Sessioon on loodud, salvestamine pole alanud
+Sammud:
+  1. Ava sessiooni seaded
+  2. Mine "Kõnelejad" sektsiooni
+  3. Vajuta "Lisa kõneleja"
+  4. Sisesta kõneleja nimi ja/või roll
+  5. Salvesta
+Oodatav tulemus: Kõneleja lisatakse sessiooni ja on valikus saadaval
+
+TC-4.2: Mitme kõneleja lisamine
+-------------------------------
+Eeltingimus: Sessioon on loodud
+Sammud:
+  1. Lisa esimene kõneleja (vt TC-4.1)
+  2. Lisa teine kõneleja
+  3. Lisa kolmas kõneleja
+Oodatav tulemus: Kõik kõnelejad on nimekirjas ja valikus
+
+TC-4.3: Kõneleja märkimine reaalajas
+------------------------------------
+Eeltingimus: Sessioon on aktiivne, kõnelejad on lisatud
+Sammud:
+  1. Alusta transkriptsiooni
+  2. Kui kõneleja vahetub, vajuta kõneleja vahetamise klahvi/nuppu
+  3. Vali uus kõneleja nimekirjast
+Oodatav tulemus: Uus kõneleja märgitakse ja kuvatakse tekstis
+
+TC-4.4: Kiirklahviga kõneleja vahetamine
+----------------------------------------
+Eeltingimus: Kõnelejad on seadistatud kiirklahvidega
+Sammud:
+  1. Transkriptsiooni ajal vajuta kõneleja kiirklahvi (nt F1, F2)
+Oodatav tulemus: Kõneleja vahetub koheselt
+
+TC-4.5: Uue kõneleja lisamine reaalajas
+---------------------------------------
+Eeltingimus: Transkriptsioon on käimas
+Sammud:
+  1. Vajuta "Lisa uus kõneleja"
+  2. Sisesta nimi
+  3. Salvesta ja määra aktiivseks
+Oodatav tulemus: Uus kõneleja lisatakse ja märgitakse aktiivseks
+
+TC-4.6: Kõneleja muutmine tagantjärele
+--------------------------------------
+Eeltingimus: Tekstis on kõnelejamärgendid
+Sammud:
+  1. Kliki kõneleja märgendil
+  2. Vali teine kõneleja
+Oodatav tulemus: Kõneleja muudetakse valitud tekstilõigus
+
+================================================================================
+5. SESSIOONI LÕPETAMINE
+================================================================================
+
+TC-5.1: Sessiooni peatamine
+---------------------------
+Eeltingimus: Sessioon on aktiivne
+Sammud:
+  1. Vajuta "Peata" nuppu
+Oodatav tulemus: ASR peatub, tekst jääb alles, saab jätkata
+
+TC-5.2: Sessiooni lõpetamine
+----------------------------
+Eeltingimus: Sessioon on aktiivne või peatatud
+Sammud:
+  1. Vajuta "Lõpeta sessioon"
+  2. Kinnita lõpetamine
+Oodatav tulemus: Sessioon lõpetatakse, tekst salvestatakse
+
+TC-5.3: Transkriptsiooni eksportimine
+-------------------------------------
+Eeltingimus: Sessioon on lõppenud
+Sammud:
+  1. Ava lõppenud sessioon
+  2. Vajuta "Ekspordi"
+  3. Vali formaat (TXT, SRT, VTT, DOCX)
+  4. Salvesta fail
+Oodatav tulemus: Transkriptsioon eksporditakse valitud formaadis
+
+TC-5.4: Sessiooni statistika vaatamine
+--------------------------------------
+Eeltingimus: Sessioon on lõppenud
+Sammud:
+  1. Ava lõppenud sessioon
+  2. Vaata statistikat (kestus, sõnade arv, kõnelejad)
+Oodatav tulemus: Kuvatakse sessiooni kokkuvõte ja statistika
+
+================================================================================
+6. MITME TOIMETAJA KOOSTÖÖ
+================================================================================
+
+TC-6.1: Teine toimetaja liitub sessiooniga
+------------------------------------------
+Eeltingimus: Sessioon on aktiivne, esimene toimetaja töötab
+Sammud:
+  1. Teine toimetaja avab sessiooni lingi
+  2. Logib sisse toimetajana
+  3. Liitub sessiooniga
+Oodatav tulemus: Teine toimetaja näeb reaalajas teksti ja saab muudatusi teha
+
+TC-6.2: Samaaegne toimetamine eri kohtades
+------------------------------------------
+Eeltingimus: Kaks toimetajat on sessioonis
+Sammud:
+  1. Toimetaja A parandab teksti alguses
+  2. Toimetaja B parandab teksti lõpus samal ajal
+Oodatav tulemus: Mõlemad muudatused salvestuvad, konflikte ei teki
+
+TC-6.3: Samaaegne toimetamine samas kohas (konflikt)
+----------------------------------------------------
+Eeltingimus: Kaks toimetajat on sessioonis
+Sammud:
+  1. Toimetaja A alustab sõna parandamist
+  2. Toimetaja B parandab sama sõna
+Oodatav tulemus: Süsteem lahendab konflikti, kuvab sobiva tulemuse
+
+TC-6.4: Toimetaja lahkub sessioonist
+------------------------------------
+Eeltingimus: Mitu toimetajat on sessioonis
+Sammud:
+  1. Üks toimetaja sulgeb rakenduse
+Oodatav tulemus: Sessioon jätkub teiste toimetajatega, muudatused säilivad
+
+TC-6.5: Toimetajate kursorite kuvamine
+--------------------------------------
+Eeltingimus: Mitu toimetajat on sessioonis
+Sammud:
+  1. Vaata, kas teiste toimetajate kursorid on nähtavad
+Oodatav tulemus: Iga toimetaja kursor kuvatakse erineva värviga
+
+================================================================================
+7. VEEBIVAATAJA KASUTAJALIIDES
+================================================================================
+
+TC-7.1: Veebivaataja avamine
+----------------------------
+Eeltingimus: Sessioon on aktiivne, jagamislink on olemas
+Sammud:
+  1. Ava brauser
+  2. Sisesta/klõpsa jagamislingil
+Oodatav tulemus: Avaneb veebivaataja, kuvatakse reaalajas tekst
+
+TC-7.2: Teksti fondi suuruse muutmine
+-------------------------------------
+Eeltingimus: Veebivaataja on avatud
+Sammud:
+  1. Leia seadete ikoon/menüü
+  2. Muuda fondi suurust (suuremaks)
+  3. Muuda fondi suurust (väiksemaks)
+Oodatav tulemus: Teksti suurus muutub vastavalt
+
+TC-7.3: Värviskeemi muutmine
+----------------------------
+Eeltingimus: Veebivaataja on avatud
+Sammud:
+  1. Ava seaded
+  2. Vali "Tume režiim"
+  3. Vali "Hele režiim"
+  4. Vali "Kõrge kontrastsus"
+Oodatav tulemus: Värvid muutuvad vastavalt valikule
+
+TC-7.4: Taustavärvi kohandamine
+-------------------------------
+Eeltingimus: Veebivaataja on avatud
+Sammud:
+  1. Ava seaded
+  2. Vali kohandatud taustavärv
+Oodatav tulemus: Taustavärv muutub
+
+TC-7.5: Teksti värvi kohandamine
+--------------------------------
+Eeltingimus: Veebivaataja on avatud
+Sammud:
+  1. Ava seaded
+  2. Vali kohandatud teksti värv
+Oodatav tulemus: Teksti värv muutub
+
+TC-7.6: Teksti joonduse muutmine
+--------------------------------
+Eeltingimus: Veebivaataja on avatud
+Sammud:
+  1. Ava seaded
+  2. Vali "Vasakule joondatud"
+  3. Vali "Keskele joondatud"
+  4. Vali "Paremale joondatud"
+Oodatav tulemus: Tekst joondub vastavalt
+
+TC-7.7: Seadete salvestamine
+----------------------------
+Eeltingimus: Kasutaja on muutnud seadeid
+Sammud:
+  1. Muuda seadeid
+  2. Sulge ja ava veebivaataja uuesti
+Oodatav tulemus: Seaded säilivad (salvestatakse brauseri mällu)
+
+TC-7.8: Täisekraanrežiim
+------------------------
+Eeltingimus: Veebivaataja on avatud
+Sammud:
+  1. Vajuta täisekraani nuppu või F11
+Oodatav tulemus: Vaataja läheb täisekraanrežiimi
+
+================================================================================
+8. ÜHENDUSE KATKESTUSED JA TAASÜHENDAMINE
+================================================================================
+
+TC-8.1: Ühenduse katkemine ja automaatne taasühendus
+----------------------------------------------------
+Eeltingimus: Vaataja/toimetaja on ühendatud
+Sammud:
+  1. Simuleeri võrguühenduse katkemist (nt lennurežiim)
+  2. Oota 5-10 sekundit
+  3. Taasta võrguühendus
+Oodatav tulemus:
+  - Kuvatakse ühenduse katkemise teade
+  - Automaatne taasühendus toimub
+  - Vahepeal lisandunud tekst laaditakse
+
+TC-8.2: Pikaajaline ühenduse katkemine
+--------------------------------------
+Eeltingimus: Vaataja on ühendatud
+Sammud:
+  1. Katkesta ühendus 5+ minutiks
+  2. Taasta ühendus
+Oodatav tulemus:
+  - Süsteem taasühendub
+  - Kogu vahepeal lisandunud tekst sünkroniseerub
+
+TC-8.3: Hiline liitumine sessiooniga
+------------------------------------
+Eeltingimus: Sessioon on kestnud 30+ minutit
+Sammud:
+  1. Ava veebivaataja esimest korda
+  2. Liitu sessiooniga
+Oodatav tulemus:
+  - Laaditakse kogu senine tekst
+  - Jätkatakse reaalajas teksti kuvamist
+
+TC-8.4: Serveri taaskäivitus
+----------------------------
+Eeltingimus: Sessioon on aktiivne
+Sammud:
+  1. Server taaskäivitub (simuleeritud)
+  2. Kliendid ootavad
+Oodatav tulemus:
+  - Kliendid taasühenduvad automaatselt
+  - Andmed säilivad
+
+TC-8.5: Aegunud sessiooni taasavamine
+-------------------------------------
+Eeltingimus: Sessioon on lõppenud
+Sammud:
+  1. Proovi avada lõppenud sessiooni veebivaataja link
+Oodatav tulemus:
+  - Kuvatakse arhiveeritud/lõppenud sessiooni tekst
+  - Või teade, et sessioon on lõppenud
+
+================================================================================
+9. MITU VAATAJAT KORRAGA
+================================================================================
+
+TC-9.1: 10 vaatajat liitub korraga
+----------------------------------
+Eeltingimus: Sessioon on aktiivne
+Sammud:
+  1. Ava 10 brauseri akent/vahekaarti
+  2. Kõik avavad sama sessiooni lingi samaaegselt
+Oodatav tulemus: Kõik 10 vaatajat näevad reaalajas teksti
+
+TC-9.2: 50 vaatajat sessiooniga ühendatud
+-----------------------------------------
+Eeltingimus: Sessioon on aktiivne
+Sammud:
+  1. 50 vaatajat ühenduvad sessiooniga
+  2. Toimetaja teeb muudatusi
+Oodatav tulemus: Kõik 50 vaatajat näevad muudatusi viivituseta (<1s)
+
+TC-9.3: Vaatajate arvu kuvamine
+-------------------------------
+Eeltingimus: Sessioon on aktiivne, mitu vaatajat ühendatud
+Sammud:
+  1. Vaata toimetaja vaates vaatajate arvu
+Oodatav tulemus: Kuvatakse ühendatud vaatajate arv
+
+TC-9.4: Vaataja lahkumine
+-------------------------
+Eeltingimus: Mitu vaatajat on ühendatud
+Sammud:
+  1. Üks vaataja sulgeb brauseri
+  2. Kontrolli vaatajate arvu
+Oodatav tulemus: Vaatajate arv väheneb, sessioon jätkub
+
+TC-9.5: Kõik vaatajad lahkuvad
+------------------------------
+Eeltingimus: Sessioon on aktiivne, vaatajad on ühendatud
+Sammud:
+  1. Kõik vaatajad sulgevad brauserid
+Oodatav tulemus: Sessioon jätkub toimetaja jaoks, tekst säilib
+
+================================================================================
+10. JÕUDLUS JA STABIILSUS
+================================================================================
+
+TC-10.1: Pikk sessioon (2+ tundi)
+---------------------------------
+Eeltingimus: Sessioon algab
+Sammud:
+  1. Jätka sessiooni 2+ tundi
+  2. Jälgi süsteemi stabiilsust
+Oodatav tulemus:
+  - Süsteem püsib stabiilne
+  - Mälu kasutus ei kasva lõpmatult
+  - Latentsus ei suurene
+
+TC-10.2: Suur tekstimaht
+------------------------
+Eeltingimus: Sessioon on aktiivne
+Sammud:
+  1. Genereeri/sisesta 50 000+ sõna teksti
+  2. Jälgi jõudlust
+Oodatav tulemus: Süsteem töötab sujuvalt, kerimine toimib
+
+TC-10.3: Kiire teksti sisestamine
+---------------------------------
+Eeltingimus: ASR on aktiivne
+Sammud:
+  1. Räägi kiiresti (200+ sõna minutis)
+Oodatav tulemus: ASR suudab järje pidada, tekst kuvatakse
+
+================================================================================
+11. VIGADE KÄSITLEMINE
+================================================================================
+
+TC-11.1: Vigane sessiooni link
+------------------------------
+Eeltingimus: Ei ole
+Sammud:
+  1. Sisesta vigane/olematu sessiooni link
+Oodatav tulemus: Kuvatakse selge veateade
+
+TC-11.2: Mikrofoni puudumine
+----------------------------
+Eeltingimus: Mikrofon pole ühendatud
+Sammud:
+  1. Proovi alustada ASR transkriptsiooni
+Oodatav tulemus: Kuvatakse veateade mikrofoni puudumise kohta
+
+TC-11.3: Mikrofoni luba puudub
+------------------------------
+Eeltingimus: Brauseri luba mikrofonile pole antud
+Sammud:
+  1. Proovi alustada transkriptsiooni
+Oodatav tulemus: Kuvatakse juhis loa andmiseks
+
+================================================================================
+MÄRKUSED TESTIJALE
+================================================================================
+
+- Testi eri brauserites: Chrome, Firefox, Safari, Edge
+- Testi eri seadmetes: Arvuti, tahvel, telefon
+- Testi eri võrgutingimustes: Kiire WiFi, aeglane 3G, ebastabiilne ühendus
+- Dokumenteeri kõik vead koos ekraanipiltide ja sammudega
+- Märgi üles jõudlusprobleemid (latentsus, mälukasutus)
+
+================================================================================
