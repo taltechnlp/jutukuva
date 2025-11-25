@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { _ } from 'svelte-i18n';
 	import CreateSessionModal from '$lib/components/sessions/CreateSessionModal.svelte';
 	import CancelConfirmationModal from '$lib/components/sessions/CancelConfirmationModal.svelte';
 	import SessionCard from '$lib/components/sessions/SessionCard.svelte';
@@ -159,15 +160,15 @@
 		<!-- Header -->
 		<div class="flex justify-between items-center mb-6">
 			<div>
-				<h1 class="text-3xl font-bold">Sessions</h1>
-				<p class="text-base-content/70 mt-1">Manage your transcription sessions</p>
+				<h1 class="text-3xl font-bold">{$_('sessions.title', { default: 'Sessions' })}</h1>
+				<p class="text-base-content/70 mt-1">{$_('sessions.description', { default: 'Manage your transcription sessions' })}</p>
 			</div>
 			<div class="flex gap-2">
 				<button
 					class="btn btn-ghost"
 					onclick={() => goto('/')}
 				>
-					Back to Editor
+					{$_('sessions.backToEditor', { default: 'Back to Editor' })}
 				</button>
 				<button
 					class="btn btn-primary"
@@ -176,7 +177,7 @@
 					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
 						<path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
 					</svg>
-					New Session
+					{$_('sessions.newSession', { default: 'New Session' })}
 				</button>
 			</div>
 		</div>
@@ -187,25 +188,25 @@
 				class={`tab ${viewMode === 'upcoming' ? 'tab-active' : ''}`}
 				onclick={() => changeViewMode('upcoming')}
 			>
-				Upcoming ({getSessionCountByStatus('upcoming')})
+				{$_('sessions.tabs.upcoming', { default: 'Upcoming' })} ({getSessionCountByStatus('upcoming')})
 			</button>
 			<button
 				class={`tab ${viewMode === 'active' ? 'tab-active' : ''}`}
 				onclick={() => changeViewMode('active')}
 			>
-				Active ({getSessionCountByStatus('active')})
+				{$_('sessions.tabs.active', { default: 'Active' })} ({getSessionCountByStatus('active')})
 			</button>
 			<button
 				class={`tab ${viewMode === 'past' ? 'tab-active' : ''}`}
 				onclick={() => changeViewMode('past')}
 			>
-				Past ({getSessionCountByStatus('past')})
+				{$_('sessions.tabs.past', { default: 'Past' })} ({getSessionCountByStatus('past')})
 			</button>
 			<button
 				class={`tab ${viewMode === 'all' ? 'tab-active' : ''}`}
 				onclick={() => changeViewMode('all')}
 			>
-				All ({getSessionCountByStatus('all')})
+				{$_('sessions.tabs.all', { default: 'All' })} ({getSessionCountByStatus('all')})
 			</button>
 		</div>
 
@@ -233,23 +234,23 @@
 					<svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-base-content/30 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
 					</svg>
-					<h3 class="text-xl font-semibold text-base-content/70 mb-2">No sessions found</h3>
+					<h3 class="text-xl font-semibold text-base-content/70 mb-2">{$_('sessions.empty.title', { default: 'No sessions found' })}</h3>
 					<p class="text-base-content/50 mb-4">
 						{#if viewMode === 'upcoming'}
-							You don't have any upcoming sessions scheduled.
+							{$_('sessions.empty.upcoming', { default: "You don't have any upcoming sessions scheduled." })}
 						{:else if viewMode === 'active'}
-							You don't have any active sessions.
+							{$_('sessions.empty.active', { default: "You don't have any active sessions." })}
 						{:else if viewMode === 'past'}
-							You don't have any past sessions.
+							{$_('sessions.empty.past', { default: "You don't have any past sessions." })}
 						{:else}
-							You haven't created any sessions yet.
+							{$_('sessions.empty.all', { default: "You haven't created any sessions yet." })}
 						{/if}
 					</p>
 					<button
 						class="btn btn-primary"
 						onclick={() => showCreateModal = true}
 					>
-						Create Your First Session
+						{$_('sessions.empty.createFirst', { default: 'Plan a New Session' })}
 					</button>
 				</div>
 			{:else}

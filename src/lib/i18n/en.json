@@ -626,7 +626,7 @@
       "active": "You don't have any active sessions.",
       "past": "You don't have any past sessions.",
       "all": "You haven't created any sessions yet.",
-      "createFirst": "Create Your First Session"
+      "createFirst": "Plan a New Session"
     },
     "card": {
       "words": "words",
@@ -699,7 +699,12 @@
       "replacementPlaceholder": "e.g., ambulance",
       "replacementHelp": "The text that will replace the trigger",
       "add": "Add",
-      "duplicateTrigger": "A snippet with this trigger already exists"
+      "duplicateTrigger": "A snippet with this trigger already exists",
+      "export": "Export",
+      "import": "Import",
+      "builtin": "Built-in",
+      "exportError": "Failed to export dictionary",
+      "importError": "Failed to import dictionary. Please check the file format."
     }
   }
 }

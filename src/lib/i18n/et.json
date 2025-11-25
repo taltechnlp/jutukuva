@@ -559,15 +559,27 @@
       "wordsApprovedStatus": "{approved} / {total} sõna kinnitatud"
     }
   },
+  "session_status": {
+    "connected": "Ühendatud",
+    "connecting": "Ühendamine...",
+    "session": "Sessioon",
+    "host": "Haldaja",
+    "guest": "Külaline",
+    "participant": "osaleja",
+    "participants": "osalejat",
+    "share": "Jaga",
+    "end_session": "Lõpeta sessioon",
+    "leave": "Lahku sessioonist"
+  },
   "collaboration": {
     "collaborative_session": "Ühissessioon",
     "session_active": "Aktiivne sessioon",
-    "choose_option": "Vali valik alustamiseks",
+    "choose_option": "Jaga reaalajas teksti teistega",
     "join_existing": "Liitu olemasoleva sessiooniga",
     "join_existing_desc": "Sisesta 6-kohaline kood, et liituda teistega reaalajas",
     "quick_start": "Kiire alustamine",
     "quick_start_desc": "Alusta uut ühissessiooni ja jaga koodi teistega",
-    "manage_sessions": "Halda ja planeeri sessioone",
+    "manage_sessions": "Halda sessioone",
     "manage_sessions_desc": "Vaata, planeeri ja korrasta oma tulevasi transkriptsioonisessioone",
     "join_session": "Liitu sessiooniga",
     "enter_code": "Sisesta 6-kohaline kood",
@@ -603,7 +615,7 @@
       "active": "Sul pole ühtegi aktiivset sessiooni.",
       "past": "Sul pole ühtegi möödunud sessiooni.",
       "all": "Sa pole veel ühtegi sessiooni loonud.",
-      "createFirst": "Loo oma esimene sessioon"
+      "createFirst": "Planeeri uus sessioon"
     },
     "card": {
       "words": "sõna",
@@ -676,7 +688,12 @@
       "replacementPlaceholder": "nt kiirabi",
       "replacementHelp": "Tekst, mis asendab päästiku",
       "add": "Lisa",
-      "duplicateTrigger": "Selle päästikuga lõik on juba olemas"
+      "duplicateTrigger": "Selle päästikuga lõik on juba olemas",
+      "export": "Ekspordi",
+      "import": "Impordi",
+      "builtin": "Sisseehitatud",
+      "exportError": "Sõnastiku eksportimine ebaõnnestus",
+      "importError": "Sõnastiku importimine ebaõnnestus. Palun kontrolli faili vormingut."
     }
   }
 }
