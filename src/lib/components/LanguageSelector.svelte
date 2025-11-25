@@ -25,7 +25,7 @@
 </script>
 
 <div class="dropdown dropdown-end">
-	<button tabindex="0" class="btn btn-ghost btn-sm" aria-label="Select language">
+	<button tabindex="0" class="btn btn-ghost btn-sm cursor-pointer" aria-label="Select language">
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
 			class="h-5 w-5"
@@ -51,6 +51,7 @@
 				<button
 					class:active={currentLocale === lang}
 					onclick={() => changeLanguage(lang)}
+					class="cursor-pointer"
 				>
 					{languageNames[lang]}
 				</button>

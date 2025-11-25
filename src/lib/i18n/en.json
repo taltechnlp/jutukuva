@@ -6,6 +6,18 @@
     "sessions": "Sessions",
     "textSnippets": "Text Snippets"
   },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "cupcake": "Cupcake",
+    "dracula": "Dracula",
+    "synthwave": "Synthwave",
+    "forest": "Forest",
+    "lofi": "Lofi",
+    "pastel": "Pastel",
+    "cyberpunk": "Cyberpunk",
+    "nord": "Nord"
+  },
   "sign_in": "Sign in",
   "sign_up": "Sign up",
   "common": {

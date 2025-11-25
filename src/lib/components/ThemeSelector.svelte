@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { theme, availableThemes, type Theme } from '$lib/stores/theme';
+	import { _ } from 'svelte-i18n';
 
 	let currentTheme = $state<Theme>($theme);
 
@@ -30,7 +31,7 @@
 </script>
 
 <div class="dropdown dropdown-end">
-	<button tabindex="0" class="btn btn-ghost btn-sm" aria-label="Select theme">
+	<button tabindex="0" class="btn btn-ghost btn-sm cursor-pointer" aria-label="Select theme">
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
 			class="h-5 w-5"
@@ -45,7 +46,7 @@
 				d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
 			/>
 		</svg>
-		<span class="hidden sm:inline ml-1">{capitalizeTheme(currentTheme)}</span>
+		<span class="hidden sm:inline ml-1">{$_(`theme.${currentTheme}`, { default: capitalizeTheme(currentTheme) })}</span>
 	</button>
 	<ul
 		tabindex="0"
@@ -56,9 +57,9 @@
 				<button
 					class:active={currentTheme === themeName}
 					onclick={() => changeTheme(themeName)}
-					class="flex items-center justify-between"
+					class="flex items-center justify-between cursor-pointer"
 				>
-					<span>{capitalizeTheme(themeName)}</span>
+					<span>{$_(`theme.${themeName}`, { default: capitalizeTheme(themeName) })}</span>
 					<span class="text-xs opacity-70">{getThemeIcon(themeName)}</span>
 				</button>
 			</li>
