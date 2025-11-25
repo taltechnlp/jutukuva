@@ -15,6 +15,7 @@ export interface StreamingTextState {
 	currentTime: number;
 	previousIncomingText: string; // Previous ASR result for final-word detection
 	createNewParagraphOnNextText: boolean; // Set when VAD detects speech end
+	triggerDeduplicationOnly: boolean; // Set when manual Enter creates paragraph (dedupe without creating new para)
 }
 
 export const streamingTextKey = new PluginKey<StreamingTextState>('streamingText');
@@ -49,11 +50,14 @@ function insertStreamingText(
 	// Check if we should create a new paragraph (after VAD speech end)
 	const pluginState = streamingTextKey.getState(state);
 	const shouldCreateNewParagraph = pluginState?.createNewParagraphOnNextText;
+	const triggerDeduplicationOnly = pluginState?.triggerDeduplicationOnly;
+	// Deduplicate if either flag is set (VAD creates para, manual Enter already created para)
+	const shouldDeduplicate = shouldCreateNewParagraph || triggerDeduplicationOnly;
 
 	// Get previous ASR result for final-word detection
 	// IMPORTANT: Check this BEFORE creating new paragraph
-	// Use empty string if we're about to create a new paragraph (don't compare across paragraphs)
-	const previousIncomingText = shouldCreateNewParagraph ? '' : (pluginState?.previousIncomingText || '');
+	// Use empty string if we're about to deduplicate (don't compare across paragraphs)
+	const previousIncomingText = shouldDeduplicate ? '' : (pluginState?.previousIncomingText || '');
 
 	if (shouldCreateNewParagraph && lastPara && lastPara.content.size > 0) {
 		const newPara = schema.nodes.paragraph.create();
@@ -88,7 +92,7 @@ function insertStreamingText(
 	// CRITICAL: When creating a new paragraph, deduplicate incoming text against ALL previous paragraphs
 	// ASR buffer doesn't clear when recording continues, so it includes text from previous paragraphs
 	let filteredText = text;
-	if (shouldCreateNewParagraph) {
+	if (shouldDeduplicate) {
 		const wordsFromPreviousParagraphs = new Set<string>();
 
 		// Collect all words from all previous paragraphs
@@ -261,7 +265,8 @@ export function streamingTextPlugin(collaborationManager?: any) {
 					pendingText: '',
 					currentTime: 0,
 					previousIncomingText: '',
-					createNewParagraphOnNextText: false
+					createNewParagraphOnNextText: false,
+					triggerDeduplicationOnly: false
 				};
 			},
 
@@ -276,12 +281,21 @@ export function streamingTextPlugin(collaborationManager?: any) {
 					};
 				}
 
+				// Handle manual paragraph creation (Enter key) - only trigger deduplication, not new paragraph
+				if (tr.getMeta('manualParagraphCreated')) {
+					newValue = {
+						...newValue,
+						triggerDeduplicationOnly: true
+					};
+				}
+
 				// Clear the flag after it's been used
 				// DON'T reset previousIncomingText here - it will be handled by the ternary in insertStreamingText()
 				if (tr.getMeta('clearNewParagraphFlag')) {
 					newValue = {
 						...newValue,
-						createNewParagraphOnNextText: false
+						createNewParagraphOnNextText: false,
+						triggerDeduplicationOnly: false
 					};
 				}
 

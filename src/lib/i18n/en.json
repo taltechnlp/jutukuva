@@ -28,7 +28,17 @@
     "save": "Save",
     "edit": "Edit",
     "delete": "Delete",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "add": "Add"
+  },
+  "speakers": {
+    "selectSpeaker": "Select speaker",
+    "changeSpeaker": "Change speaker",
+    "addNew": "Add new speaker...",
+    "manageSpeakers": "Manage Speakers",
+    "noSpeakers": "No speakers defined",
+    "speakerName": "Speaker name",
+    "addSpeaker": "Add Speaker"
   },
   "error": {
     "404": {

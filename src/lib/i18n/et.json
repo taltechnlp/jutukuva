@@ -26,7 +26,17 @@
     "reject": "Lükka tagasi",
     "error": "Viga",
     "previous": "Eelmine",
-    "next": "Järgmine"
+    "next": "Järgmine",
+    "add": "Lisa"
+  },
+  "speakers": {
+    "selectSpeaker": "Vali kõneleja",
+    "changeSpeaker": "Muuda kõnelejat",
+    "addNew": "Lisa uus kõneleja...",
+    "manageSpeakers": "Halda kõnelejaid",
+    "noSpeakers": "Kõnelejaid pole määratud",
+    "speakerName": "Kõneleja nimi",
+    "addSpeaker": "Lisa kõneleja"
   },
   "error": {
     "404": {

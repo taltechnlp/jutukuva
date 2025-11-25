@@ -5,12 +5,15 @@
 	import { EditorView } from 'prosemirror-view';
 	import { history, undo as pmUndo, redo as pmRedo } from 'prosemirror-history';
 	import { speechSchema } from './schema';
-	import { keyboardShortcutsPlugin } from './plugins/keyboardShortcuts';
+	import { keyboardShortcutsPlugin, speakerDropdownPlugin, speakerDropdownKey } from './plugins/keyboardShortcuts';
 	import { streamingTextPlugin, insertStreamingTextCommand, signalVadSpeechEndCommand } from './plugins/streamingText';
 	import { subtitleSegmentationPlugin, subtitleSegmentationKey } from './plugins/subtitleSegmentation';
 	import { textSnippetsPlugin, updateTextSnippetEntries, type TextSnippetEntry } from './plugins/textSnippets';
 	import type { EditorConfig, StreamingTextEvent, SubtitleSegment, Word } from './utils/types';
 	import type { CollaborationManager } from '$lib/collaboration/CollaborationManager';
+	import type { Speaker } from '$lib/collaboration/types';
+	import { speakerStore } from '$lib/stores/speakerStore';
+	import { createParagraphNodeView, type ParagraphNodeViewContext } from './nodeViews/paragraphNodeView';
 	import Toolbar from './Toolbar.svelte';
 
 	// Props
@@ -18,13 +21,18 @@
 		config = {},
 		class: className = '',
 		collaborationManager = undefined,
-		readOnly = false
+		readOnly = false,
+		sessionId = ''
 	}: {
 		config?: EditorConfig;
 		class?: string;
 		collaborationManager?: CollaborationManager;
 		readOnly?: boolean;
+		sessionId?: string;
 	} = $props();
+
+	// Speaker state
+	let speakers = $state<Speaker[]>([]);
 
 	// Editor state
 	let editorElement: HTMLDivElement;
@@ -52,14 +60,116 @@
 		}
 	}
 
+	// Load speakers from database (solo mode)
+	async function loadSpeakers() {
+		if (!sessionId || collaborationManager) return;
+
+		if (typeof window !== 'undefined' && window.db) {
+			try {
+				const dbSpeakers = await window.db.getSessionSpeakers(sessionId);
+				speakerStore.initFromDb(dbSpeakers);
+				speakers = dbSpeakers;
+			} catch (error) {
+				console.error('Failed to load speakers:', error);
+			}
+		}
+	}
+
+	// Save speakers to database (solo mode)
+	async function saveSpeakers() {
+		if (!sessionId || collaborationManager) return;
+
+		if (typeof window !== 'undefined' && window.db) {
+			try {
+				await window.db.setSessionSpeakers(sessionId, speakers);
+			} catch (error) {
+				console.error('Failed to save speakers:', error);
+			}
+		}
+	}
+
+	// Speaker management functions for NodeView context
+	function getSpeakers(): Speaker[] {
+		if (collaborationManager) {
+			return collaborationManager.getSpeakers();
+		}
+		return speakers;
+	}
+
+	function getSpeaker(id: string): Speaker | undefined {
+		if (collaborationManager) {
+			return collaborationManager.getSpeaker(id);
+		}
+		return speakers.find(s => s.id === id);
+	}
+
+	function addSpeaker(name: string): Speaker {
+		let newSpeaker: Speaker;
+		if (collaborationManager) {
+			newSpeaker = collaborationManager.addSpeaker(name);
+		} else {
+			newSpeaker = speakerStore.addSpeaker(name);
+			speakers = speakerStore.getSpeakers();
+			saveSpeakers();
+		}
+		return newSpeaker;
+	}
+
+	function removeSpeaker(id: string): void {
+		if (collaborationManager) {
+			collaborationManager.removeSpeaker(id);
+		} else {
+			speakerStore.removeSpeaker(id);
+			speakers = speakerStore.getSpeakers();
+			saveSpeakers();
+		}
+	}
+
+	function updateSpeaker(id: string, name: string): void {
+		if (collaborationManager) {
+			collaborationManager.updateSpeaker(id, name);
+		} else {
+			speakerStore.updateSpeaker(id, name);
+			speakers = speakerStore.getSpeakers();
+			saveSpeakers();
+		}
+	}
+
+	// Create NodeView context
+	function createNodeViewContext(): ParagraphNodeViewContext {
+		return {
+			getSpeakers,
+			getSpeaker,
+			addSpeaker,
+			readOnly
+		};
+	}
+
 	// Initialize editor
 	onMount(async () => {
 		// Load text snippets first
 		await loadTextSnippetEntries();
 
+		// Load speakers
+		await loadSpeakers();
+
+		// Subscribe to speaker changes in collaborative mode
+		if (collaborationManager) {
+			// Initial speakers from Yjs
+			speakers = collaborationManager.getSpeakers();
+		}
+
+		// Subscribe to speaker store changes in solo mode
+		const unsubscribeSpeakers = speakerStore.subscribe((storeSpeakers) => {
+			if (!collaborationManager) {
+				speakers = storeSpeakers;
+			}
+		});
+
 		// Determine plugins based on collaboration mode
 		const basePlugins = [
 			keyboardShortcutsPlugin(),
+			speakerDropdownPlugin(),
 			streamingTextPlugin(collaborationManager),
 			subtitleSegmentationPlugin(handleSegmentComplete),
 			textSnippetsPlugin({ entries: textSnippetEntries })
@@ -101,9 +211,16 @@
 
 		const state = EditorState.create(stateConfig);
 
+		// Create NodeView context
+		const nodeViewContext = createNodeViewContext();
+
 		editorView = new EditorView(editorElement, {
 			state,
 			editable: () => !readOnly,
+			nodeViews: {
+				paragraph: (node, view, getPos) =>
+					createParagraphNodeView(node, view, getPos, nodeViewContext)
+			},
 			dispatchTransaction(transaction) {
 				if (!editorView) return;
 
@@ -134,6 +251,11 @@
 
 		// Initial state update
 		updateEditorState(state);
+
+		// Return cleanup function
+		return () => {
+			unsubscribeSpeakers();
+		};
 	});
 
 	onDestroy(() => {
@@ -272,6 +394,10 @@
 		<Toolbar
 			onUndo={() => undo()}
 			onRedo={() => redo()}
+			{speakers}
+			onAddSpeaker={addSpeaker}
+			onRemoveSpeaker={removeSpeaker}
+			onUpdateSpeaker={updateSpeaker}
 		/>
 	{/if}
 
