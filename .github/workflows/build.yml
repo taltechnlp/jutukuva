@@ -119,16 +119,16 @@ jobs:
         run: find artifacts -type f -name "*" | head -50
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            artifacts/linux-build/*
-            artifacts/mac-build/*
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --repo ${{ github.repository }} \
+            --title "Streaming Caption Editor ${{ github.ref_name }}" \
+            --notes "See https://github.com/${{ github.repository_owner }}/streaming-caption-editing/releases for downloads" \
+            artifacts/linux-build/* \
+            artifacts/mac-build/* \
             artifacts/win-build/*
-          draft: false
-          prerelease: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-to-public-repo:
     needs: build
