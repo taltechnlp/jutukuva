@@ -45,6 +45,7 @@
 	});
 
 	// Editor state
+	let containerElement: HTMLDivElement;
 	let editorElement: HTMLDivElement;
 	let editorView: EditorView | null = $state(null);
 	let segments = $state<SubtitleSegment[]>([]);
@@ -344,16 +345,17 @@
 				updateEditorState(newState);
 
 				// Auto-scroll to bottom after document changes
-				if (autoScroll && transaction.docChanged && editorElement) {
+				if (autoScroll && transaction.docChanged && containerElement) {
 					requestAnimationFrame(() => {
-						if (editorElement) {
-							// Keep the bottom of the editor visible as content is added
-							const rect = editorElement.getBoundingClientRect();
+						if (containerElement) {
+							// Keep the bottom of the editor container visible as content is added
+							// This includes the status bar at the bottom
+							const rect = containerElement.getBoundingClientRect();
 							const viewportHeight = window.innerHeight;
 
-							// If bottom of editor is below viewport, scroll to keep it visible
+							// If bottom of container is below viewport, scroll to keep it visible
 							if (rect.bottom > viewportHeight) {
-								const scrollAmount = rect.bottom - viewportHeight + 50; // 50px padding from bottom
+								const scrollAmount = rect.bottom - viewportHeight + 20; // 20px padding from bottom
 								window.scrollBy({ top: scrollAmount, behavior: 'smooth' });
 							}
 						}
@@ -512,6 +514,12 @@
 		return hasText;
 	}
 
+	// Public API: Get document as JSON (for session initialization)
+	export function getDocJSON(): object | null {
+		if (!editorView) return null;
+		return editorView.state.doc.toJSON();
+	}
+
 	// Public API: Undo
 	export function undo() {
 		if (!editorView) return;
@@ -531,7 +539,7 @@
 	}
 </script>
 
-<div class="flex flex-col bg-base-100 border border-base-300 rounded-lg overflow-hidden {className}">
+<div bind:this={containerElement} class="flex flex-col bg-base-100 border border-base-300 rounded-lg overflow-hidden {className}">
 	{#if !readOnly}
 		<!-- Toolbar -->
 		<Toolbar
