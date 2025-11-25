@@ -566,6 +566,75 @@
     "start_session": "Alusta uut sessiooni",
     "guest_cannot_record": "Ainult peremees saab salvestada"
   },
+  "sessions": {
+    "title": "Sessioonid",
+    "description": "Halda oma transkriptsioonisessioone",
+    "backToEditor": "Tagasi redaktorisse",
+    "newSession": "Uus sessioon",
+    "tabs": {
+      "upcoming": "Tulevased",
+      "active": "Aktiivsed",
+      "past": "Möödunud",
+      "all": "Kõik"
+    },
+    "status": {
+      "planned": "Planeeritud",
+      "active": "Aktiivne",
+      "completed": "Lõpetatud",
+      "cancelled": "Tühistatud"
+    },
+    "badges": {
+      "pastDue": "Möödunud",
+      "upcoming": "Tulemas"
+    },
+    "empty": {
+      "title": "Sessioone ei leitud",
+      "upcoming": "Sul pole ühtegi planeeritud sessiooni.",
+      "active": "Sul pole ühtegi aktiivset sessiooni.",
+      "past": "Sul pole ühtegi möödunud sessiooni.",
+      "all": "Sa pole veel ühtegi sessiooni loonud.",
+      "createFirst": "Loo oma esimene sessioon"
+    },
+    "card": {
+      "words": "sõna",
+      "activate": "Aktiveeri",
+      "cancel": "Tühista",
+      "complete": "Lõpeta",
+      "open": "Ava",
+      "view": "Vaata",
+      "cancelled": "Tühistatud"
+    },
+    "errors": {
+      "loadFailed": "Sessioonide laadimine ebaõnnestus",
+      "activateFailed": "Sessiooni aktiveerimine ebaõnnestus",
+      "completeFailed": "Sessiooni lõpetamine ebaõnnestus",
+      "cancelFailed": "Sessiooni tühistamine ebaõnnestus",
+      "createFailed": "Sessiooni loomine ebaõnnestus"
+    },
+    "create": {
+      "title": "Loo uus sessioon",
+      "name": "Sessiooni nimi",
+      "namePlaceholder": "nt Meeskonnakoosolek, Intervjuu",
+      "date": "Kuupäev",
+      "time": "Kellaaeg",
+      "description": "Kirjeldus (valikuline)",
+      "descriptionPlaceholder": "Lisa märkmeid selle sessiooni kohta...",
+      "nameRequired": "Sessiooni nimi on nõutud",
+      "dateTimeRequired": "Kuupäev ja kellaaeg on nõutud",
+      "cancel": "Tühista",
+      "creating": "Loon...",
+      "submit": "Loo sessioon"
+    },
+    "cancelModal": {
+      "title": "Tühista sessioon?",
+      "confirm": "Kas oled kindel, et soovid selle sessiooni tühistada?",
+      "scheduledFor": "Planeeritud:",
+      "sessionCode": "Sessiooni kood:",
+      "warning": "See tegevus märgib sessiooni tühistatuks. Sessioon jääb sinu ajalukku, kuid seda ei saa enam aktiveerida.",
+      "keep": "Säilita sessioon",
+      "cancel": "Tühista sessioon"
+    }
+  },
   "settings": {
     "dictionaries": {
       "title": "Tekstilõikude sõnastikud",
