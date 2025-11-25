@@ -34,12 +34,6 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies (Linux)
-        if: matrix.platform == 'linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libayatana-appindicator3-dev librsvg2-dev
-
       - name: Install npm dependencies
         run: npm ci
 
@@ -67,6 +61,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: List dist directory
+        run: ls -la dist/ || echo "dist directory not found"
+
       - name: Upload Linux artifacts
         if: matrix.platform == 'linux'
         uses: actions/upload-artifact@v4
@@ -75,6 +72,7 @@ jobs:
           path: |
             dist/*.AppImage
             dist/*.deb
+            dist/*.tar.gz
           if-no-files-found: warn
 
       - name: Upload macOS artifacts
@@ -94,6 +92,7 @@ jobs:
           name: win-build
           path: |
             dist/*.exe
+            dist/*.msi
           if-no-files-found: warn
 
   release:
