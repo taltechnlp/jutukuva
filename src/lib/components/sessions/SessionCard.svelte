@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { _ } from 'svelte-i18n';
+
 	interface Props {
 		session: TranscriptionSession;
 		onActivate: () => void;
@@ -47,7 +49,8 @@
 	}
 
 	function getStatusText(status: string): string {
-		return status.charAt(0).toUpperCase() + status.slice(1);
+		const statusKey = `sessions.status.${status}`;
+		return $_<string>(statusKey, { default: status.charAt(0).toUpperCase() + status.slice(1) });
 	}
 
 	function isUpcoming(): boolean {
@@ -83,9 +86,9 @@
 					<span class={isPastDue() ? 'text-error' : ''}>
 						{formatDate(session.scheduled_date)}
 						{#if isPastDue()}
-							<span class="badge badge-error badge-xs ml-1 px-2 py-1">Past Due</span>
+							<span class="badge badge-error badge-xs ml-1 px-2 py-1">{$_('sessions.badges.pastDue', { default: 'Past Due' })}</span>
 						{:else if isUpcoming()}
-							<span class="badge badge-info badge-xs ml-1 px-2 py-1">Upcoming</span>
+							<span class="badge badge-info badge-xs ml-1 px-2 py-1">{$_('sessions.badges.upcoming', { default: 'Upcoming' })}</span>
 						{/if}
 					</span>
 				</div>
@@ -114,7 +117,7 @@
 					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
 					</svg>
-					<span>{session.word_count.toLocaleString()} words</span>
+					<span>{session.word_count.toLocaleString()} {$_('sessions.card.words', { default: 'words' })}</span>
 				</div>
 			{/if}
 		</div>
@@ -130,13 +133,13 @@
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
 					</svg>
-					Activate
+					{$_('sessions.card.activate', { default: 'Activate' })}
 				</button>
 				<button
 					class="btn btn-sm btn-ghost"
 					onclick={onCancel}
 				>
-					Cancel
+					{$_('sessions.card.cancel', { default: 'Cancel' })}
 				</button>
 			{:else if session.status === 'active'}
 				<button
@@ -146,7 +149,7 @@
 					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
 					</svg>
-					Complete
+					{$_('sessions.card.complete', { default: 'Complete' })}
 				</button>
 				<button
 					class="btn btn-sm btn-primary"
@@ -155,7 +158,7 @@
 					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
 					</svg>
-					Open
+					{$_('sessions.card.open', { default: 'Open' })}
 				</button>
 			{:else if session.status === 'completed'}
 				<button
@@ -166,11 +169,11 @@
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
 					</svg>
-					View
+					{$_('sessions.card.view', { default: 'View' })}
 				</button>
 			{:else if session.status === 'cancelled'}
 				<div class="text-xs text-base-content/50">
-					Cancelled {session.cancelled_at ? formatDate(session.cancelled_at) : ''}
+					{$_('sessions.card.cancelled', { default: 'Cancelled' })} {session.cancelled_at ? formatDate(session.cancelled_at) : ''}
 				</div>
 			{/if}
 		</div>

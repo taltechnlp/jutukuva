@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { nanoid } from 'nanoid';
+	import { _ } from 'svelte-i18n';
 
 	interface Props {
 		onClose: () => void;
@@ -30,12 +31,12 @@
 
 	async function handleSubmit() {
 		if (!name.trim()) {
-			error = 'Session name is required';
+			error = $_('sessions.create.nameRequired', { default: 'Session name is required' });
 			return;
 		}
 
 		if (!scheduledDate || !scheduledTime) {
-			error = 'Date and time are required';
+			error = $_('sessions.create.dateTimeRequired', { default: 'Date and time are required' });
 			return;
 		}
 
@@ -75,18 +76,18 @@
 	aria-modal="true"
 >
 	<div class="modal-box max-w-md">
-		<h3 class="font-bold text-lg mb-4">Create New Session</h3>
+		<h3 class="font-bold text-lg mb-4">{$_('sessions.create.title', { default: 'Create New Session' })}</h3>
 
 		<form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
 			<!-- Session Name -->
 			<div class="form-control mb-4">
 				<label class="label" for="session-name">
-					<span class="label-text">Session Name *</span>
+					<span class="label-text">{$_('sessions.create.name', { default: 'Session Name' })} *</span>
 				</label>
 				<input
 					id="session-name"
 					type="text"
-					placeholder="e.g., Team Meeting, Interview Session"
+					placeholder={$_('sessions.create.namePlaceholder', { default: 'e.g., Team Meeting, Interview Session' })}
 					class="input input-bordered w-full"
 					bind:value={name}
 					disabled={creating}
@@ -97,7 +98,7 @@
 			<!-- Date -->
 			<div class="form-control mb-4">
 				<label class="label" for="session-date">
-					<span class="label-text">Date *</span>
+					<span class="label-text">{$_('sessions.create.date', { default: 'Date' })} *</span>
 				</label>
 				<input
 					id="session-date"
@@ -112,7 +113,7 @@
 			<!-- Time -->
 			<div class="form-control mb-4">
 				<label class="label" for="session-time">
-					<span class="label-text">Time *</span>
+					<span class="label-text">{$_('sessions.create.time', { default: 'Time' })} *</span>
 				</label>
 				<input
 					id="session-time"
@@ -127,11 +128,11 @@
 			<!-- Description (Optional) -->
 			<div class="form-control mb-4">
 				<label class="label" for="session-description">
-					<span class="label-text">Description (optional)</span>
+					<span class="label-text">{$_('sessions.create.description', { default: 'Description (optional)' })}</span>
 				</label>
 				<textarea
 					id="session-description"
-					placeholder="Add notes about this session..."
+					placeholder={$_('sessions.create.descriptionPlaceholder', { default: 'Add notes about this session...' })}
 					class="textarea textarea-bordered w-full h-24"
 					bind:value={description}
 					disabled={creating}
@@ -156,7 +157,7 @@
 					onclick={onClose}
 					disabled={creating}
 				>
-					Cancel
+					{$_('sessions.create.cancel', { default: 'Cancel' })}
 				</button>
 				<button
 					type="submit"
@@ -165,9 +166,9 @@
 				>
 					{#if creating}
 						<span class="loading loading-spinner"></span>
-						Creating...
+						{$_('sessions.create.creating', { default: 'Creating...' })}
 					{:else}
-						Create Session
+						{$_('sessions.create.submit', { default: 'Create Session' })}
 					{/if}
 				</button>
 			</div>

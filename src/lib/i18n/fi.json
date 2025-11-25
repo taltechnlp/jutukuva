@@ -578,7 +578,7 @@
       "active": "Sinulla ei ole aktiivisia istuntoja.",
       "past": "Sinulla ei ole menneitä istuntoja.",
       "all": "Et ole vielä luonut istuntoja.",
-      "createFirst": "Luo ensimmäinen istuntosi"
+      "createFirst": "Suunnittele uusi istunto"
     },
     "card": {
       "words": "sanaa",
@@ -651,7 +651,12 @@
       "replacementPlaceholder": "esim. ambulanssi",
       "replacementHelp": "Teksti, joka korvaa laukaisimen",
       "add": "Lisää",
-      "duplicateTrigger": "Tällä laukaisimella oleva pätkä on jo olemassa"
+      "duplicateTrigger": "Tällä laukaisimella oleva pätkä on jo olemassa",
+      "export": "Vie",
+      "import": "Tuo",
+      "builtin": "Sisäänrakennettu",
+      "exportError": "Sanakirjan vienti epäonnistui",
+      "importError": "Sanakirjan tuonti epäonnistui. Tarkista tiedostomuoto."
     }
   }
 }
