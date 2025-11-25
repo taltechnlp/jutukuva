@@ -237,6 +237,15 @@ app.whenReady().then(() => {
 		return dbOperations.getActiveEntries();
 	});
 
+	// Dictionary import/export
+	ipcMain.handle('db:exportDictionary', async (event, id) => {
+		return dbOperations.exportDictionary(id);
+	});
+
+	ipcMain.handle('db:importDictionary', async (event, name, entries) => {
+		return dbOperations.importDictionary(name, entries);
+	});
+
 	// Speaker operations
 	ipcMain.handle('db:getSessionSpeakers', async (event, sessionId) => {
 		return dbOperations.getSessionSpeakers(sessionId);
