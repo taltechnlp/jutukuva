@@ -2,6 +2,9 @@
  * Streaming Text Plugin
  *
  * Inserts streaming ASR text at document end without disrupting user's cursor
+ *
+ * NOTE: Cross-paragraph deduplication is handled OUTSIDE the editor in SpeechEditor.svelte
+ * This plugin focuses only on text insertion and VAD-triggered paragraph creation
  */
 
 import { Plugin, PluginKey } from 'prosemirror-state';
@@ -15,7 +18,6 @@ export interface StreamingTextState {
 	currentTime: number;
 	previousIncomingText: string; // Previous ASR result for final-word detection
 	createNewParagraphOnNextText: boolean; // Set when VAD detects speech end
-	triggerDeduplicationOnly: boolean; // Set when manual Enter creates paragraph (dedupe without creating new para)
 }
 
 export const streamingTextKey = new PluginKey<StreamingTextState>('streamingText');
@@ -50,14 +52,10 @@ function insertStreamingText(
 	// Check if we should create a new paragraph (after VAD speech end)
 	const pluginState = streamingTextKey.getState(state);
 	const shouldCreateNewParagraph = pluginState?.createNewParagraphOnNextText;
-	const triggerDeduplicationOnly = pluginState?.triggerDeduplicationOnly;
-	// Deduplicate if either flag is set (VAD creates para, manual Enter already created para)
-	const shouldDeduplicate = shouldCreateNewParagraph || triggerDeduplicationOnly;
 
 	// Get previous ASR result for final-word detection
-	// IMPORTANT: Check this BEFORE creating new paragraph
-	// Use empty string if we're about to deduplicate (don't compare across paragraphs)
-	const previousIncomingText = shouldDeduplicate ? '' : (pluginState?.previousIncomingText || '');
+	// Use empty string if we're about to create new paragraph (don't compare across paragraphs)
+	const previousIncomingText = shouldCreateNewParagraph ? '' : (pluginState?.previousIncomingText || '');
 
 	if (shouldCreateNewParagraph && lastPara && lastPara.content.size > 0) {
 		const newPara = schema.nodes.paragraph.create();
@@ -89,33 +87,11 @@ function insertStreamingText(
 		doc = tr.doc;
 	}
 
-	// CRITICAL: When creating a new paragraph, deduplicate incoming text against ALL previous paragraphs
-	// ASR buffer doesn't clear when recording continues, so it includes text from previous paragraphs
-	let filteredText = text;
-	if (shouldDeduplicate) {
-		const wordsFromPreviousParagraphs = new Set<string>();
+	// NOTE: Cross-paragraph deduplication is now handled in SpeechEditor.svelte
+	// before text reaches this plugin. Text arriving here is already filtered.
 
-		// Collect all words from all previous paragraphs
-		doc.descendants((node, pos) => {
-			// Only scan paragraphs before the current (last) one
-			if (pos < lastParaPos) {
-				if (node.isText && node.marks.length > 0) {
-					const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-					if (wordMark && node.text && node.text.trim().length > 0) {
-						wordsFromPreviousParagraphs.add(node.text.trim());
-					}
-				}
-			}
-		});
-
-		// Filter incoming text to remove words that exist in previous paragraphs
-		const incomingWordsList = text.trim().split(/\s+/).filter(w => w.length > 0);
-		const filteredWordsList = incomingWordsList.filter(word => !wordsFromPreviousParagraphs.has(word));
-		filteredText = filteredWordsList.join(' ');
-	}
-
-	// Split filtered text into words for insertion
-	const incomingWords = filteredText.trim().split(/\s+/).filter(w => w.length > 0);
+	// Split text into words for insertion
+	const incomingWords = text.trim().split(/\s+/).filter(w => w.length > 0);
 
 	const paraStart = lastParaPos + 1;
 	const paraEnd = lastParaPos + lastPara.nodeSize - 1;
@@ -189,7 +165,7 @@ function insertStreamingText(
 
 	// Calculate timing info
 	const totalDuration = (endTime || 0) - (startTime || 0);
-	const timePerChar = filteredText.length > 0 ? totalDuration / filteredText.length : 0;
+	const timePerChar = text.length > 0 ? totalDuration / text.length : 0;
 
 	// Calculate character position up to match point
 	let charPosition = 0;
@@ -265,8 +241,7 @@ export function streamingTextPlugin(collaborationManager?: any) {
 					pendingText: '',
 					currentTime: 0,
 					previousIncomingText: '',
-					createNewParagraphOnNextText: false,
-					triggerDeduplicationOnly: false
+					createNewParagraphOnNextText: false
 				};
 			},
 
@@ -281,21 +256,14 @@ export function streamingTextPlugin(collaborationManager?: any) {
 					};
 				}
 
-				// Handle manual paragraph creation (Enter key) - only trigger deduplication, not new paragraph
-				if (tr.getMeta('manualParagraphCreated')) {
-					newValue = {
-						...newValue,
-						triggerDeduplicationOnly: true
-					};
-				}
+				// NOTE: Manual paragraph creation (Enter key) is now handled in SpeechEditor.svelte
+				// which commits words to the deduplication set before dispatching the transaction
 
 				// Clear the flag after it's been used
-				// DON'T reset previousIncomingText here - it will be handled by the ternary in insertStreamingText()
 				if (tr.getMeta('clearNewParagraphFlag')) {
 					newValue = {
 						...newValue,
-						createNewParagraphOnNextText: false,
-						triggerDeduplicationOnly: false
+						createNewParagraphOnNextText: false
 					};
 				}
 

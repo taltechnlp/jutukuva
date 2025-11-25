@@ -42,6 +42,57 @@
 	let autoScroll = $state(true);
 	let textSnippetEntries = $state<TextSnippetEntry[]>([]);
 
+	// Deduplication state (kept OUTSIDE editor to avoid race conditions)
+	// This tracks all words that have been "committed" (exist in previous paragraphs)
+	let committedWords = new Set<string>();
+
+	/**
+	 * Normalize a word for deduplication comparison
+	 * Strips punctuation and converts to lowercase
+	 */
+	function normalizeForDedup(word: string): string {
+		return word.replace(/[.,!?;:\-–—""''„"«»]/g, '').toLowerCase();
+	}
+
+	/**
+	 * Commit words BEFORE cursor position to the committed set
+	 * Called when user creates a new paragraph (Enter key)
+	 *
+	 * IMPORTANT: Only commits words before the cursor, not after.
+	 * When Enter is pressed mid-paragraph, words after cursor move to new paragraph
+	 * and should NOT be committed (they're still "active" ASR text).
+	 */
+	function commitCurrentParagraphWords() {
+		if (!editorView) return;
+
+		// Get cursor position BEFORE the split transaction is applied
+		const cursorPos = editorView.state.selection.from;
+
+		// Only commit words that END before the cursor position
+		editorView.state.doc.descendants((node, pos) => {
+			if (node.isText && node.marks.length > 0) {
+				const wordMark = node.marks.find((mark) => mark.type.name === 'word');
+				if (wordMark && node.text && node.text.trim().length > 0) {
+					// Only commit if this word ends before or at cursor position
+					const wordEnd = pos + node.nodeSize;
+					if (wordEnd <= cursorPos) {
+						committedWords.add(normalizeForDedup(node.text.trim()));
+					}
+				}
+			}
+		});
+	}
+
+	/**
+	 * Filter incoming ASR text to remove duplicates
+	 * Returns only the new words that haven't been committed yet
+	 */
+	function filterDuplicates(text: string): string {
+		const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+		const newWords = words.filter(word => !committedWords.has(normalizeForDedup(word)));
+		return newWords.join(' ');
+	}
+
 	// Load text snippet entries from database
 	async function loadTextSnippetEntries() {
 		if (typeof window !== 'undefined' && window.db) {
@@ -224,6 +275,12 @@
 			dispatchTransaction(transaction) {
 				if (!editorView) return;
 
+				// Detect paragraph creation (Enter key) and commit words BEFORE applying
+				// This ensures deduplication state is updated synchronously
+				if (transaction.getMeta('manualParagraphCreated')) {
+					commitCurrentParagraphWords();
+				}
+
 				const newState = editorView.state.apply(transaction);
 				editorView.updateState(newState);
 
@@ -311,13 +368,26 @@
 			return;
 		}
 
+		// CRITICAL: Filter duplicates BEFORE sending to editor
+		// This prevents ASR buffer from adding words from previous paragraphs
+		const filteredText = filterDuplicates(event.text);
+
+		// Skip if all words were filtered out
+		if (!filteredText) {
+			return;
+		}
+
 		// Calculate timing based on recording start time if timestamps are 0
-		let enhancedEvent = event;
+		let enhancedEvent: StreamingTextEvent = {
+			...event,
+			text: filteredText // Use filtered text
+		};
+
 		if (recordingStartTime && (event.start === 0 || event.start === undefined)) {
 			const currentTime = Date.now();
 			const elapsedSeconds = (currentTime - recordingStartTime) / 1000;
 			enhancedEvent = {
-				...event,
+				...enhancedEvent,
 				start: elapsedSeconds - 0.5, // Estimate start slightly before current time
 				end: elapsedSeconds
 			};
