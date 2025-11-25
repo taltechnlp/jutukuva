@@ -61,6 +61,7 @@
   },
   "build": {
     "appId": "com.kirikaja.app",
+    "productName": "Streaming Caption Editor",
     "files": [
       "build/**/*",
       "electron/**/*",
@@ -71,12 +72,51 @@
       "output": "dist"
     },
     "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "category": "public.app-category.productivity",
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
       "hardenedRuntime": true,
       "extendInfo": {
-        "NSScreenCaptureUsageDescription": "This app needs to access screen recording to capture system audio from specific windows and screens."
+        "NSScreenCaptureUsageDescription": "This app needs to access screen recording to capture system audio from specific windows and screens.",
+        "NSMicrophoneUsageDescription": "This app needs microphone access for speech recognition."
       }
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.png"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ],
+      "category": "Utility",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
     }
   }
 }
