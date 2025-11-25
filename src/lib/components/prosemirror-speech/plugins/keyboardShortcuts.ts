@@ -6,7 +6,7 @@
 
 import { keymap } from 'prosemirror-keymap';
 import { undo, redo } from 'prosemirror-history';
-import type { Command } from 'prosemirror-state';
+import type { Command, Transaction } from 'prosemirror-state';
 import { TextSelection, PluginKey, Plugin } from 'prosemirror-state';
 import { splitBlock } from 'prosemirror-commands';
 
@@ -140,39 +140,33 @@ const selectPreviousWord: Command = (state, dispatch) => {
  * Enter command that creates new paragraph and signals speaker dropdown should open
  */
 const enterWithSpeakerDropdown: Command = (state, dispatch, view) => {
-	// Get current paragraph position before split
-	const { $from } = state.selection;
-
-	// Perform the split
-	if (!splitBlock(state, dispatch)) return false;
-
-	// After split, signal to show speaker dropdown on new paragraph
-	// The position of the new paragraph is $from.after() in the original state
-	if (dispatch && view) {
-		// Use setTimeout to dispatch after the split transaction is processed
-		setTimeout(() => {
-			const newState = view.state;
-
-			// Signal that a paragraph was manually created (Enter key)
-			// This triggers cross-paragraph deduplication WITHOUT creating another paragraph
-			// (unlike vadSpeechEnd which would create a new paragraph on top of splitBlock's)
-			const deduplicationTr = newState.tr;
-			deduplicationTr.setMeta('manualParagraphCreated', true);
-			deduplicationTr.setMeta('addToHistory', false);
-			view.dispatch(deduplicationTr);
-
-			// Then show speaker dropdown
-			const dropdownState = view.state;
-			const { $from: new$from } = dropdownState.selection;
-			// Get the position of the current paragraph (the new one)
-			const paragraphPos = new$from.before(new$from.depth);
-
-			const dropdownTr = dropdownState.tr.setMeta(speakerDropdownKey, {
-				showDropdownAtPos: paragraphPos
-			});
-			view.dispatch(dropdownTr);
-		}, 0);
+	if (!dispatch || !view) {
+		// Just perform the split without metadata
+		return splitBlock(state, dispatch);
 	}
+
+	// Wrap dispatch to inject deduplication flag SYNCHRONOUSLY into the split transaction
+	// This fixes the race condition where streaming text could arrive before the flag was set
+	const wrappedDispatch = (tr: Transaction) => {
+		tr.setMeta('manualParagraphCreated', true);
+		dispatch(tr);
+	};
+
+	// Perform the split with the wrapped dispatch
+	if (!splitBlock(state, wrappedDispatch)) return false;
+
+	// Speaker dropdown uses setTimeout (UI timing, not dedup-critical)
+	setTimeout(() => {
+		const dropdownState = view.state;
+		const { $from } = dropdownState.selection;
+		// Get the position of the current paragraph (the new one)
+		const paragraphPos = $from.before($from.depth);
+
+		const dropdownTr = dropdownState.tr.setMeta(speakerDropdownKey, {
+			showDropdownAtPos: paragraphPos
+		});
+		view.dispatch(dropdownTr);
+	}, 0);
 
 	return true;
 };
