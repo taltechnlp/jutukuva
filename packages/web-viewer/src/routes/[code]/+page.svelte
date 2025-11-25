@@ -17,6 +17,7 @@
 	import type { SessionInfo, Participant } from '$shared/collaboration/types';
 
 	import { AutoScroller } from '$lib/actions/autoscroll.svelte';
+	import type { Speaker } from '$shared/collaboration/types';
 
 	// Get session code from URL
 	const sessionCode = $derived(normalizeSessionCode($page.params.code || ''));
@@ -32,10 +33,12 @@
 	let collaborationManager: CollaborationManager | null = $state(null);
 	let sessionInfo = $state<SessionInfo | null>(null);
 	let participants = $state<Participant[]>([]);
+	let speakers = $state<Speaker[]>([]);
 	// Autoscroll is always enabled in smart mode
 	let autoscrollEnabled = $state(true);
 	// Store observer and interval for cleanup
 	let xmlFragmentObserver: (() => void) | null = null;
+	let speakersObserver: (() => void) | null = null;
 	let extractInterval: ReturnType<typeof setInterval> | null = null;
 	let updateHandler: ((update: Uint8Array, origin: any) => void) | null = null;
 
@@ -69,6 +72,15 @@
 
 	// ... (keep extractTextFromYDoc and onMount/onDestroy) ...
 
+	/**
+	 * Get speaker name by ID, with fallback
+	 */
+	function getSpeakerName(speakerId: string | null): string | null {
+		if (!speakerId || !collaborationManager) return null;
+		const speaker = collaborationManager.getSpeaker(speakerId);
+		return speaker?.name || null;
+	}
+
 	function extractTextFromYDoc() {
 		if (!collaborationManager) {
 			return '';
@@ -79,7 +91,7 @@
 
 			// Convert XML fragment to string
 			const rawText = xmlFrag.toString();
-			
+
 			// Debug: log the raw XML to understand structure
 			console.log('[WEB-VIEWER] XML fragment toString length:', rawText.length);
 			if (rawText && rawText.length > 0) {
@@ -88,19 +100,54 @@
 				console.log('[WEB-VIEWER] XML fragment is empty');
 			}
 
-			// Extract text content while preserving paragraph structure
-			// 1. Replace closing paragraph tags with single newlines
-			// 2. Strip all other XML tags
-			// 3. Clean up spaces but preserve newlines
-			const textOnly = rawText
-				.replace(/<\/paragraph>/g, '\n')
-				.replace(/<[^>]*>/g, '')
-				.replace(/ +/g, ' ')
-				.replace(/\n /g, '\n')
-				.replace(/ \n/g, '\n')
-				.trim();
+			// Extract text content with speaker prefixes
+			// Parse paragraph by paragraph to include speaker info
+			const paragraphs: string[] = [];
 
-			return textOnly;
+			// Match each paragraph element with its attributes and content
+			const paragraphRegex = /<paragraph([^>]*)>([\s\S]*?)<\/paragraph>/g;
+			let match;
+
+			while ((match = paragraphRegex.exec(rawText)) !== null) {
+				const attrs = match[1];
+				const content = match[2];
+
+				// Extract speakerId from attributes
+				const speakerIdMatch = attrs.match(/speakerId="([^"]*)"/);
+				const speakerId = speakerIdMatch ? speakerIdMatch[1] : null;
+
+				// Get speaker name
+				const speakerName = getSpeakerName(speakerId);
+
+				// Strip XML tags from content to get plain text
+				const plainText = content
+					.replace(/<[^>]*>/g, '')
+					.replace(/ +/g, ' ')
+					.trim();
+
+				if (plainText) {
+					// Add speaker prefix if available
+					if (speakerName) {
+						paragraphs.push(`${speakerName}: ${plainText}`);
+					} else {
+						paragraphs.push(plainText);
+					}
+				}
+			}
+
+			// If regex didn't match (different XML structure), fall back to simple extraction
+			if (paragraphs.length === 0) {
+				const textOnly = rawText
+					.replace(/<\/paragraph>/g, '\n')
+					.replace(/<[^>]*>/g, '')
+					.replace(/ +/g, ' ')
+					.replace(/\n /g, '\n')
+					.replace(/ \n/g, '\n')
+					.trim();
+				return textOnly;
+			}
+
+			return paragraphs.join('\n');
 		} catch (err) {
 			console.error('[WEB-VIEWER] Error extracting text from Yjs:', err);
 			return '';
@@ -159,6 +206,20 @@
 			xmlFrag.observe(observer);
 			xmlFragmentObserver = () => xmlFrag.unobserve(observer);
 
+			// Observe speakers map for changes (to update speaker prefixes)
+			const speakersMap = collaborationManager.ydoc.getMap('speakers');
+			const speakersObserverFn = () => {
+				console.log('[WEB-VIEWER] Speakers changed');
+				speakers = collaborationManager?.getSpeakers() || [];
+				// Re-extract text to update speaker prefixes
+				updateTextFromFragment();
+			};
+			speakersMap.observe(speakersObserverFn);
+			speakersObserver = () => speakersMap.unobserve(speakersObserverFn);
+
+			// Initial speakers load
+			speakers = collaborationManager.getSpeakers();
+
 			// Also listen for Yjs document updates as a fallback
 			updateHandler = (update: Uint8Array, origin: any) => {
 				console.log('[WEB-VIEWER] Yjs update event fired', { updateSize: update.length, origin });
@@ -205,6 +266,10 @@
 		if (xmlFragmentObserver) {
 			xmlFragmentObserver();
 			xmlFragmentObserver = null;
+		}
+		if (speakersObserver) {
+			speakersObserver();
+			speakersObserver = null;
 		}
 		if (extractInterval) {
 			clearInterval(extractInterval);
