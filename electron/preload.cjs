@@ -62,7 +62,15 @@ contextBridge.exposeInMainWorld('db', {
 
 	// Speakers
 	getSessionSpeakers: (sessionId) => ipcRenderer.invoke('db:getSessionSpeakers', sessionId),
-	setSessionSpeakers: (sessionId, speakers) => ipcRenderer.invoke('db:setSessionSpeakers', sessionId, speakers)
+	setSessionSpeakers: (sessionId, speakers) => ipcRenderer.invoke('db:setSessionSpeakers', sessionId, speakers),
+
+	// Editor state persistence
+	saveEditorState: (sessionId, editorState) => ipcRenderer.invoke('db:saveEditorState', sessionId, editorState),
+	getEditorState: (sessionId) => ipcRenderer.invoke('db:getEditorState', sessionId),
+	clearEditorState: (sessionId) => ipcRenderer.invoke('db:clearEditorState', sessionId),
+
+	// End session
+	endSession: (id, deleteContent) => ipcRenderer.invoke('db:endSession', id, deleteContent)
 });
 
 // Expose Broadcast API

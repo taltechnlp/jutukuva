@@ -247,6 +247,26 @@ app.whenReady().then(() => {
 		return true;
 	});
 
+	// Editor state persistence handlers
+	ipcMain.handle('db:saveEditorState', async (event, sessionId, editorState) => {
+		dbOperations.saveEditorState(sessionId, editorState);
+		return true;
+	});
+
+	ipcMain.handle('db:getEditorState', async (event, sessionId) => {
+		return dbOperations.getEditorState(sessionId);
+	});
+
+	ipcMain.handle('db:clearEditorState', async (event, sessionId) => {
+		dbOperations.clearEditorState(sessionId);
+		return true;
+	});
+
+	// End session handler
+	ipcMain.handle('db:endSession', async (event, id, deleteContent) => {
+		return dbOperations.endSession(id, deleteContent);
+	});
+
 	// Set up IPC handlers for broadcast server
 	ipcMain.handle('broadcast:start', async (event, port) => {
 		return initBroadcastServer(port);

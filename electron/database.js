@@ -88,6 +88,13 @@ export function initDatabase() {
 		// Column already exists
 	}
 
+	// Add editor_state column for periodic editor state persistence
+	try {
+		db.exec('ALTER TABLE transcription_sessions ADD COLUMN editor_state TEXT');
+	} catch (e) {
+		// Column already exists
+	}
+
 	// Create indexes for better query performance
 	db.exec(`
 		CREATE INDEX IF NOT EXISTS idx_sessions_status
@@ -507,5 +514,56 @@ export const dbOperations = {
 			WHERE id = ?
 		`);
 		stmt.run(JSON.stringify(speakers), sessionId);
+	},
+
+	// Editor state persistence operations
+	saveEditorState: (sessionId, editorState) => {
+		const stmt = db.prepare(`
+			UPDATE transcription_sessions
+			SET editor_state = ?, updated_at = CURRENT_TIMESTAMP
+			WHERE id = ?
+		`);
+		stmt.run(editorState, sessionId);
+	},
+
+	getEditorState: (sessionId) => {
+		const stmt = db.prepare('SELECT editor_state FROM transcription_sessions WHERE id = ?');
+		const row = stmt.get(sessionId);
+		return row?.editor_state || null;
+	},
+
+	clearEditorState: (sessionId) => {
+		const stmt = db.prepare(`
+			UPDATE transcription_sessions
+			SET editor_state = NULL, updated_at = CURRENT_TIMESTAMP
+			WHERE id = ?
+		`);
+		stmt.run(sessionId);
+	},
+
+	// End session with optional content deletion
+	endSession: (id, deleteContent = false) => {
+		if (deleteContent) {
+			// Delete transcripts
+			db.prepare('DELETE FROM transcripts WHERE session_id = ?').run(id);
+
+			// Clear speakers and editor state
+			db.prepare(`
+				UPDATE transcription_sessions
+				SET speakers = NULL, editor_state = NULL,
+					status = 'completed', completed_at = CURRENT_TIMESTAMP,
+					updated_at = CURRENT_TIMESTAMP
+				WHERE id = ?
+			`).run(id);
+		} else {
+			// Just mark as completed, keep content
+			db.prepare(`
+				UPDATE transcription_sessions
+				SET status = 'completed', completed_at = CURRENT_TIMESTAMP,
+					updated_at = CURRENT_TIMESTAMP
+				WHERE id = ?
+			`).run(id);
+		}
+		return db.prepare('SELECT * FROM transcription_sessions WHERE id = ?').get(id);
 	}
 };
