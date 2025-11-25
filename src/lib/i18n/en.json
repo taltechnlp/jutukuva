@@ -589,6 +589,75 @@
     "start_session": "Start New Session",
     "guest_cannot_record": "Only the host can record"
   },
+  "sessions": {
+    "title": "Sessions",
+    "description": "Manage your transcription sessions",
+    "backToEditor": "Back to Editor",
+    "newSession": "New Session",
+    "tabs": {
+      "upcoming": "Upcoming",
+      "active": "Active",
+      "past": "Past",
+      "all": "All"
+    },
+    "status": {
+      "planned": "Planned",
+      "active": "Active",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "badges": {
+      "pastDue": "Past Due",
+      "upcoming": "Upcoming"
+    },
+    "empty": {
+      "title": "No sessions found",
+      "upcoming": "You don't have any upcoming sessions scheduled.",
+      "active": "You don't have any active sessions.",
+      "past": "You don't have any past sessions.",
+      "all": "You haven't created any sessions yet.",
+      "createFirst": "Create Your First Session"
+    },
+    "card": {
+      "words": "words",
+      "activate": "Activate",
+      "cancel": "Cancel",
+      "complete": "Complete",
+      "open": "Open",
+      "view": "View",
+      "cancelled": "Cancelled"
+    },
+    "errors": {
+      "loadFailed": "Failed to load sessions",
+      "activateFailed": "Failed to activate session",
+      "completeFailed": "Failed to complete session",
+      "cancelFailed": "Failed to cancel session",
+      "createFailed": "Failed to create session"
+    },
+    "create": {
+      "title": "Create New Session",
+      "name": "Session Name",
+      "namePlaceholder": "e.g., Team Meeting, Interview Session",
+      "date": "Date",
+      "time": "Time",
+      "description": "Description (optional)",
+      "descriptionPlaceholder": "Add notes about this session...",
+      "nameRequired": "Session name is required",
+      "dateTimeRequired": "Date and time are required",
+      "cancel": "Cancel",
+      "creating": "Creating...",
+      "submit": "Create Session"
+    },
+    "cancelModal": {
+      "title": "Cancel Session?",
+      "confirm": "Are you sure you want to cancel this session?",
+      "scheduledFor": "Scheduled for:",
+      "sessionCode": "Session Code:",
+      "warning": "This action will mark the session as cancelled. The session will remain in your history but cannot be activated.",
+      "keep": "Keep Session",
+      "cancel": "Cancel Session"
+    }
+  },
   "settings": {
     "dictionaries": {
       "title": "Text Snippet Dictionaries",

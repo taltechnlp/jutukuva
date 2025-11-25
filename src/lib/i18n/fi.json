@@ -551,6 +551,75 @@
     "start_session": "Aloita uusi istunto",
     "guest_cannot_record": "Vain isäntä voi nauhoittaa"
   },
+  "sessions": {
+    "title": "Istunnot",
+    "description": "Hallitse transkriptioistuntojasi",
+    "backToEditor": "Takaisin editoriin",
+    "newSession": "Uusi istunto",
+    "tabs": {
+      "upcoming": "Tulevat",
+      "active": "Aktiiviset",
+      "past": "Menneet",
+      "all": "Kaikki"
+    },
+    "status": {
+      "planned": "Suunniteltu",
+      "active": "Aktiivinen",
+      "completed": "Valmis",
+      "cancelled": "Peruutettu"
+    },
+    "badges": {
+      "pastDue": "Myöhässä",
+      "upcoming": "Tulossa"
+    },
+    "empty": {
+      "title": "Istuntoja ei löytynyt",
+      "upcoming": "Sinulla ei ole tulevia istuntoja.",
+      "active": "Sinulla ei ole aktiivisia istuntoja.",
+      "past": "Sinulla ei ole menneitä istuntoja.",
+      "all": "Et ole vielä luonut istuntoja.",
+      "createFirst": "Luo ensimmäinen istuntosi"
+    },
+    "card": {
+      "words": "sanaa",
+      "activate": "Aktivoi",
+      "cancel": "Peruuta",
+      "complete": "Valmis",
+      "open": "Avaa",
+      "view": "Näytä",
+      "cancelled": "Peruutettu"
+    },
+    "errors": {
+      "loadFailed": "Istuntojen lataaminen epäonnistui",
+      "activateFailed": "Istunnon aktivointi epäonnistui",
+      "completeFailed": "Istunnon viimeistely epäonnistui",
+      "cancelFailed": "Istunnon peruuttaminen epäonnistui",
+      "createFailed": "Istunnon luominen epäonnistui"
+    },
+    "create": {
+      "title": "Luo uusi istunto",
+      "name": "Istunnon nimi",
+      "namePlaceholder": "esim. Tiimikokous, Haastattelu",
+      "date": "Päivämäärä",
+      "time": "Aika",
+      "description": "Kuvaus (valinnainen)",
+      "descriptionPlaceholder": "Lisää muistiinpanoja tästä istunnosta...",
+      "nameRequired": "Istunnon nimi vaaditaan",
+      "dateTimeRequired": "Päivämäärä ja aika vaaditaan",
+      "cancel": "Peruuta",
+      "creating": "Luodaan...",
+      "submit": "Luo istunto"
+    },
+    "cancelModal": {
+      "title": "Peruuta istunto?",
+      "confirm": "Haluatko varmasti peruuttaa tämän istunnon?",
+      "scheduledFor": "Ajoitettu:",
+      "sessionCode": "Istuntokoodi:",
+      "warning": "Tämä toiminto merkitsee istunnon peruutetuksi. Istunto säilyy historiassasi, mutta sitä ei voi enää aktivoida.",
+      "keep": "Säilytä istunto",
+      "cancel": "Peruuta istunto"
+    }
+  },
   "settings": {
     "dictionaries": {
       "title": "Tekstipätkien sanakirjat",
