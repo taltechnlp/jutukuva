@@ -130,6 +130,7 @@ declare global {
 			getPlatform: () => Promise<string>;
 			setSetting: (key: string, value: string) => Promise<void>;
 			getSetting: (key: string) => Promise<string | null>;
+			onDeepLinkJoin: (callback: (sessionCode: string) => void) => void;
 		};
 	}
 

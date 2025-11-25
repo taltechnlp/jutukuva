@@ -1262,6 +1262,20 @@
 				}, 500);
 			}
 		}
+
+		// Listen for deep link join events from Electron
+		if (typeof window !== 'undefined' && window.electronAPI?.onDeepLinkJoin) {
+			window.electronAPI.onDeepLinkJoin((sessionCode) => {
+				console.log('[Deep Link] Received join request for session:', sessionCode);
+				joinSessionCode = sessionCode;
+				// Auto-join after a short delay to ensure editor is ready
+				setTimeout(() => {
+					if (joinSessionCode) {
+						joinCollaborativeSession(joinSessionCode);
+					}
+				}, 500);
+			});
+		}
 	});
 
 	// Cleanup on component destroy

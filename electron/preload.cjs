@@ -97,5 +97,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	downloadBlackHole: () => ipcRenderer.invoke('audio:downloadBlackHole'),
 	onDownloadProgress: (callback) => ipcRenderer.on('download-progress', (event, progress) => callback(progress)),
 	setSetting: (key, value) => ipcRenderer.invoke('db:setSetting', key, value),
-	getSetting: (key) => ipcRenderer.invoke('db:getSetting', key)
+	getSetting: (key) => ipcRenderer.invoke('db:getSetting', key),
+	// Deep link handler
+	onDeepLinkJoin: (callback) => ipcRenderer.on('deep-link-join', (event, sessionCode) => callback(sessionCode))
 });
