@@ -95,8 +95,8 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%;
-		background-color: #fafafa;
-		border: 1px solid #ddd;
+		background-color: oklch(var(--b2));
+		border: 1px solid oklch(var(--b3));
 		border-radius: 8px;
 		overflow: hidden;
 	}
@@ -106,15 +106,15 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 12px 16px;
-		background-color: white;
-		border-bottom: 1px solid #ddd;
+		background-color: oklch(var(--b1));
+		border-bottom: 1px solid oklch(var(--b3));
 	}
 
 	.preview-title {
 		margin: 0;
 		font-size: 16px;
 		font-weight: 600;
-		color: #424242;
+		color: oklch(var(--bc));
 	}
 
 	.preview-actions {
@@ -128,18 +128,18 @@
 		align-items: center;
 		gap: 6px;
 		padding: 6px 12px;
-		border: 1px solid #ddd;
+		border: 1px solid oklch(var(--b3));
 		border-radius: 6px;
-		background-color: white;
+		background-color: oklch(var(--b1));
 		cursor: pointer;
 		font-size: 13px;
-		color: #424242;
+		color: oklch(var(--bc));
 		transition: all 0.2s ease;
 	}
 
 	.action-button:hover:not(:disabled) {
-		background-color: #f5f5f5;
-		border-color: #bbb;
+		background-color: oklch(var(--b2));
+		border-color: oklch(var(--bc) / 0.3);
 	}
 
 	.action-button:disabled {
@@ -159,7 +159,7 @@
 		align-items: center;
 		justify-content: center;
 		height: 100%;
-		color: #9e9e9e;
+		color: oklch(var(--bc) / 0.5);
 		text-align: center;
 	}
 
@@ -174,27 +174,27 @@
 
 	.hint {
 		font-size: 13px;
-		color: #bdbdbd;
+		color: oklch(var(--bc) / 0.4);
 	}
 
 	.segment {
 		margin-bottom: 16px;
 		padding: 12px;
-		background-color: white;
-		border: 1px solid #e0e0e0;
+		background-color: oklch(var(--b1));
+		border: 1px solid oklch(var(--b3));
 		border-radius: 6px;
 		transition: all 0.2s ease;
 	}
 
 	.segment.active {
-		border-color: #2196f3;
-		box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+		border-color: oklch(var(--p));
+		box-shadow: 0 2px 8px oklch(var(--p) / 0.2);
 	}
 
 	.segment-text {
 		font-size: 14px;
 		line-height: 1.5;
-		color: #424242;
+		color: oklch(var(--bc));
 	}
 
 	/* Scrollbar styling */
@@ -203,15 +203,15 @@
 	}
 
 	.segments-container::-webkit-scrollbar-track {
-		background-color: #f5f5f5;
+		background-color: oklch(var(--b2));
 	}
 
 	.segments-container::-webkit-scrollbar-thumb {
-		background-color: #bdbdbd;
+		background-color: oklch(var(--bc) / 0.3);
 		border-radius: 4px;
 	}
 
 	.segments-container::-webkit-scrollbar-thumb:hover {
-		background-color: #9e9e9e;
+		background-color: oklch(var(--bc) / 0.5);
 	}
 </style>

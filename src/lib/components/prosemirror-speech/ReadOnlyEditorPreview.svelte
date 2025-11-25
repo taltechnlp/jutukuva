@@ -42,8 +42,8 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%;
-		background-color: #fafafa;
-		border: 1px solid #ddd;
+		background-color: oklch(var(--b2));
+		border: 1px solid oklch(var(--b3));
 		border-radius: 8px;
 		overflow: hidden;
 	}
@@ -53,15 +53,15 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 12px 16px;
-		background-color: white;
-		border-bottom: 1px solid #ddd;
+		background-color: oklch(var(--b1));
+		border-bottom: 1px solid oklch(var(--b3));
 	}
 
 	.preview-title {
 		margin: 0;
 		font-size: 16px;
 		font-weight: 600;
-		color: #424242;
+		color: oklch(var(--bc));
 	}
 
 	.editor-container {
@@ -77,7 +77,7 @@
 		align-items: center;
 		justify-content: center;
 		height: 100%;
-		color: #9e9e9e;
+		color: oklch(var(--bc) / 0.5);
 		text-align: center;
 	}
 

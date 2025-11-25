@@ -5,7 +5,7 @@
 	import { page } from '$app/stores';
 	import { MicVAD } from '@ricky0123/vad-web';
 	import * as ort from 'onnxruntime-web';
-	import { SpeechEditor, ReadOnlyEditorPreview, ShareSessionModal, SessionStatus } from '$lib/components/prosemirror-speech';
+	import { SpeechEditor, ShareSessionModal, SessionStatus } from '$lib/components/prosemirror-speech';
 	import type { SubtitleSegment, Word } from '$lib/components/prosemirror-speech/utils/types';
 	import { AudioSourceManager, type AudioSourceType, type AudioDevice } from '$lib/audioSourceManager';
 	import MacOSAudioSetup from '$lib/components/MacOSAudioSetup.svelte';
@@ -119,39 +119,6 @@
 		return language !== 'et' && language !== 'en';
 	}
 
-	// Past recordings
-	interface Recording {
-		id: string;
-		text: string;
-		timestamp: Date;
-	}
-	let pastRecordings = $state<Recording[]>([]);
-
-	// Format timestamp for display
-	function formatTimestamp(date: Date): string {
-		return date.toLocaleString(undefined, {
-			year: 'numeric',
-			month: '2-digit',
-			day: '2-digit',
-			hour: '2-digit',
-			minute: '2-digit',
-			second: '2-digit'
-		});
-	}
-
-	// Copy text to clipboard
-	async function copyToClipboard(text: string) {
-		try {
-			await navigator.clipboard.writeText(text);
-		} catch (error) {
-			console.error('Failed to copy text:', error);
-		}
-	}
-
-	// Delete a past recording
-	function deleteRecording(id: string) {
-		pastRecordings = pastRecordings.filter((r) => r.id !== id);
-	}
 
 	// ═══════════════════════════════════════════════════════════════
 	// COLLABORATION FUNCTIONS
@@ -296,18 +263,22 @@
 	}
 
 	// Audio source management functions
-	async function loadAudioDevices(skipDesktopSources = false) {
+	async function loadAudioDevices(skipDesktopSources: boolean = false) {
 		if (!audioSourceManager) return;
 		try {
-			// Request permission first to get device labels
-			try {
-				const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-				stream.getTracks().forEach((track) => track.stop());
-			} catch (e) {
-				console.warn('[AUDIO] Could not get permission for device enumeration:', e);
+			// Request permission first to get device labels (only for microphone)
+			// Skip this for system audio to avoid triggering permission dialogs
+			if (audioSourceType === 'microphone') {
+				try {
+					const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+					stream.getTracks().forEach((track) => track.stop());
+				} catch (e) {
+					console.warn('[AUDIO] Could not get permission for device enumeration:', e);
+				}
 			}
 
 			// Enumerate devices filtered by current source type
+			// Skip desktop sources during initialization to avoid permission prompts
 			availableAudioDevices = await audioSourceManager.enumerateAudioDevices(audioSourceType, skipDesktopSources);
 			console.log(
 				`[AUDIO] Found ${availableAudioDevices.length} ${audioSourceType} device(s)`
@@ -439,7 +410,8 @@
 			systemAudioAvailable = await audioSourceManager.checkSystemAudioSupport();
 			console.log('[INIT-AUDIO] System audio available:', systemAudioAvailable);
 
-			// Load available audio devices (skip desktop sources to avoid screen sharing permission)
+			// Load available audio devices, but skip desktop sources during initialization
+			// This prevents the screen sharing permission dialog from appearing on startup
 			await loadAudioDevices(true);
 
 			// Fall back to microphone if system audio is selected but not available
@@ -458,6 +430,13 @@
 
 		// Initialize audio source manager if not already done
 		await initializeAudioSourceManager();
+
+		// Now load desktop sources if needed (user is actually starting to record)
+		// This ensures desktop sources are only requested when user clicks record
+		if (audioSourceType === 'system' && availableAudioDevices.length === 0) {
+			console.log('[INIT-VAD] Loading desktop sources for system audio...');
+			await loadAudioDevices(false); // Don't skip desktop sources this time
+		}
 
 		// Get custom audio stream based on selected source
 		try {
@@ -1164,20 +1143,6 @@
 		const isOffline = isOfflineModel(selectedLanguage);
 		const waitTime = isOffline ? 3000 : 1000; // 3s for offline, 1s for streaming
 		await new Promise(resolve => setTimeout(resolve, waitTime));
-
-		// Combine final and partial transcripts
-		const finalText = (transcript + ' ' + partialTranscript).trim();
-
-		if (finalText) {
-			const newRecording: Recording = {
-				id: Date.now().toString(),
-				text: finalText,
-				timestamp: new Date()
-			};
-			pastRecordings = [newRecording, ...pastRecordings];
-			transcript = '';
-			partialTranscript = '';
-		}
 	}
 
 	// Clear transcript
@@ -1210,12 +1175,20 @@
 			if (savedType) {
 				audioSourceType = savedType as AudioSourceType;
 				console.log('[AUDIO] Restored audio source type:', audioSourceType);
-				// Reload device list for the restored type (skip desktop sources to avoid permission dialog)
+				// Reload device list for the restored type, but skip desktop sources on init
 				await loadAudioDevices(true);
 			}
 			if (savedDeviceId) {
-				selectedDeviceId = savedDeviceId;
-				console.log('[AUDIO] Restored device ID:', selectedDeviceId);
+				// Only restore device ID if it exists in the available devices
+				const deviceExists = availableAudioDevices.some(d => d.deviceId === savedDeviceId);
+				if (deviceExists) {
+					selectedDeviceId = savedDeviceId;
+					console.log('[AUDIO] Restored device ID:', selectedDeviceId);
+				} else {
+					// Device no longer available, default to null (Default)
+					selectedDeviceId = null;
+					console.log('[AUDIO] Saved device not found, using default');
+				}
 			}
 		}
 
@@ -1272,17 +1245,7 @@
 	<div class="container mx-auto px-4 py-8 max-w-4xl xl:max-w-7xl">
 	<!-- Header -->
 	<div class="mb-8">
-		<div class="flex justify-between items-start mb-4">
-			<h1 class="text-4xl font-bold">{$_('dictate.pageHeading')}</h1>
-			{#if browser && window.db}
-				<a href="/sessions" class="btn btn-outline btn-sm">
-					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-					</svg>
-					Manage Sessions
-				</a>
-			{/if}
-		</div>
+		<h1 class="text-4xl font-bold mb-4">{$_('dictate.pageHeading')}</h1>
 		<div class="prose max-w-none">
 			<p class="mb-2">{$_('dictate.intro1')}</p>
 			<p class="mb-2">{$_('dictate.intro2')}</p>
@@ -1349,40 +1312,49 @@
 	{/if}
 
 	<!-- Collaboration Controls -->
-	<div class="mb-6">
-		<div class="collapse collapse-arrow bg-base-200">
-			<input type="checkbox" />
-			<div class="collapse-title text-lg font-semibold">
+	<div class="bg-base-100 border border-base-300 rounded-lg overflow-hidden mb-6">
+		<!-- Header -->
+		<div class="px-4 py-3 bg-base-200 border-b border-base-300">
+			<h2 class="text-base font-semibold m-0 text-base-content">
 				{#if sessionInfo}
 					{$_('collaboration.session_active', { default: 'Active Session' })}
 				{:else}
 					{$_('collaboration.collaborative_session', { default: 'Collaborative Session' })}
 				{/if}
-			</div>
-			<div class="collapse-content">
-				{#if sessionInfo}
-					<!-- Session Status -->
-					<SessionStatus
-						{sessionInfo}
-						{participants}
-						connected={collaborationConnected}
-						onShowShareModal={() => (showShareModal = true)}
-					/>
-				{:else}
-					<!-- Join/Start Session UI -->
-					<div class="flex gap-4 p-4 bg-base-100 rounded-lg">
-						<!-- Join Session -->
-						<div class="flex-1">
-							<label class="label">
-								<span class="label-text font-semibold">
-									{$_('collaboration.join_session', { default: 'Join Session' })}
-								</span>
-							</label>
+			</h2>
+		</div>
+
+		<!-- Body -->
+		<div class="p-6">
+			{#if sessionInfo}
+				<!-- Session Status -->
+				<SessionStatus
+					{sessionInfo}
+					{participants}
+					connected={collaborationConnected}
+					onShowShareModal={() => (showShareModal = true)}
+				/>
+			{:else}
+				<!-- Three Options -->
+				<p class="text-sm text-base-content/70 mb-6">{$_('collaboration.choose_option')}</p>
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<!-- Option 1: Join Existing Session -->
+					<div class="card bg-base-200 border border-base-300 hover:border-secondary transition-colors">
+						<div class="card-body p-5">
+							<div class="flex items-center gap-3 mb-3">
+								<div class="p-2 rounded-lg bg-secondary/20">
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+									</svg>
+								</div>
+								<h3 class="card-title text-base m-0">{$_('collaboration.join_existing')}</h3>
+							</div>
+							<p class="text-sm text-base-content/70 mb-4">{$_('collaboration.join_existing_desc')}</p>
 							<div class="flex gap-2">
 								<input
 									type="text"
-									placeholder={$_('collaboration.enter_code', { default: 'Enter 6-character code' })}
-									class="input input-bordered flex-1 font-mono uppercase"
+									placeholder={$_('collaboration.enter_code')}
+									class="input input-sm input-bordered flex-1 font-mono uppercase"
 									maxlength="6"
 									bind:value={joinSessionCode}
 									oninput={(e) => {
@@ -1395,55 +1367,76 @@
 									}}
 								/>
 								<button
-									class="btn btn-secondary"
+									class="btn btn-sm btn-secondary"
 									disabled={joinSessionCode.length !== 6}
 									onclick={() => joinCollaborativeSession(joinSessionCode)}
 								>
-									{$_('collaboration.join', { default: 'Join' })}
+									{$_('collaboration.join')}
 								</button>
 							</div>
 						</div>
+					</div>
 
-						<div class="divider divider-horizontal">OR</div>
-
-						<!-- Start New Session -->
-						<div class="flex-1 flex items-end">
-							<button class="btn btn-primary w-full" onclick={startCollaborativeSession}>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									class="h-5 w-5"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M12 4v16m8-8H4"
-									/>
+					<!-- Option 2: Quick Start Session -->
+					<div class="card bg-base-200 border border-base-300 hover:border-primary transition-colors">
+						<div class="card-body p-5">
+							<div class="flex items-center gap-3 mb-3">
+								<div class="p-2 rounded-lg bg-primary/20">
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+									</svg>
+								</div>
+								<h3 class="card-title text-base m-0">{$_('collaboration.quick_start')}</h3>
+							</div>
+							<p class="text-sm text-base-content/70 mb-4">{$_('collaboration.quick_start_desc')}</p>
+							<button class="btn btn-sm btn-primary w-full" onclick={() => startCollaborativeSession()}>
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
 								</svg>
-								{$_('collaboration.start_session', { default: 'Start New Session' })}
+								{$_('collaboration.start_session')}
 							</button>
 						</div>
 					</div>
-				{/if}
-			</div>
+
+					<!-- Option 3: Manage Sessions -->
+					{#if browser && window.db}
+						<div class="card bg-base-200 border border-base-300 hover:border-accent transition-colors">
+							<div class="card-body p-5">
+								<div class="flex items-center gap-3 mb-3">
+									<div class="p-2 rounded-lg bg-accent/20">
+										<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+										</svg>
+									</div>
+									<h3 class="card-title text-base m-0">{$_('collaboration.manage_sessions')}</h3>
+								</div>
+								<p class="text-sm text-base-content/70 mb-4">{$_('collaboration.manage_sessions_desc')}</p>
+								<a href="/sessions" class="btn btn-sm btn-accent w-full">
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+									</svg>
+									{$_('collaboration.manage_sessions')}
+								</a>
+							</div>
+						</div>
+					{/if}
+				</div>
+			{/if}
 		</div>
 	</div>
 
 	<!-- Recording Controls -->
-	<div style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; margin-bottom: 1.5rem;">
+	<div class="bg-base-100 border border-base-300 rounded-lg overflow-hidden mb-6">
 		<!-- Header -->
-		<div style="padding: 12px 16px; background-color: #fafafa; border-bottom: 1px solid #ddd;">
-			<h2 style="font-size: 16px; font-weight: 600; margin: 0; color: #424242;">Eesti keele kõnetuvastus</h2>
+		<div class="px-4 py-3 bg-base-200 border-b border-base-300">
+			<h2 class="text-base font-semibold m-0 text-base-content">Eesti keele kõnetuvastus</h2>
 		</div>
 
 		<!-- Body -->
-		<div style="padding: 2rem;">
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-8" style="position: relative;">
+		<div class="p-8">
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-8 relative">
 				<!-- Column Divider (only visible on desktop) -->
-				<div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: #e0e0e0; display: none;" class="md:block"></div>
+				<div class="absolute left-1/2 top-0 bottom-0 w-px bg-base-300 hidden md:block"></div>
 
 				<!-- Left Column: Status and Controls -->
 				<div class="flex flex-col gap-4">
@@ -1519,8 +1512,7 @@
 							<span class="label-text font-semibold">{$_('dictate.audioSource')}</span>
 						</label>
 						<select
-							class="select w-full"
-							style="border: 1px solid #ddd; border-radius: 6px; background-color: white; padding: 8px 12px; font-size: 14px;"
+							class="select select-bordered w-full"
 							bind:value={audioSourceType}
 							onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
 							disabled={isAudioSourceSwitching || !isWasmReady}
@@ -1543,8 +1535,7 @@
 								</span>
 							</label>
 							<select
-								class="select w-full"
-								style="border: 1px solid #ddd; border-radius: 6px; background-color: white; padding: 8px 12px; font-size: 14px;"
+								class="select select-bordered w-full"
 								bind:value={selectedDeviceId}
 								onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
 								disabled={isAudioSourceSwitching || !isWasmReady}
@@ -1643,98 +1634,20 @@
 		</div>
 	</div>
 
-<!-- Speech Editor and Subtitle Preview -->
-<div class="flex flex-col xl:flex-row xl:items-start gap-6 mb-6">
-	<!-- Speech Editor -->
-	<div class="xl:flex-[2] flex-1 min-w-[500px]">
-		{#key sessionInfo?.code || 'solo'}
-			<SpeechEditor
-				bind:this={speechEditor}
-				collaborationManager={collaborationManager}
-				config={{
-					fontSize: 16,
-					onWordApproved: handleWordApproved,
-					onSubtitleEmit: handleSubtitleEmit
-				}}
-			/>
-		{/key}
-	</div>
-
-	<!-- Read-Only Editor Preview -->
-	<div class="xl:flex-[1] flex-1 min-w-[500px]">
-		<ReadOnlyEditorPreview
+<!-- Speech Editor -->
+<div class="mb-6">
+	{#key sessionInfo?.code || 'solo'}
+		<SpeechEditor
+			bind:this={speechEditor}
 			collaborationManager={collaborationManager}
-			class="h-[600px]"
+			config={{
+				fontSize: 16,
+				onWordApproved: handleWordApproved,
+				onSubtitleEmit: handleSubtitleEmit
+			}}
 		/>
-	</div>
+	{/key}
 </div>
-
-	<!-- Past Recordings -->
-	{#if pastRecordings.length > 0}
-		<div class="mt-6 space-y-4">
-			<h2 class="text-2xl font-bold">{$_('dictate.pastRecordings')}</h2>
-			{#each pastRecordings as recording (recording.id)}
-				<div class="card bg-base-200 shadow-xl">
-					<div class="card-body">
-						<div class="flex justify-between items-start mb-2">
-							<div class="text-sm text-base-content/60">
-								{formatTimestamp(recording.timestamp)}
-							</div>
-							<div class="flex gap-2">
-								<!-- Copy Button -->
-								<button
-									class="btn btn-sm btn-ghost btn-circle"
-									onclick={() => copyToClipboard(recording.text)}
-									title="Copy to clipboard"
-								>
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										class="h-4 w-4"
-										fill="none"
-										viewBox="0 0 24 24"
-										stroke="currentColor"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-										/>
-									</svg>
-								</button>
-								<!-- Delete Button -->
-								<button
-									class="btn btn-sm btn-ghost btn-circle"
-									onclick={() => deleteRecording(recording.id)}
-									title="Delete recording"
-								>
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										class="h-4 w-4"
-										fill="none"
-										viewBox="0 0 24 24"
-										stroke="currentColor"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-										/>
-									</svg>
-								</button>
-							</div>
-						</div>
-						<div
-							class="bg-base-100 rounded-lg p-4 font-mono text-sm whitespace-pre-wrap"
-						>
-							{recording.text}
-						</div>
-					</div>
-				</div>
-			{/each}
-		</div>
-	{/if}
 	</div>
 </div>
 

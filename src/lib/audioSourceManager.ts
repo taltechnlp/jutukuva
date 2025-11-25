@@ -83,8 +83,9 @@ export class AudioSourceManager {
 	/**
 	 * Enumerate all audio input devices
 	 * @param sourceType Optional filter: 'microphone' returns only mics, 'system' returns only monitors
+	 * @param skipDesktopSources If true, skip enumerating desktop sources (to avoid permission prompts during initialization)
 	 */
-	async enumerateAudioDevices(sourceType?: AudioSourceType, skipDesktopSources = false): Promise<AudioDevice[]> {
+	async enumerateAudioDevices(sourceType?: AudioSourceType, skipDesktopSources: boolean = false): Promise<AudioDevice[]> {
 		const devices = await navigator.mediaDevices.enumerateDevices();
 		const allAudioInputs = devices
 			.filter((d) => d.kind === 'audioinput')
@@ -106,7 +107,7 @@ export class AudioSourceManager {
 		if (sourceType === 'system') {
 			// On all desktop platforms, prefer desktop sources over monitor/loopback devices
 			// Desktop sources allow selecting specific windows/screens and work consistently
-			// Skip desktop sources during initial load to avoid screen sharing permission dialog
+			// Skip during initialization to avoid triggering screen sharing permission prompts
 			if (window.electronAPI && !skipDesktopSources) {
 				const desktopSources = await this.getDesktopSourcesAsDevices();
 				if (desktopSources.length > 0) {

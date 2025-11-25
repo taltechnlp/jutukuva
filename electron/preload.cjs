@@ -43,7 +43,22 @@ contextBridge.exposeInMainWorld('db', {
 	// Transcripts
 	addTranscript: (sessionId, segmentIndex, text, srtText, startTime, endTime) =>
 		ipcRenderer.invoke('db:addTranscript', sessionId, segmentIndex, text, srtText, startTime, endTime),
-	getSessionTranscripts: (sessionId) => ipcRenderer.invoke('db:getSessionTranscripts', sessionId)
+	getSessionTranscripts: (sessionId) => ipcRenderer.invoke('db:getSessionTranscripts', sessionId),
+
+	// Autocomplete dictionaries
+	createDictionary: (id, name, isActive) => ipcRenderer.invoke('db:createDictionary', id, name, isActive),
+	getDictionary: (id) => ipcRenderer.invoke('db:getDictionary', id),
+	getAllDictionaries: () => ipcRenderer.invoke('db:getAllDictionaries'),
+	updateDictionary: (id, data) => ipcRenderer.invoke('db:updateDictionary', id, data),
+	deleteDictionary: (id) => ipcRenderer.invoke('db:deleteDictionary', id),
+
+	// Autocomplete entries
+	createEntry: (id, dictionaryId, trigger, replacement) => ipcRenderer.invoke('db:createEntry', id, dictionaryId, trigger, replacement),
+	getEntry: (id) => ipcRenderer.invoke('db:getEntry', id),
+	getDictionaryEntries: (dictionaryId) => ipcRenderer.invoke('db:getDictionaryEntries', dictionaryId),
+	updateEntry: (id, data) => ipcRenderer.invoke('db:updateEntry', id, data),
+	deleteEntry: (id) => ipcRenderer.invoke('db:deleteEntry', id),
+	getActiveEntries: () => ipcRenderer.invoke('db:getActiveEntries')
 });
 
 // Expose Broadcast API

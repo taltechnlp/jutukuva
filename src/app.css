@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 @plugin "daisyui" {
-	themes: cmyk --default;
+	themes: light --default, dark, cupcake, bumblebee, emerald, corporate, synthwave, retro, cyberpunk, valentine, halloween, garden, forest, aqua, lofi, pastel, fantasy, wireframe, black, luxury, dracula, cmyk, autumn, business, acid, lemonade, night, coffee, winter, dim, nord, sunset;
 }
 
 @layer base {
@@ -83,12 +83,12 @@
 
 /* Word styling */
 .word-pending {
-	background-color: rgba(251, 191, 36, 0.2);
+	background-color: transparent;
 	border-radius: 0.125rem;
 }
 
 .word-active {
-	background-color: rgba(59, 130, 246, 0.3);
+	background-color: transparent;
 	border-radius: 0.125rem;
 }
 
@@ -96,11 +96,20 @@
 	background-color: transparent;
 }
 
+/* Text snippet ghost text styling */
+.snippet-ghost-text {
+	color: #9ca3af;
+	opacity: 0.6;
+	font-style: italic;
+	pointer-events: none;
+	user-select: none;
+}
+
 /* Subtitle preview styles */
 .playing {
-	color: #70acc7;
+	color: oklch(var(--p));
 }
 
 .played {
-	color: #9b9b9b;
+	color: oklch(var(--bc) / 0.5);
 }
