@@ -5,6 +5,7 @@
 	import { EditorView } from 'prosemirror-view';
 	import { Node } from 'prosemirror-model';
 	import { history, undo as pmUndo, redo as pmRedo } from 'prosemirror-history';
+	import { initProseMirrorDoc } from 'y-prosemirror';
 	import { writable, type Writable } from 'svelte/store';
 	import { speechSchema } from './schema';
 	import { keyboardShortcutsPlugin, speakerDropdownPlugin, speakerDropdownKey } from './plugins/keyboardShortcuts';
@@ -96,6 +97,37 @@
 				}
 			}
 		});
+	}
+
+	/**
+	 * Initialize committedWords from existing document content
+	 * Called when editor mounts with existing content (e.g., after session switch)
+	 *
+	 * IMPORTANT: Only commits words from paragraphs BEFORE the last one.
+	 * The last paragraph is "active" and ASR should be able to update it.
+	 */
+	function initializeCommittedWordsFromDoc() {
+		if (!editorView) return;
+
+		committedWords.clear();
+		const doc = editorView.state.doc;
+		const lastParaIndex = doc.childCount - 1;
+
+		// Only commit words from paragraphs BEFORE the last one
+		doc.forEach((paragraph, offset, index) => {
+			if (index < lastParaIndex) {
+				paragraph.descendants((node) => {
+					if (node.isText && node.marks.length > 0) {
+						const wordMark = node.marks.find((mark) => mark.type.name === 'word');
+						if (wordMark && node.text && node.text.trim().length > 0) {
+							committedWords.add(normalizeForDedup(node.text.trim()));
+						}
+					}
+				});
+			}
+		});
+
+		console.log('[EDITOR] Initialized committedWords with', committedWords.size, 'words from', lastParaIndex, 'previous paragraphs (excluding active last paragraph)');
 	}
 
 	/**
@@ -274,6 +306,12 @@
 			const yjsPlugins = collaborationManager.getProseMirrorPlugins({
 				includeCursor: !readOnly
 			});
+
+			// Debug: Check Yjs state when editor mounts
+			const xmlFragment = collaborationManager.ydoc.getXmlFragment('prosemirror');
+			console.log('[SpeechEditor] Yjs XmlFragment length at mount:', xmlFragment.length);
+			console.log('[SpeechEditor] Yjs XmlFragment content:', xmlFragment.toJSON());
+
 			plugins = [
 				...yjsPlugins,
 				...basePlugins
@@ -287,17 +325,31 @@
 		}
 
 		// Create editor state
-		// In collaborative mode, don't provide initial doc - let ySyncPlugin manage it
 		const stateConfig: any = {
 			schema: speechSchema,
 			plugins
 		};
 
-		// Only provide initial doc in solo mode - try to restore from database first
-		if (!collaborationManager) {
+		// Set initial doc based on mode
+		if (collaborationManager) {
+			// In collaborative mode: use initProseMirrorDoc to properly create doc from Yjs
+			const xmlFragment = collaborationManager.ydoc.getXmlFragment('prosemirror');
+			if (xmlFragment.length > 0) {
+				// Yjs has content - initialize doc from it
+				const { doc } = initProseMirrorDoc(xmlFragment, speechSchema);
+				stateConfig.doc = doc;
+				console.log('[EDITOR] Initialized doc from Yjs, childCount:', doc.childCount);
+			} else {
+				// Yjs is empty - create empty doc
+				stateConfig.doc = speechSchema.node('doc', null, [
+					speechSchema.node('paragraph', null, [])
+				]);
+				console.log('[EDITOR] Created empty doc for new session');
+			}
+		} else {
+			// Solo mode: try to restore from database first
 			let initialDoc = null;
 
-			// Try to restore editor state from database
 			if (sessionId && typeof window !== 'undefined' && window.db) {
 				try {
 					const savedState = await window.db.getEditorState(sessionId);
@@ -366,6 +418,14 @@
 
 		// Initial state update
 		updateEditorState(state);
+
+		// Initialize deduplication set from existing content
+		// This is crucial when remounting with preserved content (e.g., session switch)
+		initializeCommittedWordsFromDoc();
+
+		// Debug: Log initial editor document
+		console.log('[SpeechEditor] Initial doc after mount:', editorView?.state.doc.toJSON());
+		console.log('[SpeechEditor] Initial doc childCount:', editorView?.state.doc.childCount);
 
 		// Start auto-save interval (for both solo and collaborative modes)
 		// In collaborative mode, this serves as a local backup

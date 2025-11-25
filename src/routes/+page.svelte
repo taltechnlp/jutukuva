@@ -173,8 +173,10 @@
 		// Capture existing editor content BEFORE creating collaboration manager
 		// This ensures existing content is preserved when starting a session
 		const existingContent = speechEditor?.getDocJSON?.() || null;
+		console.log('[COLLAB] speechEditor:', speechEditor);
+		console.log('[COLLAB] existingContent:', existingContent);
 		if (existingContent) {
-			console.log('[COLLAB] Capturing existing editor content for Yjs initialization');
+			console.log('[COLLAB] Capturing existing editor content for Yjs initialization, paragraphs:', (existingContent as any)?.content?.length);
 		}
 
 		// Create and initialize CollaborationManager BEFORE setting sessionInfo
