@@ -58,6 +58,9 @@
 	let autoSaveInterval: ReturnType<typeof setInterval> | null = null;
 	const AUTO_SAVE_INTERVAL_MS = 30000; // 30 seconds
 
+	// Auto-scroll resize observer
+	let resizeObserver: ResizeObserver | null = null;
+
 	// Deduplication state (kept OUTSIDE editor to avoid race conditions)
 	// This tracks all words that have been "committed" (exist in previous paragraphs)
 	let committedWords = new Set<string>();
@@ -395,24 +398,6 @@
 
 				// Update reactive state
 				updateEditorState(newState);
-
-				// Auto-scroll to bottom after document changes
-				if (autoScroll && transaction.docChanged && containerElement) {
-					requestAnimationFrame(() => {
-						if (containerElement) {
-							// Keep the bottom of the editor container visible as content is added
-							// This includes the status bar at the bottom
-							const rect = containerElement.getBoundingClientRect();
-							const viewportHeight = window.innerHeight;
-
-							// If bottom of container is below viewport, scroll to keep it visible
-							if (rect.bottom > viewportHeight) {
-								const scrollAmount = rect.bottom - viewportHeight + 20; // 20px padding from bottom
-								window.scrollBy({ top: scrollAmount, behavior: 'smooth' });
-							}
-						}
-					});
-				}
 			}
 		});
 
@@ -433,6 +418,27 @@
 			autoSaveInterval = setInterval(saveEditorState, AUTO_SAVE_INTERVAL_MS);
 		}
 
+		// Set up ResizeObserver for auto-scroll
+		// This detects when the editor container grows and scrolls to keep it visible
+		resizeObserver = new ResizeObserver(() => {
+			if (autoScroll && containerElement) {
+				const rect = containerElement.getBoundingClientRect();
+				const viewportHeight = window.innerHeight;
+
+				// If bottom of container is below viewport, scroll to keep it visible
+				if (rect.bottom > viewportHeight) {
+					window.scrollBy({
+						top: rect.bottom - viewportHeight + 20,
+						behavior: 'smooth'
+					});
+				}
+			}
+		});
+
+		if (containerElement) {
+			resizeObserver.observe(containerElement);
+		}
+
 		// Return cleanup function
 		return () => {
 			unsubscribeSpeakers();
@@ -444,6 +450,12 @@
 		if (autoSaveInterval) {
 			clearInterval(autoSaveInterval);
 			autoSaveInterval = null;
+		}
+
+		// Clean up resize observer
+		if (resizeObserver) {
+			resizeObserver.disconnect();
+			resizeObserver = null;
 		}
 
 		if (editorView) {
