@@ -74,6 +74,21 @@ declare global {
 					created_at: string;
 				}>
 			>;
+
+			// Autocomplete dictionaries
+			createDictionary: (id: string, name: string, isActive?: number) => Promise<AutocompleteDictionary>;
+			getDictionary: (id: string) => Promise<AutocompleteDictionary | null>;
+			getAllDictionaries: () => Promise<Array<AutocompleteDictionary>>;
+			updateDictionary: (id: string, data: { name?: string; is_active?: number }) => Promise<AutocompleteDictionary>;
+			deleteDictionary: (id: string) => Promise<boolean>;
+
+			// Autocomplete entries
+			createEntry: (id: string, dictionaryId: string, trigger: string, replacement: string) => Promise<AutocompleteEntry>;
+			getEntry: (id: string) => Promise<AutocompleteEntry | null>;
+			getDictionaryEntries: (dictionaryId: string) => Promise<Array<AutocompleteEntry>>;
+			updateEntry: (id: string, data: { trigger?: string; replacement?: string }) => Promise<AutocompleteEntry>;
+			deleteEntry: (id: string) => Promise<boolean>;
+			getActiveEntries: () => Promise<Array<AutocompleteEntry & { dictionary_name: string }>>;
 		};
 		broadcast: {
 			start: (port: number) => Promise<boolean>;
@@ -118,6 +133,22 @@ declare global {
 		scheduled_date: string | null;
 		completed_at: string | null;
 		cancelled_at: string | null;
+	}
+
+	interface AutocompleteDictionary {
+		id: string;
+		name: string;
+		is_active: number;
+		created_at: string;
+		updated_at: string;
+	}
+
+	interface AutocompleteEntry {
+		id: string;
+		dictionary_id: string;
+		trigger: string;
+		replacement: string;
+		created_at: string;
 	}
 }
 

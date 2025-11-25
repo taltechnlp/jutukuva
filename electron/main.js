@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, desktopCapturer, protocol, net, systemPreferences } from 'electron';
+import { app, BrowserWindow, ipcMain, desktopCapturer, protocol, net, systemPreferences, nativeTheme } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { readFile } from 'fs/promises';
@@ -35,6 +35,9 @@ function createWindow() {
 	mainWindow = new BrowserWindow({
 		width: 1200,
 		height: 800,
+		backgroundColor: '#1a1a1a', // Dark background that works with both themes
+		autoHideMenuBar: true, // Hide menu bar (press Alt to show it)
+		titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
 		webPreferences: {
 			preload: path.join(__dirname, 'preload.cjs'),
 			contextIsolation: true,
@@ -55,6 +58,14 @@ function createWindow() {
 
 	mainWindow.on('closed', () => {
 		mainWindow = null;
+	});
+
+	// Sync native theme with system preferences
+	nativeTheme.themeSource = 'system';
+
+	// Listen for theme changes
+	nativeTheme.on('updated', () => {
+		console.log('Native theme changed:', nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
 	});
 }
 
@@ -177,6 +188,53 @@ app.whenReady().then(() => {
 
 	ipcMain.handle('db:getSessionTranscripts', async (event, sessionId) => {
 		return dbOperations.getSessionTranscripts(sessionId);
+	});
+
+	// Set up IPC handlers for autocomplete dictionaries
+	ipcMain.handle('db:createDictionary', async (event, id, name, isActive) => {
+		return dbOperations.createDictionary(id, name, isActive);
+	});
+
+	ipcMain.handle('db:getDictionary', async (event, id) => {
+		return dbOperations.getDictionary(id);
+	});
+
+	ipcMain.handle('db:getAllDictionaries', async () => {
+		return dbOperations.getAllDictionaries();
+	});
+
+	ipcMain.handle('db:updateDictionary', async (event, id, data) => {
+		return dbOperations.updateDictionary(id, data);
+	});
+
+	ipcMain.handle('db:deleteDictionary', async (event, id) => {
+		dbOperations.deleteDictionary(id);
+		return true;
+	});
+
+	ipcMain.handle('db:createEntry', async (event, id, dictionaryId, trigger, replacement) => {
+		return dbOperations.createEntry(id, dictionaryId, trigger, replacement);
+	});
+
+	ipcMain.handle('db:getEntry', async (event, id) => {
+		return dbOperations.getEntry(id);
+	});
+
+	ipcMain.handle('db:getDictionaryEntries', async (event, dictionaryId) => {
+		return dbOperations.getDictionaryEntries(dictionaryId);
+	});
+
+	ipcMain.handle('db:updateEntry', async (event, id, data) => {
+		return dbOperations.updateEntry(id, data);
+	});
+
+	ipcMain.handle('db:deleteEntry', async (event, id) => {
+		dbOperations.deleteEntry(id);
+		return true;
+	});
+
+	ipcMain.handle('db:getActiveEntries', async () => {
+		return dbOperations.getActiveEntries();
 	});
 
 	// Set up IPC handlers for broadcast server

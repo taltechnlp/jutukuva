@@ -474,7 +474,6 @@
     "transcript": "Transkriptsioon",
     "listeningForSpeech": "🔊 Kuulan kõnet...",
     "speakingDetected": "🎤 Kõne tuvastatud - salvestamine käib...",
-    "pastRecordings": "Varasemad salvestused",
     "failedToConnect": "Serveriga ühendamine ebaõnnestus",
     "failedToLoadVadModel": "Häältuvastuse mudeli laadimine ebaõnnestus",
     "vadError": "VAD viga",
@@ -537,9 +536,17 @@
   "collaboration": {
     "collaborative_session": "Ühissessioon",
     "session_active": "Aktiivne sessioon",
+    "choose_option": "Vali valik alustamiseks",
+    "join_existing": "Liitu olemasoleva sessiooniga",
+    "join_existing_desc": "Sisesta 6-kohaline kood, et liituda teistega reaalajas",
+    "quick_start": "Kiire alustamine",
+    "quick_start_desc": "Alusta uut ühissessiooni ja jaga koodi teistega",
+    "manage_sessions": "Halda ja planeeri sessioone",
+    "manage_sessions_desc": "Vaata, planeeri ja korrasta oma tulevasi transkriptsioonisessioone",
     "join_session": "Liitu sessiooniga",
     "enter_code": "Sisesta 6-kohaline kood",
     "join": "Liitu",
+    "or": "VÕI",
     "start_session": "Alusta uut sessiooni",
     "guest_cannot_record": "Ainult peremees saab salvestada"
   }

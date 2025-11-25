@@ -73,12 +73,19 @@ const setupWSConnection = (conn, req, roomName) => {
 			switch (messageType) {
 				case messageSync: {
 					console.log(`[${new Date().toISOString()}] [${roomName}] Received sync message, size: ${uint8Array.length}`);
+				const docSize = doc.store.clients.size;
+				const docUpdates = Y.encodeStateAsUpdate(doc);
+				console.log(`[${new Date().toISOString()}] [${roomName}] Doc state before sync: clients=${docSize}, updateSize=${docUpdates.length}`);
 					const encoder = encoding.createEncoder();
 					encoding.writeVarUint(encoder, messageSync);
 					syncProtocol.readSyncMessage(decoder, encoder, doc, conn);
-					if (encoding.length(encoder) > 1) {
-						console.log(`[${new Date().toISOString()}] [${roomName}] Sending sync response, size: ${encoding.length(encoder)}`);
+					const responseSize = encoding.length(encoder);
+					console.log(`[${new Date().toISOString()}] [${roomName}] Sync response encoded: size=${responseSize}`);
+					if (responseSize > 1) {
+						console.log(`[${new Date().toISOString()}] [${roomName}] Sending sync response, size: ${responseSize}`);
 						conn.send(encoding.toUint8Array(encoder));
+					} else {
+						console.log(`[${new Date().toISOString()}] [${roomName}] No sync response needed (client is up to date)`);
 					}
 					break;
 				}

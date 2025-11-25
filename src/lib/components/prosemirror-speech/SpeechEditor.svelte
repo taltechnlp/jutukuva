@@ -8,6 +8,7 @@
 	import { keyboardShortcutsPlugin } from './plugins/keyboardShortcuts';
 	import { streamingTextPlugin, insertStreamingTextCommand, signalVadSpeechEndCommand } from './plugins/streamingText';
 	import { subtitleSegmentationPlugin, subtitleSegmentationKey } from './plugins/subtitleSegmentation';
+	import { textSnippetsPlugin, updateTextSnippetEntries, type TextSnippetEntry } from './plugins/textSnippets';
 	import type { EditorConfig, StreamingTextEvent, SubtitleSegment, Word } from './utils/types';
 	import type { CollaborationManager } from '$lib/collaboration/CollaborationManager';
 	import Toolbar from './Toolbar.svelte';
@@ -31,14 +32,37 @@
 	let segments = $state<SubtitleSegment[]>([]);
 	let recordingStartTime = $state<number | null>(null);
 	let autoScroll = $state(true);
+	let textSnippetEntries = $state<TextSnippetEntry[]>([]);
+
+	// Load text snippet entries from database
+	async function loadTextSnippetEntries() {
+		if (typeof window !== 'undefined' && window.db) {
+			try {
+				const entries = await window.db.getActiveEntries();
+				textSnippetEntries = entries.map(entry => ({
+					trigger: entry.trigger,
+					replacement: entry.replacement,
+					dictionary_id: entry.dictionary_id,
+					dictionary_name: entry.dictionary_name
+				}));
+			} catch (error) {
+				console.error('Failed to load text snippet entries:', error);
+				textSnippetEntries = [];
+			}
+		}
+	}
 
 	// Initialize editor
-	onMount(() => {
+	onMount(async () => {
+		// Load text snippets first
+		await loadTextSnippetEntries();
+
 		// Determine plugins based on collaboration mode
 		const basePlugins = [
 			keyboardShortcutsPlugin(),
 			streamingTextPlugin(collaborationManager),
-			subtitleSegmentationPlugin(handleSegmentComplete)
+			subtitleSegmentationPlugin(handleSegmentComplete),
+			textSnippetsPlugin({ entries: textSnippetEntries })
 		];
 
 		// Add collaboration or history plugins
@@ -182,6 +206,14 @@
 		}, enhancedEvent);
 	}
 
+	// Public API: Reload text snippet entries from database
+	export async function reloadTextSnippetEntries() {
+		await loadTextSnippetEntries();
+		if (editorView) {
+			updateTextSnippetEntries(editorView, textSnippetEntries);
+		}
+	}
+
 	// Public API: Signal VAD speech end (to create new paragraph on next text)
 	export function signalVadSpeechEnd() {
 		if (!editorView) return;
@@ -234,7 +266,7 @@
 	}
 </script>
 
-<div class="speech-editor-container {className}">
+<div class="flex flex-col bg-base-100 border border-base-300 rounded-lg overflow-hidden {className}">
 	{#if !readOnly}
 		<!-- Toolbar -->
 		<Toolbar
@@ -257,6 +289,7 @@
 			<label class="auto-scroll-toggle">
 				<input
 					type="checkbox"
+					class="checkbox checkbox-sm"
 					checked={autoScroll}
 					onchange={handleAutoScrollChange}
 					aria-label={$_('dictate.autoScroll')}
@@ -268,14 +301,6 @@
 </div>
 
 <style>
-	.speech-editor-container {
-		display: flex;
-		flex-direction: column;
-		border: 1px solid #ddd;
-		border-radius: 8px;
-		overflow: hidden;
-		background: white;
-	}
 
 	.speech-editor {
 		min-height: 300px;
@@ -289,10 +314,10 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 8px 16px;
-		background-color: #f5f5f5;
-		border-top: 1px solid #ddd;
+		background-color: var(--fallback-b2, oklch(var(--b2) / 1));
+		border-top: 1px solid var(--fallback-b3, oklch(var(--b3) / 1));
 		font-size: 13px;
-		color: #666;
+		color: var(--fallback-bc, oklch(var(--bc) / 0.6));
 	}
 
 	.auto-scroll-toggle {
@@ -300,7 +325,7 @@
 		align-items: center;
 		gap: 6px;
 		font-size: 13px;
-		color: #666;
+		color: var(--fallback-bc, oklch(var(--bc) / 0.6));
 		cursor: pointer;
 		user-select: none;
 	}

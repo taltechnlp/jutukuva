@@ -22,7 +22,7 @@
 	}
 </script>
 
-<div class="toolbar">
+<div class="flex items-center flex-wrap gap-3 px-4 py-3 bg-base-200 border-b border-base-300">
 	<!-- Undo/Redo -->
 	<div class="toolbar-group">
 		<button
@@ -103,6 +103,35 @@
 								<kbd class="kbd kbd-sm">Ctrl</kbd> + <kbd class="kbd kbd-sm">Shift</kbd> + <kbd class="kbd kbd-sm">Z</kbd>
 							</td>
 						</tr>
+						<tr>
+							<td>{$_('dictate.shortcuts.selectNextWord', { default: 'Select next word' })}</td>
+							<td>
+								<kbd class="kbd kbd-sm">Tab</kbd>
+							</td>
+						</tr>
+						<tr>
+							<td>{$_('dictate.shortcuts.selectPreviousWord', { default: 'Select previous word' })}</td>
+							<td>
+								<kbd class="kbd kbd-sm">Shift</kbd> + <kbd class="kbd kbd-sm">Tab</kbd>
+							</td>
+						</tr>
+
+						<!-- Text Snippets -->
+						<tr class="bg-base-200">
+							<td colspan="2" class="font-semibold">{$_('dictate.shortcuts.textSnippets', { default: 'Text Snippets' })}</td>
+						</tr>
+						<tr>
+							<td>{$_('dictate.shortcuts.applySnippet', { default: 'Apply snippet (when ghost text shown)' })}</td>
+							<td>
+								<kbd class="kbd kbd-sm">Space</kbd>
+							</td>
+						</tr>
+						<tr>
+							<td>{$_('dictate.shortcuts.cancelSnippet', { default: 'Cancel snippet and insert space' })}</td>
+							<td>
+								<kbd class="kbd kbd-sm">Esc</kbd>
+							</td>
+						</tr>
 					</tbody>
 				</table>
 			</div>
@@ -118,16 +147,6 @@
 {/if}
 
 <style>
-	.toolbar {
-		display: flex;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: 12px;
-		padding: 12px 16px;
-		background-color: #fafafa;
-		border-bottom: 1px solid #ddd;
-	}
-
 	.toolbar-group {
 		display: flex;
 		align-items: center;
@@ -141,20 +160,20 @@
 		width: 36px;
 		height: 36px;
 		padding: 0;
-		border: 1px solid #ddd;
+		border: 1px solid var(--fallback-b3, oklch(var(--b3) / 1));
 		border-radius: 6px;
-		background-color: white;
+		background-color: var(--fallback-b1, oklch(var(--b1) / 1));
 		cursor: pointer;
-		color: #424242;
+		color: var(--fallback-bc, oklch(var(--bc) / 1));
 		transition: all 0.2s ease;
 	}
 
 	.toolbar-button:hover {
-		background-color: #f5f5f5;
-		border-color: #bbb;
+		background-color: var(--fallback-b2, oklch(var(--b2) / 1));
+		border-color: var(--fallback-bc, oklch(var(--bc) / 0.3));
 	}
 
 	.toolbar-button:active {
-		background-color: #e0e0e0;
+		background-color: var(--fallback-b3, oklch(var(--b3) / 1));
 	}
 </style>
