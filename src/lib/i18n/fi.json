@@ -2,6 +2,22 @@
   "app": {
     "title": "Puheentunnistus"
   },
+  "nav": {
+    "sessions": "Istunnot",
+    "textSnippets": "Tekstipätkät"
+  },
+  "theme": {
+    "light": "Vaalea",
+    "dark": "Tumma",
+    "cupcake": "Kuppikakku",
+    "dracula": "Dracula",
+    "synthwave": "Retroaalto",
+    "forest": "Metsä",
+    "lofi": "Lofi",
+    "pastel": "Pastelli",
+    "cyberpunk": "Kyberpunk",
+    "nord": "Pohjoinen"
+  },
   "sign_in": "Kirjaudu sisään",
   "sign_up": "Luo käyttäjätili",
   "common": {
@@ -534,5 +550,39 @@
     "or": "TAI",
     "start_session": "Aloita uusi istunto",
     "guest_cannot_record": "Vain isäntä voi nauhoittaa"
+  },
+  "settings": {
+    "dictionaries": {
+      "title": "Tekstipätkien sanakirjat",
+      "description": "Hallitse tekstipätkien sanakirjojasi. Luo mukautettuja pikavalintoja, jotka laajenevat automaattisesti kirjoittaessasi.",
+      "myDictionaries": "Omat sanakirjat",
+      "new": "Uusi sanakirja",
+      "noDictionaries": "Ei sanakirjoja vielä",
+      "createFirst": "Luo ensimmäinen sanakirjasi aloittaaksesi",
+      "createdAt": "Luotu",
+      "delete": "Poista",
+      "confirmDelete": "Haluatko varmasti poistaa tämän sanakirjan? Kaikki merkinnät poistetaan.",
+      "selectDictionary": "Valitse sanakirja merkintöjen hallintaan",
+      "newDictionaryTitle": "Luo uusi sanakirja",
+      "dictionaryName": "Sanakirjan nimi",
+      "namePlaceholder": "esim. Lääketieteelliset termit",
+      "create": "Luo",
+      "entries": "merkintää",
+      "searchPlaceholder": "Etsi pätkiä...",
+      "addEntry": "Lisää",
+      "noResults": "Hakua vastaavia merkintöjä ei löytynyt",
+      "noEntries": "Ei merkintöjä vielä. Lisää ensimmäinen pätkäsi!",
+      "trigger": "Laukaisin",
+      "replacement": "Korvaus",
+      "addedOn": "Lisätty",
+      "confirmDeleteEntry": "Poista tämä merkintä?",
+      "addNewEntry": "Lisää uusi pätkä",
+      "triggerPlaceholder": "esim. amb",
+      "triggerHelp": "Teksti, jonka kirjoitat käynnistääksesi korvauksen",
+      "replacementPlaceholder": "esim. ambulanssi",
+      "replacementHelp": "Teksti, joka korvaa laukaisimen",
+      "add": "Lisää",
+      "duplicateTrigger": "Tällä laukaisimella oleva pätkä on jo olemassa"
+    }
   }
 }

@@ -2,6 +2,22 @@
   "app": {
     "title": "Kõnetuvastus"
   },
+  "nav": {
+    "sessions": "Sessioonid",
+    "textSnippets": "Tekstilõigud"
+  },
+  "theme": {
+    "light": "Hele",
+    "dark": "Tume",
+    "cupcake": "Koogike",
+    "dracula": "Dracula",
+    "synthwave": "Retrolaine",
+    "forest": "Mets",
+    "lofi": "Lofi",
+    "pastel": "Pastell",
+    "cyberpunk": "Küberpunk",
+    "nord": "Põhjala"
+  },
   "sign_in": "Logi sisse",
   "sign_up": "Logi välja",
   "common": {
@@ -549,5 +565,39 @@
     "or": "VÕI",
     "start_session": "Alusta uut sessiooni",
     "guest_cannot_record": "Ainult peremees saab salvestada"
+  },
+  "settings": {
+    "dictionaries": {
+      "title": "Tekstilõikude sõnastikud",
+      "description": "Halda oma tekstilõikude sõnastikke. Loo kohandatud otseteid, mis laienevad automaatselt kirjutamise ajal.",
+      "myDictionaries": "Minu sõnastikud",
+      "new": "Uus sõnastik",
+      "noDictionaries": "Sõnastikud puuduvad",
+      "createFirst": "Loo oma esimene sõnastik alustamiseks",
+      "createdAt": "Loodud",
+      "delete": "Kustuta",
+      "confirmDelete": "Kas oled kindel, et soovid selle sõnastiku kustutada? Kõik kirjed kustutatakse.",
+      "selectDictionary": "Vali sõnastik kirjete haldamiseks",
+      "newDictionaryTitle": "Loo uus sõnastik",
+      "dictionaryName": "Sõnastiku nimi",
+      "namePlaceholder": "nt Meditsiiniterminid",
+      "create": "Loo",
+      "entries": "kirjet",
+      "searchPlaceholder": "Otsi lõike...",
+      "addEntry": "Lisa",
+      "noResults": "Ühtegi kirjet ei leitud",
+      "noEntries": "Kirjed puuduvad. Lisa oma esimene lõik!",
+      "trigger": "Päästik",
+      "replacement": "Asendus",
+      "addedOn": "Lisatud",
+      "confirmDeleteEntry": "Kustuta see kirje?",
+      "addNewEntry": "Lisa uus lõik",
+      "triggerPlaceholder": "nt kiir",
+      "triggerHelp": "Tekst, mille sisestamisel käivitub asendus",
+      "replacementPlaceholder": "nt kiirabi",
+      "replacementHelp": "Tekst, mis asendab päästiku",
+      "add": "Lisa",
+      "duplicateTrigger": "Selle päästikuga lõik on juba olemas"
+    }
   }
 }
