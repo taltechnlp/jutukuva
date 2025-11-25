@@ -141,13 +141,13 @@
 		</button>
 
 		{#if showSpeakerDropdown}
-			<div class="speaker-manager-dropdown" use:clickOutside onoutclick={closeSpeakerDropdown}>
-				<div class="dropdown-header">
+			<div class="speaker-manager-dropdown bg-base-100 border-base-300" use:clickOutside onoutclick={closeSpeakerDropdown}>
+				<div class="dropdown-header bg-base-100 border-base-300">
 					<h4>{$_('speakers.manageSpeakers')}</h4>
 				</div>
 
 				<!-- Add new speaker -->
-				<div class="add-speaker-form">
+				<div class="add-speaker-form bg-base-100 border-base-300">
 					<input
 						type="text"
 						bind:value={newSpeakerName}
@@ -166,12 +166,12 @@
 				</div>
 
 				<!-- Speaker list -->
-				<div class="speaker-list">
+				<div class="speaker-list bg-base-100">
 					{#if speakers.length === 0}
-						<div class="no-speakers">{$_('speakers.noSpeakers')}</div>
+						<div class="no-speakers bg-base-100">{$_('speakers.noSpeakers')}</div>
 					{:else}
 						{#each speakers as speaker}
-							<div class="speaker-item">
+							<div class="speaker-item bg-base-100 hover:bg-base-200">
 								<span class="speaker-color" style:background-color={speaker.color}></span>
 								{#if editingSpeakerId === speaker.id}
 									<input
@@ -353,8 +353,8 @@
 		left: 0;
 		z-index: 1000;
 		min-width: 280px;
-		background: oklch(var(--b1));
-		border: 1px solid oklch(var(--b3));
+		border-width: 1px;
+		border-style: solid;
 		border-radius: 0.5rem;
 		box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.15);
 		margin-top: 4px;
@@ -362,8 +362,8 @@
 
 	.dropdown-header {
 		padding: 0.75rem 1rem;
-		background: oklch(var(--b1));
-		border-bottom: 1px solid oklch(var(--b3));
+		border-bottom-width: 1px;
+		border-bottom-style: solid;
 	}
 
 	.dropdown-header h4 {
@@ -376,22 +376,20 @@
 		display: flex;
 		gap: 0.5rem;
 		padding: 0.75rem 1rem;
-		background: oklch(var(--b1));
-		border-bottom: 1px solid oklch(var(--b3));
+		border-bottom-width: 1px;
+		border-bottom-style: solid;
 	}
 
 	.speaker-list {
 		max-height: 240px;
 		overflow-y: auto;
-		background: oklch(var(--b1));
 	}
 
 	.no-speakers {
 		padding: 1rem;
 		text-align: center;
-		color: oklch(var(--bc) / 0.5);
+		opacity: 0.5;
 		font-size: 0.875rem;
-		background: oklch(var(--b1));
 	}
 
 	.speaker-item {
@@ -399,16 +397,11 @@
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.5rem 1rem;
-		background: oklch(var(--b1));
-		border-bottom: 1px solid oklch(var(--b2));
+		border-bottom: 1px solid oklch(0.95 0 0 / 0.5);
 	}
 
 	.speaker-item:last-child {
 		border-bottom: none;
-	}
-
-	.speaker-item:hover {
-		background: oklch(var(--b2));
 	}
 
 	.speaker-color {
