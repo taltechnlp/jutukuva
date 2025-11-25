@@ -60,6 +60,10 @@ contextBridge.exposeInMainWorld('db', {
 	deleteEntry: (id) => ipcRenderer.invoke('db:deleteEntry', id),
 	getActiveEntries: () => ipcRenderer.invoke('db:getActiveEntries'),
 
+	// Dictionary import/export
+	exportDictionary: (id) => ipcRenderer.invoke('db:exportDictionary', id),
+	importDictionary: (name, entries) => ipcRenderer.invoke('db:importDictionary', name, entries),
+
 	// Speakers
 	getSessionSpeakers: (sessionId) => ipcRenderer.invoke('db:getSessionSpeakers', sessionId),
 	setSessionSpeakers: (sessionId, speakers) => ipcRenderer.invoke('db:setSessionSpeakers', sessionId, speakers),

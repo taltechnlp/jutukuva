@@ -90,6 +90,10 @@ declare global {
 			deleteEntry: (id: string) => Promise<boolean>;
 			getActiveEntries: () => Promise<Array<AutocompleteEntry & { dictionary_name: string }>>;
 
+			// Dictionary import/export
+			exportDictionary: (id: string) => Promise<{ name: string; entries: Record<string, string> }>;
+			importDictionary: (name: string, entries: Record<string, string>) => Promise<AutocompleteDictionary>;
+
 			// Speakers
 			getSessionSpeakers: (sessionId: string) => Promise<Array<SessionSpeaker>>;
 			setSessionSpeakers: (sessionId: string, speakers: Array<SessionSpeaker>) => Promise<boolean>;
@@ -153,6 +157,7 @@ declare global {
 		id: string;
 		name: string;
 		is_active: number;
+		is_builtin: number;
 		created_at: string;
 		updated_at: string;
 	}

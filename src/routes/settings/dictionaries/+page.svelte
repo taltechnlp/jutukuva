@@ -10,6 +10,7 @@
 	let newDictionaryName = $state('');
 	let loading = $state(true);
 	let error = $state<string | null>(null);
+	let fileInput: HTMLInputElement;
 
 	// Load dictionaries on mount
 	onMount(async () => {
@@ -82,6 +83,54 @@
 	function closeEditor() {
 		selectedDictionary = null;
 	}
+
+	async function exportDictionary(dictionary: AutocompleteDictionary) {
+		try {
+			const data = await window.db.exportDictionary(dictionary.id);
+			const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `${dictionary.name.replace(/[^a-z0-9]/gi, '_')}.json`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		} catch (err) {
+			console.error('Failed to export dictionary:', err);
+			error = $_('settings.dictionaries.exportError', { default: 'Failed to export dictionary' });
+		}
+	}
+
+	function triggerImport() {
+		fileInput?.click();
+	}
+
+	async function handleImport(event: Event) {
+		const input = event.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+
+		try {
+			const text = await file.text();
+			const data = JSON.parse(text);
+
+			// Validate structure
+			if (!data.name || !data.entries || typeof data.entries !== 'object') {
+				throw new Error('Invalid dictionary format');
+			}
+
+			await window.db.importDictionary(data.name, data.entries);
+			await loadDictionaries();
+			error = null;
+		} catch (err) {
+			console.error('Failed to import dictionary:', err);
+			error = $_('settings.dictionaries.importError', { default: 'Failed to import dictionary. Please check the file format.' });
+		} finally {
+			// Reset file input
+			input.value = '';
+		}
+	}
 </script>
 
 <div class="container mx-auto p-6 max-w-6xl">
@@ -119,13 +168,22 @@
 			<div class="card-body">
 				<div class="flex justify-between items-center mb-4">
 					<h2 class="card-title">{$_('settings.dictionaries.myDictionaries', { default: 'My Dictionaries' })}</h2>
-					<button class="btn btn-primary btn-sm" onclick={() => (showNewDictionaryModal = true)}>
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-						</svg>
-						{$_('settings.dictionaries.new', { default: 'New Dictionary' })}
-					</button>
+					<div class="flex gap-2">
+						<button class="btn btn-ghost btn-sm" onclick={triggerImport}>
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+							</svg>
+							{$_('settings.dictionaries.import', { default: 'Import' })}
+						</button>
+						<button class="btn btn-primary btn-sm" onclick={() => (showNewDictionaryModal = true)}>
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+							</svg>
+							{$_('settings.dictionaries.new', { default: 'New Dictionary' })}
+						</button>
+					</div>
 				</div>
+				<input type="file" accept=".json" class="hidden" bind:this={fileInput} onchange={handleImport} />
 
 				{#if loading}
 					<div class="flex justify-center py-8">
@@ -161,7 +219,12 @@
 								<div class="card-body p-4">
 									<div class="flex items-center justify-between">
 										<div class="flex-1" onclick={() => selectDictionary(dictionary)}>
-											<h3 class="font-semibold text-lg">{dictionary.name}</h3>
+											<div class="flex items-center gap-2">
+												<h3 class="font-semibold text-lg">{dictionary.name}</h3>
+												{#if dictionary.is_builtin === 1}
+													<span class="badge badge-secondary badge-sm">{$_('settings.dictionaries.builtin', { default: 'Built-in' })}</span>
+												{/if}
+											</div>
 											<p class="text-sm text-base-content/60">
 												{$_('settings.dictionaries.createdAt', { default: 'Created' })}:
 												{new Date(dictionary.created_at).toLocaleDateString()}
@@ -176,8 +239,8 @@
 											/>
 											<button
 												class="btn btn-ghost btn-sm btn-square"
-												onclick={() => deleteDictionary(dictionary)}
-												title={$_('settings.dictionaries.delete', { default: 'Delete' })}
+												onclick={() => exportDictionary(dictionary)}
+												title={$_('settings.dictionaries.export', { default: 'Export' })}
 											>
 												<svg
 													xmlns="http://www.w3.org/2000/svg"
@@ -190,10 +253,32 @@
 														stroke-linecap="round"
 														stroke-linejoin="round"
 														stroke-width="2"
-														d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+														d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
 													/>
 												</svg>
 											</button>
+											{#if dictionary.is_builtin !== 1}
+												<button
+													class="btn btn-ghost btn-sm btn-square"
+													onclick={() => deleteDictionary(dictionary)}
+													title={$_('settings.dictionaries.delete', { default: 'Delete' })}
+												>
+													<svg
+														xmlns="http://www.w3.org/2000/svg"
+														class="h-5 w-5"
+														fill="none"
+														viewBox="0 0 24 24"
+														stroke="currentColor"
+													>
+														<path
+															stroke-linecap="round"
+															stroke-linejoin="round"
+															stroke-width="2"
+															d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+														/>
+													</svg>
+												</button>
+											{/if}
 										</div>
 									</div>
 								</div>

@@ -1,6 +1,12 @@
 import Database from 'better-sqlite3';
 import { app } from 'electron';
 import path from 'path';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+
+// Get the directory of this module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let db = null;
 
@@ -128,6 +134,13 @@ export function initDatabase() {
 		)
 	`);
 
+	// Add is_builtin column to autocomplete_dictionaries
+	try {
+		db.exec('ALTER TABLE autocomplete_dictionaries ADD COLUMN is_builtin INTEGER DEFAULT 0');
+	} catch (e) {
+		// Column already exists
+	}
+
 	// Create indexes for autocomplete
 	db.exec(`
 		CREATE INDEX IF NOT EXISTS idx_entries_dictionary
@@ -160,7 +173,73 @@ export function initDatabase() {
 	`);
 
 	console.log('Database initialized at:', dbPath);
+
+	// Seed default dictionary if not already done
+	seedDefaultDictionary();
+
 	return db;
+}
+
+function seedDefaultDictionary() {
+	// Check if default dictionary has already been seeded
+	const seededSetting = db.prepare('SELECT value FROM settings WHERE key = ?').get('default_dictionary_seeded');
+	if (seededSetting) {
+		return; // Already seeded
+	}
+
+	console.log('Seeding default dictionary...');
+
+	try {
+		// Load the default dictionary JSON
+		// In production, this file will be in resources/app.asar or similar
+		// During development, it's in src/lib/data/
+		let defaultDictPath = path.join(__dirname, '..', 'src', 'lib', 'data', 'defaultDictionary.json');
+
+		// Check if running from asar
+		if (__dirname.includes('app.asar')) {
+			defaultDictPath = path.join(__dirname, '..', 'src', 'lib', 'data', 'defaultDictionary.json');
+		}
+
+		const defaultDictData = JSON.parse(readFileSync(defaultDictPath, 'utf-8'));
+		const { name, entries } = defaultDictData;
+
+		// Create the default dictionary with is_builtin = 1
+		const dictionaryId = 'default-estonian-shortforms';
+		const createDict = db.prepare(`
+			INSERT INTO autocomplete_dictionaries (id, name, is_active, is_builtin)
+			VALUES (?, ?, 1, 1)
+		`);
+		createDict.run(dictionaryId, name);
+
+		// Bulk insert entries using a transaction
+		const insertEntry = db.prepare(`
+			INSERT INTO autocomplete_entries (id, dictionary_id, trigger, replacement)
+			VALUES (?, ?, ?, ?)
+		`);
+
+		const insertMany = db.transaction((entries) => {
+			let count = 0;
+			for (const [trigger, replacement] of Object.entries(entries)) {
+				const entryId = `default-${count++}`;
+				insertEntry.run(entryId, dictionaryId, trigger, replacement);
+			}
+			return count;
+		});
+
+		const insertedCount = insertMany(entries);
+		console.log(`Seeded ${insertedCount} entries into default dictionary`);
+
+		// Mark as seeded
+		db.prepare(`
+			INSERT INTO settings (key, value)
+			VALUES (?, ?)
+			ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = CURRENT_TIMESTAMP
+		`).run('default_dictionary_seeded', 'true', 'true');
+
+	} catch (error) {
+		console.error('Failed to seed default dictionary:', error);
+		// Don't throw - app should still work without default dictionary
+	}
 }
 
 export function getDatabase() {
@@ -426,6 +505,11 @@ export const dbOperations = {
 	},
 
 	deleteDictionary: (id) => {
+		// Check if dictionary is built-in
+		const dict = db.prepare('SELECT is_builtin FROM autocomplete_dictionaries WHERE id = ?').get(id);
+		if (dict && dict.is_builtin === 1) {
+			throw new Error('Cannot delete built-in dictionary');
+		}
 		// Entries will be deleted automatically due to CASCADE
 		const stmt = db.prepare('DELETE FROM autocomplete_dictionaries WHERE id = ?');
 		stmt.run(id);
@@ -491,6 +575,59 @@ export const dbOperations = {
 			ORDER BY LENGTH(e.trigger) DESC, e.trigger
 		`);
 		return stmt.all();
+	},
+
+	// Export dictionary to simplified format
+	exportDictionary: (id) => {
+		const dict = db.prepare('SELECT * FROM autocomplete_dictionaries WHERE id = ?').get(id);
+		if (!dict) {
+			throw new Error('Dictionary not found');
+		}
+
+		const entries = db.prepare('SELECT trigger, replacement FROM autocomplete_entries WHERE dictionary_id = ? ORDER BY trigger').all(id);
+
+		// Convert array of entries to object format
+		const entriesObj = {};
+		for (const entry of entries) {
+			entriesObj[entry.trigger] = entry.replacement;
+		}
+
+		return {
+			name: dict.name,
+			entries: entriesObj
+		};
+	},
+
+	// Import dictionary from simplified format
+	importDictionary: (name, entries) => {
+		const id = crypto.randomUUID();
+
+		// Create the dictionary
+		const createDict = db.prepare(`
+			INSERT INTO autocomplete_dictionaries (id, name, is_active, is_builtin)
+			VALUES (?, ?, 1, 0)
+		`);
+		createDict.run(id, name);
+
+		// Bulk insert entries using a transaction
+		const insertEntry = db.prepare(`
+			INSERT INTO autocomplete_entries (id, dictionary_id, trigger, replacement)
+			VALUES (?, ?, ?, ?)
+		`);
+
+		const insertMany = db.transaction((entries) => {
+			let count = 0;
+			for (const [trigger, replacement] of Object.entries(entries)) {
+				const entryId = crypto.randomUUID();
+				insertEntry.run(entryId, id, trigger, replacement);
+				count++;
+			}
+			return count;
+		});
+
+		insertMany(entries);
+
+		return db.prepare('SELECT * FROM autocomplete_dictionaries WHERE id = ?').get(id);
 	},
 
 	// Speaker operations
