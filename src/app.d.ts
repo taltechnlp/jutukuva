@@ -89,6 +89,10 @@ declare global {
 			updateEntry: (id: string, data: { trigger?: string; replacement?: string }) => Promise<AutocompleteEntry>;
 			deleteEntry: (id: string) => Promise<boolean>;
 			getActiveEntries: () => Promise<Array<AutocompleteEntry & { dictionary_name: string }>>;
+
+			// Speakers
+			getSessionSpeakers: (sessionId: string) => Promise<Array<SessionSpeaker>>;
+			setSessionSpeakers: (sessionId: string, speakers: Array<SessionSpeaker>) => Promise<boolean>;
 		};
 		broadcast: {
 			start: (port: number) => Promise<boolean>;
@@ -149,6 +153,14 @@ declare global {
 		trigger: string;
 		replacement: string;
 		created_at: string;
+	}
+
+	interface SessionSpeaker {
+		id: string;
+		name: string;
+		color?: string;
+		createdBy?: number;
+		createdAt?: number;
 	}
 }
 

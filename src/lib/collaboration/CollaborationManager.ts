@@ -6,7 +6,8 @@ import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import type { EditorView } from 'prosemirror-view';
 import { ySyncPlugin, yCursorPlugin, yUndoPlugin } from 'y-prosemirror';
-import type { SessionInfo, SessionRole, Participant, WordApprovalData, SessionMetadata } from './types';
+import type { SessionInfo, SessionRole, Participant, WordApprovalData, SessionMetadata, Speaker } from './types';
+import { v4 as uuidv4 } from 'uuid';
 
 const YJS_SERVER_URL = import.meta.env.VITE_YJS_SERVER_URL || 'wss://tekstiks.ee/kk';
 
@@ -18,10 +19,12 @@ export class CollaborationManager {
 	// Shared Yjs types
 	public wordApprovalsMap: Y.Map<WordApprovalData> | null = null;
 	public sessionMetadataMap: Y.Map<any> | null = null;
+	public speakersMap: Y.Map<Speaker> | null = null;
 
 	// Callbacks
 	private onParticipantsChange?: (participants: Participant[]) => void;
 	private onConnectionStatusChange?: (connected: boolean) => void;
+	private onSpeakersChange?: (speakers: Speaker[]) => void;
 
 	constructor() {
 		this.ydoc = new Y.Doc();
@@ -37,11 +40,13 @@ export class CollaborationManager {
 		callbacks?: {
 			onParticipantsChange?: (participants: Participant[]) => void;
 			onConnectionStatusChange?: (connected: boolean) => void;
+			onSpeakersChange?: (speakers: Speaker[]) => void;
 		}
 	): void {
 		this.sessionInfo = sessionInfo;
 		this.onParticipantsChange = callbacks?.onParticipantsChange;
 		this.onConnectionStatusChange = callbacks?.onConnectionStatusChange;
+		this.onSpeakersChange = callbacks?.onSpeakersChange;
 
 		// Connect to WebSocket provider
 		console.log('[CollaborationManager] Connecting to:', sessionInfo.serverUrl, 'room:', sessionInfo.roomName);
@@ -61,6 +66,12 @@ export class CollaborationManager {
 		// Initialize shared types
 		this.wordApprovalsMap = this.ydoc.getMap('wordApprovals');
 		this.sessionMetadataMap = this.ydoc.getMap('sessionMetadata');
+		this.speakersMap = this.ydoc.getMap('speakers');
+
+		// Observe speaker changes
+		this.speakersMap.observe(() => {
+			this.onSpeakersChange?.(this.getSpeakers());
+		});
 
 		// Set session metadata if host
 		if (sessionInfo.role === 'host') {
@@ -225,6 +236,54 @@ export class CollaborationManager {
 		return {
 			hostClientId: this.sessionMetadataMap.get('hostClientId') ?? 0
 		};
+	}
+
+	/**
+	 * Add a new speaker to the session
+	 */
+	addSpeaker(name: string): Speaker {
+		const speaker: Speaker = {
+			id: uuidv4(),
+			name,
+			color: this.getRandomColor(),
+			createdBy: this.provider?.awareness.clientID,
+			createdAt: Date.now()
+		};
+
+		this.speakersMap?.set(speaker.id, speaker);
+		return speaker;
+	}
+
+	/**
+	 * Update a speaker's properties
+	 */
+	updateSpeaker(id: string, updates: Partial<Pick<Speaker, 'name' | 'color'>>): void {
+		const existing = this.speakersMap?.get(id);
+		if (existing) {
+			this.speakersMap?.set(id, { ...existing, ...updates });
+		}
+	}
+
+	/**
+	 * Remove a speaker from the session
+	 */
+	removeSpeaker(id: string): void {
+		this.speakersMap?.delete(id);
+	}
+
+	/**
+	 * Get all speakers in the session
+	 */
+	getSpeakers(): Speaker[] {
+		if (!this.speakersMap) return [];
+		return Array.from(this.speakersMap.values());
+	}
+
+	/**
+	 * Get a speaker by ID
+	 */
+	getSpeaker(id: string): Speaker | undefined {
+		return this.speakersMap?.get(id);
 	}
 
 	/**

@@ -1,17 +1,33 @@
 <script lang="ts">
 	import { _ } from 'svelte-i18n';
+	import type { Speaker } from '$lib/collaboration/types';
+	import { clickOutside } from './utils/clickOutside';
 
 	// Props
 	let {
 		onUndo = () => {},
-		onRedo = () => {}
+		onRedo = () => {},
+		speakers = [],
+		onAddSpeaker,
+		onRemoveSpeaker,
+		onUpdateSpeaker
 	}: {
 		onUndo?: () => void;
 		onRedo?: () => void;
+		speakers?: Speaker[];
+		onAddSpeaker?: (name: string) => Speaker;
+		onRemoveSpeaker?: (id: string) => void;
+		onUpdateSpeaker?: (id: string, name: string) => void;
 	} = $props();
 
 	// Keyboard shortcuts modal state
 	let showShortcutsModal = $state(false);
+
+	// Speaker manager dropdown state
+	let showSpeakerDropdown = $state(false);
+	let newSpeakerName = $state('');
+	let editingSpeakerId = $state<string | null>(null);
+	let editingSpeakerName = $state('');
 
 	function openShortcutsModal() {
 		showShortcutsModal = true;
@@ -19,6 +35,65 @@
 
 	function closeShortcutsModal() {
 		showShortcutsModal = false;
+	}
+
+	function toggleSpeakerDropdown() {
+		showSpeakerDropdown = !showSpeakerDropdown;
+		if (!showSpeakerDropdown) {
+			// Reset state when closing
+			editingSpeakerId = null;
+			editingSpeakerName = '';
+		}
+	}
+
+	function closeSpeakerDropdown() {
+		showSpeakerDropdown = false;
+		editingSpeakerId = null;
+		editingSpeakerName = '';
+	}
+
+	function handleAddSpeaker() {
+		const trimmed = newSpeakerName.trim();
+		if (trimmed && onAddSpeaker) {
+			onAddSpeaker(trimmed);
+			newSpeakerName = '';
+		}
+	}
+
+	function handleAddSpeakerKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			handleAddSpeaker();
+		}
+	}
+
+	function startEditingSpeaker(speaker: Speaker) {
+		editingSpeakerId = speaker.id;
+		editingSpeakerName = speaker.name;
+	}
+
+	function saveEditingSpeaker() {
+		if (editingSpeakerId && editingSpeakerName.trim() && onUpdateSpeaker) {
+			onUpdateSpeaker(editingSpeakerId, editingSpeakerName.trim());
+		}
+		editingSpeakerId = null;
+		editingSpeakerName = '';
+	}
+
+	function handleEditKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			saveEditingSpeaker();
+		} else if (e.key === 'Escape') {
+			editingSpeakerId = null;
+			editingSpeakerName = '';
+		}
+	}
+
+	function handleRemoveSpeaker(id: string) {
+		if (onRemoveSpeaker) {
+			onRemoveSpeaker(id);
+		}
 	}
 </script>
 
@@ -47,6 +122,100 @@
 				<path d="M3 17a9 9 0 019-9 9 9 0 016 2.3l3 2.7" />
 			</svg>
 		</button>
+	</div>
+
+	<!-- Speakers Manager -->
+	<div class="toolbar-group relative">
+		<button
+			class="toolbar-button"
+			onclick={toggleSpeakerDropdown}
+			title={$_('speakers.manageSpeakers')}
+			aria-label={$_('speakers.manageSpeakers')}
+		>
+			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+				<circle cx="9" cy="7" r="4" />
+				<path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+				<path d="M16 3.13a4 4 0 0 1 0 7.75" />
+			</svg>
+		</button>
+
+		{#if showSpeakerDropdown}
+			<div class="speaker-manager-dropdown" use:clickOutside onoutclick={closeSpeakerDropdown}>
+				<div class="dropdown-header">
+					<h4>{$_('speakers.manageSpeakers')}</h4>
+				</div>
+
+				<!-- Add new speaker -->
+				<div class="add-speaker-form">
+					<input
+						type="text"
+						bind:value={newSpeakerName}
+						placeholder={$_('speakers.speakerName')}
+						onkeydown={handleAddSpeakerKeydown}
+						class="input input-sm input-bordered flex-1"
+					/>
+					<button
+						type="button"
+						class="btn btn-sm btn-primary"
+						onclick={handleAddSpeaker}
+						disabled={!newSpeakerName.trim()}
+					>
+						{$_('common.add')}
+					</button>
+				</div>
+
+				<!-- Speaker list -->
+				<div class="speaker-list">
+					{#if speakers.length === 0}
+						<div class="no-speakers">{$_('speakers.noSpeakers')}</div>
+					{:else}
+						{#each speakers as speaker}
+							<div class="speaker-item">
+								<span class="speaker-color" style:background-color={speaker.color}></span>
+								{#if editingSpeakerId === speaker.id}
+									<input
+										type="text"
+										bind:value={editingSpeakerName}
+										onkeydown={handleEditKeydown}
+										onblur={saveEditingSpeaker}
+										class="input input-xs input-bordered flex-1"
+									/>
+								{:else}
+									<span class="speaker-name">{speaker.name}</span>
+								{/if}
+								<div class="speaker-actions">
+									{#if editingSpeakerId !== speaker.id}
+										<button
+											type="button"
+											class="btn btn-ghost btn-xs"
+											onclick={() => startEditingSpeaker(speaker)}
+											title={$_('common.edit')}
+										>
+											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+												<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+												<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+											</svg>
+										</button>
+									{/if}
+									<button
+										type="button"
+										class="btn btn-ghost btn-xs text-error"
+										onclick={() => handleRemoveSpeaker(speaker.id)}
+										title={$_('common.delete')}
+									>
+										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+											<polyline points="3 6 5 6 21 6" />
+											<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+										</svg>
+									</button>
+								</div>
+							</div>
+						{/each}
+					{/if}
+				</div>
+			</div>
+		{/if}
 	</div>
 
 	<!-- Keyboard Shortcuts Help -->
@@ -175,5 +344,96 @@
 
 	.toolbar-button:active {
 		background-color: var(--fallback-b3, oklch(var(--b3) / 1));
+	}
+
+	/* Speaker Manager Dropdown */
+	.speaker-manager-dropdown {
+		position: absolute;
+		top: 100%;
+		left: 0;
+		z-index: 50;
+		min-width: 280px;
+		background-color: var(--fallback-b1, oklch(var(--b1) / 1));
+		border: 1px solid var(--fallback-b3, oklch(var(--b3) / 1));
+		border-radius: 0.5rem;
+		box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+		margin-top: 4px;
+	}
+
+	.dropdown-header {
+		padding: 0.75rem 1rem;
+		background-color: var(--fallback-b1, oklch(var(--b1) / 1));
+		border-bottom: 1px solid var(--fallback-b3, oklch(var(--b3) / 1));
+	}
+
+	.dropdown-header h4 {
+		margin: 0;
+		font-size: 0.875rem;
+		font-weight: 600;
+	}
+
+	.add-speaker-form {
+		display: flex;
+		gap: 0.5rem;
+		padding: 0.75rem 1rem;
+		background-color: var(--fallback-b1, oklch(var(--b1) / 1));
+		border-bottom: 1px solid var(--fallback-b3, oklch(var(--b3) / 1));
+	}
+
+	.speaker-list {
+		max-height: 240px;
+		overflow-y: auto;
+		background-color: var(--fallback-b1, oklch(var(--b1) / 1));
+	}
+
+	.no-speakers {
+		padding: 1rem;
+		text-align: center;
+		color: var(--fallback-bc, oklch(var(--bc) / 0.5));
+		font-size: 0.875rem;
+		background-color: var(--fallback-b1, oklch(var(--b1) / 1));
+	}
+
+	.speaker-item {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 1rem;
+		background-color: var(--fallback-b1, oklch(var(--b1) / 1));
+		border-bottom: 1px solid var(--fallback-b2, oklch(var(--b2) / 1));
+	}
+
+	.speaker-item:last-child {
+		border-bottom: none;
+	}
+
+	.speaker-item:hover {
+		background-color: var(--fallback-b2, oklch(var(--b2) / 1));
+	}
+
+	.speaker-color {
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.speaker-name {
+		flex: 1;
+		font-size: 0.875rem;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.speaker-actions {
+		display: flex;
+		gap: 2px;
+		opacity: 0;
+		transition: opacity 0.15s;
+	}
+
+	.speaker-item:hover .speaker-actions {
+		opacity: 1;
 	}
 </style>

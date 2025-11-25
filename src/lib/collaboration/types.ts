@@ -27,3 +27,14 @@ export interface WordApprovalData {
 export interface SessionMetadata {
 	hostClientId: number;
 }
+
+/**
+ * Speaker information for transcription sessions
+ */
+export interface Speaker {
+	id: string;
+	name: string;
+	color?: string;
+	createdBy?: number; // clientId in collaborative mode
+	createdAt?: number;
+}

@@ -81,6 +81,13 @@ export function initDatabase() {
 		// Column already exists
 	}
 
+	// Add speakers column for session speaker management
+	try {
+		db.exec('ALTER TABLE transcription_sessions ADD COLUMN speakers TEXT');
+	} catch (e) {
+		// Column already exists
+	}
+
 	// Create indexes for better query performance
 	db.exec(`
 		CREATE INDEX IF NOT EXISTS idx_sessions_status
@@ -477,5 +484,28 @@ export const dbOperations = {
 			ORDER BY LENGTH(e.trigger) DESC, e.trigger
 		`);
 		return stmt.all();
+	},
+
+	// Speaker operations
+	getSessionSpeakers: (sessionId) => {
+		const stmt = db.prepare('SELECT speakers FROM transcription_sessions WHERE id = ?');
+		const row = stmt.get(sessionId);
+		if (row && row.speakers) {
+			try {
+				return JSON.parse(row.speakers);
+			} catch (e) {
+				return [];
+			}
+		}
+		return [];
+	},
+
+	setSessionSpeakers: (sessionId, speakers) => {
+		const stmt = db.prepare(`
+			UPDATE transcription_sessions
+			SET speakers = ?, updated_at = CURRENT_TIMESTAMP
+			WHERE id = ?
+		`);
+		stmt.run(JSON.stringify(speakers), sessionId);
 	}
 };

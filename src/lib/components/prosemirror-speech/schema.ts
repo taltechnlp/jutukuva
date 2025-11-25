@@ -25,7 +25,9 @@ export const speechSchema = new Schema({
 				// Segment metadata
 				segmentIndex: { default: null },
 				segmentStartTime: { default: null },
-				segmentEndTime: { default: null }
+				segmentEndTime: { default: null },
+				// Speaker attribution
+				speakerId: { default: null }
 			},
 			toDOM(node) {
 				return [
@@ -33,7 +35,8 @@ export const speechSchema = new Schema({
 					{
 						'data-segment-index': node.attrs.segmentIndex,
 						'data-start': node.attrs.segmentStartTime,
-						'data-end': node.attrs.segmentEndTime
+						'data-end': node.attrs.segmentEndTime,
+						'data-speaker-id': node.attrs.speakerId
 					},
 					0
 				];
@@ -52,7 +55,8 @@ export const speechSchema = new Schema({
 								: null,
 							segmentEndTime: el.getAttribute('data-end')
 								? parseFloat(el.getAttribute('data-end')!)
-								: null
+								: null,
+							speakerId: el.getAttribute('data-speaker-id') || null
 						};
 					}
 				}

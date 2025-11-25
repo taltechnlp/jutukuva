@@ -237,6 +237,16 @@ app.whenReady().then(() => {
 		return dbOperations.getActiveEntries();
 	});
 
+	// Speaker operations
+	ipcMain.handle('db:getSessionSpeakers', async (event, sessionId) => {
+		return dbOperations.getSessionSpeakers(sessionId);
+	});
+
+	ipcMain.handle('db:setSessionSpeakers', async (event, sessionId, speakers) => {
+		dbOperations.setSessionSpeakers(sessionId, speakers);
+		return true;
+	});
+
 	// Set up IPC handlers for broadcast server
 	ipcMain.handle('broadcast:start', async (event, port) => {
 		return initBroadcastServer(port);

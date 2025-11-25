@@ -113,3 +113,125 @@
 .played {
 	color: oklch(var(--bc) / 0.5);
 }
+
+/* Speaker prefix and paragraph styles */
+.paragraph-with-speaker {
+	display: flex;
+	align-items: flex-start;
+	gap: 0;
+	margin: 0.5rem 0;
+}
+
+.speaker-prefix-mount {
+	flex-shrink: 0;
+	user-select: none;
+}
+
+.paragraph-content {
+	flex: 1;
+	min-width: 0;
+}
+
+/* Speaker prefix component */
+.speaker-prefix {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding-right: 8px;
+	cursor: pointer;
+	border-radius: 4px;
+	transition: background-color 0.15s;
+}
+
+.speaker-prefix:hover {
+	background-color: var(--fallback-b2, oklch(var(--b2) / 1));
+}
+
+.speaker-prefix.read-only {
+	cursor: default;
+}
+
+.speaker-prefix.read-only:hover {
+	background-color: transparent;
+}
+
+.speaker-prefix-color {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.speaker-prefix-name {
+	font-weight: 500;
+	white-space: nowrap;
+	color: var(--fallback-bc, oklch(var(--bc) / 0.8));
+}
+
+.speaker-prefix-colon {
+	color: var(--fallback-bc, oklch(var(--bc) / 0.5));
+}
+
+.speaker-prefix-placeholder {
+	color: var(--fallback-bc, oklch(var(--bc) / 0.3));
+	font-style: italic;
+	font-size: 0.875em;
+}
+
+/* Speaker dropdown */
+.speaker-dropdown {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	z-index: 50;
+	min-width: 200px;
+	max-height: 300px;
+	overflow-y: auto;
+	background-color: var(--fallback-b1, oklch(var(--b1) / 1));
+	border: 1px solid var(--fallback-b3, oklch(var(--b3) / 1));
+	border-radius: 0.5rem;
+	box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+	margin-top: 4px;
+}
+
+.speaker-dropdown-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	cursor: pointer;
+	transition: background-color 0.15s;
+}
+
+.speaker-dropdown-item:hover {
+	background-color: var(--fallback-b2, oklch(var(--b2) / 1));
+}
+
+.speaker-dropdown-item.selected {
+	background-color: var(--fallback-p, oklch(var(--p) / 0.1));
+}
+
+.speaker-dropdown-color {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.speaker-dropdown-name {
+	flex: 1;
+	font-size: 0.875rem;
+}
+
+.speaker-dropdown-add {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	border-top: 1px solid var(--fallback-b3, oklch(var(--b3) / 1));
+}
+
+.speaker-dropdown-add input {
+	flex: 1;
+	min-width: 0;
+}

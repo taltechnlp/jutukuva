@@ -58,7 +58,11 @@ contextBridge.exposeInMainWorld('db', {
 	getDictionaryEntries: (dictionaryId) => ipcRenderer.invoke('db:getDictionaryEntries', dictionaryId),
 	updateEntry: (id, data) => ipcRenderer.invoke('db:updateEntry', id, data),
 	deleteEntry: (id) => ipcRenderer.invoke('db:deleteEntry', id),
-	getActiveEntries: () => ipcRenderer.invoke('db:getActiveEntries')
+	getActiveEntries: () => ipcRenderer.invoke('db:getActiveEntries'),
+
+	// Speakers
+	getSessionSpeakers: (sessionId) => ipcRenderer.invoke('db:getSessionSpeakers', sessionId),
+	setSessionSpeakers: (sessionId, speakers) => ipcRenderer.invoke('db:setSessionSpeakers', sessionId, speakers)
 });
 
 // Expose Broadcast API
