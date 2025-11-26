@@ -163,7 +163,7 @@
 	}
 </script>
 
-<div class="min-h-screen">
+<div >
 	<div class="max-w-6xl mx-auto">
 		<!-- Header -->
 		<div class="flex justify-between items-center mb-6">
