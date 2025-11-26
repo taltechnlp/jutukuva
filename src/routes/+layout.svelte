@@ -70,8 +70,8 @@
 				</div>
 
 				<!-- Right: Settings -->
-				<div class="flex items-center justify-end w-[200px] space-x-2">
-					<div class="flex items-center space-x-1 bg-base-200/30 rounded-full px-2 py-1">
+				<div class="flex items-center justify-end space-x-2">
+					<div class="flex items-center bg-base-200/30 rounded-full px-2 py-1">
 						<ThemeSelector />
 						<div class="w-px h-4 bg-base-content/10 mx-1"></div>
 						<LanguageSelector />
@@ -103,7 +103,7 @@
 	</nav>
 
 	<!-- Main content -->
-	<main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-28 md:pb-8 animate-in fade-in duration-500">
+	<main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 animate-in fade-in duration-500">
 		<slot />
 	</main>
 </div>

@@ -31,7 +31,7 @@
 </script>
 
 <div class="dropdown dropdown-end">
-	<button tabindex="0" class="btn btn-ghost btn-sm cursor-pointer" aria-label="Select theme">
+	<button tabindex="0" class="btn btn-ghost btn-sm cursor-pointer hover:rounded-l-lg" aria-label="Select theme">
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
 			class="h-5 w-5"
