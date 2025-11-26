@@ -1302,9 +1302,9 @@
 	<title>{$_('dictate.pageTitle')} | tekstiks.ee</title>
 </svelte:head>
 
-<div class="h-[calc(100vh-64px)] flex flex-col bg-base-100">
+<div class="flex flex-col bg-base-100">
 	<!-- Toolbar -->
-	<div class="navbar bg-base-100 border-b border-base-200 px-6 min-h-[72px] shrink-0 z-20">
+	<div class="navbar bg-base-100 border-b border-base-200 shrink-0 z-20">
 		<div class="grid grid-cols-3 w-full items-center gap-4">
 			<!-- Left: Logo & Status -->
 			<div class="flex items-center gap-3">
@@ -1548,9 +1548,9 @@
 	</div>
 
 	<!-- Main Content: Editor -->
-	<div class="flex-1 overflow-hidden relative">
+	<div class=" relative">
 		<div class=" w-full overflow-y-auto">
-			<div class="px-4 pt-6">
+			<div>
 				{#key sessionInfo?.code || 'solo'}
 					<SpeechEditor
 						bind:this={speechEditor}
