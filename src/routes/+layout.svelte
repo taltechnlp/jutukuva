@@ -51,14 +51,14 @@
 
 				<!-- Center: Navigation -->
 				<div class="hidden md:flex flex-1 justify-center">
-					<div class="flex items-center space-x-1 bg-base-200/50 p-1 rounded-full backdrop-blur-sm">
+					<div class="flex items-center space-x-1 bg-base-200/50 p-1.5 rounded-full backdrop-blur-sm">
 						{#each navItems as item}
 							{@const isActive = item.exact 
 								? $page.url.pathname === item.href 
 								: (item.href === '/' ? $page.url.pathname === '/' : $page.url.pathname.startsWith(item.href))}
 							<a
 								href={item.href}
-								class="relative px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ease-out
+								class="relative px-5 py-2.5 text-sm font-medium rounded-full transition-all duration-200 ease-out
 								{isActive
 									? 'bg-white text-primary shadow-sm ring-1 ring-black/5 dark:bg-base-100 dark:text-primary dark:ring-white/10'
 									: 'text-base-content/60 hover:text-base-content hover:bg-base-200/50'}"
@@ -81,8 +81,8 @@
 		</div>
 
 		<!-- Mobile menu (Bottom Bar) -->
-		<div class="md:hidden fixed bottom-0 left-0 right-0 bg-base-100/90 backdrop-blur-xl border-t border-base-200 pb-safe z-50 px-6 py-2">
-			<div class="flex justify-between items-center h-14">
+		<div class="md:hidden fixed bottom-0 left-0 right-0 bg-base-100/90 backdrop-blur-xl border-t border-base-200 pb-safe z-50 px-6 py-3">
+			<div class="flex justify-between items-center h-12">
 				{#each navItems as item}
 					{@const isActive = item.exact 
 						? $page.url.pathname === item.href 
@@ -103,7 +103,7 @@
 	</nav>
 
 	<!-- Main content -->
-	<main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 animate-in fade-in duration-500">
+	<main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 mb-6 animate-in fade-in duration-500">
 		<slot />
 	</main>
 </div>
