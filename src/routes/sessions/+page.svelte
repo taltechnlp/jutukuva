@@ -163,7 +163,7 @@
 	}
 </script>
 
-<div class="min-h-screen bg-base-200 p-6">
+<div class="min-h-screen">
 	<div class="max-w-6xl mx-auto">
 		<!-- Header -->
 		<div class="flex justify-between items-center mb-6">
@@ -171,23 +171,15 @@
 				<h1 class="text-3xl font-bold">{$_('sessions.title', { default: 'Sessions' })}</h1>
 				<p class="text-base-content/70 mt-1">{$_('sessions.description', { default: 'Manage your transcription sessions' })}</p>
 			</div>
-			<div class="flex gap-2">
-				<button
-					class="btn btn-ghost"
-					onclick={() => goto('/')}
-				>
-					{$_('sessions.backToEditor', { default: 'Back to Editor' })}
-				</button>
-				<button
-					class="btn btn-primary"
-					onclick={() => showCreateModal = true}
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-						<path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-					</svg>
-					{$_('sessions.newSession', { default: 'New Session' })}
-				</button>
-			</div>
+			<button
+				class="btn btn-primary"
+				onclick={() => showCreateModal = true}
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+					<path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+				</svg>
+				{$_('sessions.newSession', { default: 'New Session' })}
+			</button>
 		</div>
 
 		<!-- View Mode Tabs -->
