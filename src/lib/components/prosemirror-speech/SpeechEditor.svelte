@@ -32,7 +32,7 @@
 	}: {
 		config?: EditorConfig;
 		class?: string;
-		collaborationManager?: CollaborationManager;
+		collaborationManager?: CollaborationManager | null;
 		readOnly?: boolean;
 		sessionId?: string;
 	} = $props();
@@ -53,6 +53,8 @@
 	let recordingStartTime = $state<number | null>(null);
 	let autoScroll = $state(true);
 	let textSnippetEntries = $state<TextSnippetEntry[]>([]);
+	let wordCount = $state(0);
+	let approvedCount = $state(0);
 
 	// Auto-save state
 	let autoSaveInterval: ReturnType<typeof setInterval> | null = null;
