@@ -18,7 +18,7 @@
 		{
 			href: '/',
 			labelKey: 'app.title',
-			labelDefault: 'Jutukuva',
+			labelDefault: 'Speech Recognition',
 			exact: true
 		},
 		{
