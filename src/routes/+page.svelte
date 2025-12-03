@@ -1299,7 +1299,7 @@
 </script>
 
 <svelte:head>
-	<title>{$_('dictate.pageTitle')} | tekstiks.ee</title>
+	<title>{$_('dictate.pageTitle')} | Jutukuva</title>
 </svelte:head>
 
 <div class="flex flex-col bg-base-100">
@@ -1308,8 +1308,7 @@
 		<div class="grid grid-cols-3 w-full items-center gap-4">
 			<!-- Left: Logo & Status -->
 			<div class="flex items-center gap-3">
-				<h1 class="text-xl font-bold text-primary tracking-tight">tekstiks</h1>
-				
+								
 			<!-- Status Badges -->
 			{#if isRecording}
 				<div class="badge badge-error gap-2 animate-pulse max-w-full">
