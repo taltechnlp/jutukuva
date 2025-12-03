@@ -1,6 +1,6 @@
-# Kirikaja Web Viewer
+# Jutukuva Web Viewer
 
-Web-based collaborative viewer for Kirikaja speech editing sessions.
+Web-based collaborative viewer for Jutukuva speech editing sessions.
 
 ## Overview
 

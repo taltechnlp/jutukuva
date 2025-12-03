@@ -1,10 +1,10 @@
 {
-  "name": "kirikaja",
+  "name": "jutukuva",
   "version": "0.0.1",
   "description": "Real-time caption editing application for live streaming and transcription",
   "author": {
-    "name": "Kirikaja",
-    "email": "kirikaja@example.com"
+    "name": "Jutukuva",
+    "email": "jutukuva@example.com"
   },
   "private": true,
   "type": "module",
@@ -65,7 +65,7 @@
     "yjs": "^13.6.27"
   },
   "build": {
-    "appId": "com.kirikaja.app",
+    "appId": "com.jutukuva.app",
     "productName": "Streaming Caption Editor",
     "files": [
       "build/**/*",

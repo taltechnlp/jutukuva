@@ -1,6 +1,6 @@
 # Deployment Guide for tekstiks.ee/kk
 
-Complete guide for deploying Kirikaja web viewer to `tekstiks.ee/kk` using PM2 and nginx.
+Complete guide for deploying Jutukuva web viewer to `tekstiks.ee/kk` using PM2 and nginx.
 
 ## Prerequisites
 
@@ -109,7 +109,7 @@ mkdir -p logs
 pm2 start ecosystem.config.cjs
 
 # View logs
-pm2 logs kirikaja-server
+pm2 logs jutukuva-server
 
 # Check status
 pm2 status
@@ -163,12 +163,12 @@ After deployment:
 ```bash
 # Start/Stop/Restart
 pm2 start ecosystem.config.cjs
-pm2 stop kirikaja-server
-pm2 restart kirikaja-server
+pm2 stop jutukuva-server
+pm2 restart jutukuva-server
 
 # View logs
-pm2 logs kirikaja-server
-pm2 logs kirikaja-server --lines 100
+pm2 logs jutukuva-server
+pm2 logs jutukuva-server --lines 100
 
 # Monitor
 pm2 monit
@@ -178,7 +178,7 @@ pm2 status
 pm2 list
 
 # Delete from PM2
-pm2 delete kirikaja-server
+pm2 delete jutukuva-server
 
 # Update after code changes
 cd /home/aiolev/kirikaja
@@ -186,7 +186,7 @@ git pull
 cd packages/web-viewer
 npm run build
 cd ../yjs-server
-pm2 restart kirikaja-server
+pm2 restart jutukuva-server
 ```
 
 ## Nginx Commands
@@ -251,10 +251,10 @@ npm run build
 
 # 4. Restart PM2
 cd ../yjs-server
-pm2 restart kirikaja-server
+pm2 restart jutukuva-server
 
 # 5. Verify
-pm2 logs kirikaja-server --lines 50
+pm2 logs jutukuva-server --lines 50
 curl https://tekstiks.ee/kk/health
 ```
 
@@ -270,10 +270,10 @@ pm2 monit
 pm2 status
 
 # Application logs
-pm2 logs kirikaja-server
+pm2 logs jutukuva-server
 
 # Error logs only
-pm2 logs kirikaja-server --err
+pm2 logs jutukuva-server --err
 ```
 
 ### System Monitoring
@@ -298,7 +298,7 @@ free -h
 
 ```bash
 # Check PM2 logs
-pm2 logs kirikaja-server --lines 100
+pm2 logs jutukuva-server --lines 100
 
 # Common issues:
 # - Port 1234 already in use: sudo lsof -i :1234
@@ -329,7 +329,7 @@ curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" https://tekstiks.ee/
 pm2 status
 
 # Restart if needed
-pm2 restart kirikaja-server
+pm2 restart jutukuva-server
 
 # Check if port 1234 is listening
 sudo netstat -tlnp | grep 1234
@@ -342,7 +342,7 @@ sudo netstat -tlnp | grep 1234
 pm2 status
 
 # Restart to free memory
-pm2 restart kirikaja-server
+pm2 restart jutukuva-server
 
 # Adjust max_memory_restart in ecosystem.config.cjs if needed
 ```
@@ -395,7 +395,7 @@ npm update
 
 # Rebuild and restart
 cd packages/web-viewer && npm run build
-cd ../yjs-server && pm2 restart kirikaja-server
+cd ../yjs-server && pm2 restart jutukuva-server
 ```
 
 ## Backup and Recovery
@@ -455,7 +455,7 @@ location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
 - **Web Viewer Issues**: Check `packages/web-viewer/README.md`
 - **Server Issues**: Check `packages/yjs-server/README.md`
 - **Collaboration**: Check `COLLABORATION_SETUP.md`
-- **Application Logs**: `pm2 logs kirikaja-server`
+- **Application Logs**: `pm2 logs jutukuva-server`
 - **Nginx Logs**: `/var/log/nginx/tekstiks.ee-*.log`
 
 ---

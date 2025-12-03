@@ -1,9 +1,9 @@
-// PM2 ecosystem file for Kirikaja server deployment
+// PM2 ecosystem file for Jutukuva server deployment
 // Usage: pm2 start ecosystem.config.cjs
 
 module.exports = {
 	apps: [{
-		name: 'kirikaja-server',
+		name: 'jutukuva-server',
 		script: './server.js',
 		instances: 1,
 		exec_mode: 'fork',

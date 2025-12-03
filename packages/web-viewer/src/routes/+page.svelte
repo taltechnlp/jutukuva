@@ -15,7 +15,7 @@
 <div class="hero min-h-screen bg-base-200">
 	<div class="hero-content text-center">
 		<div class="max-w-md">
-			<h1 class="text-5xl font-bold mb-4">Kirikaja</h1>
+			<h1 class="text-5xl font-bold mb-4">Jutukuva</h1>
 			<p class="text-xl mb-8">
 				{$_('web_viewer.tagline', { default: 'Real-time Collaborative Speech Editor' })}
 			</p>

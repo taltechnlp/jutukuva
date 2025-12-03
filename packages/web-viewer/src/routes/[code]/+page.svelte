@@ -326,7 +326,7 @@
 </script>
 
 <svelte:head>
-	<title>Session {sessionCode} - Kirikaja</title>
+	<title>Session {sessionCode} - Jutukuva</title>
 </svelte:head>
 
 <div class="app-root" data-mode={settings.viewMode} style={backgroundStyle}>

@@ -212,7 +212,7 @@ try {
 			<!DOCTYPE html>
 			<html>
 			<head>
-				<title>Kirikaja Server</title>
+				<title>Jutukuva Server</title>
 				<meta charset="utf-8">
 				<style>
 					body { font-family: system-ui; max-width: 600px; margin: 100px auto; padding: 20px; }
@@ -220,7 +220,7 @@ try {
 				</style>
 			</head>
 			<body>
-				<h1>Kirikaja WebSocket Server</h1>
+				<h1>Jutukuva WebSocket Server</h1>
 				<p>Server is running. Web viewer not built yet.</p>
 				<h2>Endpoints:</h2>
 				<ul>
@@ -302,7 +302,7 @@ wss.on('error', (error) => {
 
 server.listen(PORT, HOST, () => {
 	console.log(`========================================`);
-	console.log(`Kirikaja Server`);
+	console.log(`Jutukuva Server`);
 	console.log(`========================================`);
 	console.log(`HTTP/WS server: http://${HOST}:${PORT}`);
 	console.log(`WebSocket URL:  ws://${HOST}:${PORT}`);

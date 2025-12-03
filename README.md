@@ -1,4 +1,4 @@
-# Kirikaja
+# Jutukuva
 
 A desktop application built with SvelteKit, Electron, SQLite, and TypeScript.
 
@@ -95,9 +95,9 @@ dist\win-unpacked\Kirikaja.exe
 
 The app uses SQLite with better-sqlite3. The database file is stored in the user data directory:
 
-- **Linux**: `~/.config/kirikaja/database.sqlite`
-- **macOS**: `~/Library/Application Support/kirikaja/database.sqlite`
-- **Windows**: `%APPDATA%/kirikaja/database.sqlite`
+- **Linux**: `~/.config/jutukuva/database.sqlite`
+- **macOS**: `~/Library/Application Support/jutukuva/database.sqlite`
+- **Windows**: `%APPDATA%/jutukuva/database.sqlite`
 
 ### Database API
 

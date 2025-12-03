@@ -16,7 +16,7 @@
 </script>
 
 <svelte:head>
-	<title>Kirikaja - Collaborative Speech Editor</title>
+	<title>Jutukuva - Collaborative Speech Editor</title>
 	<meta name="description" content="Real-time collaborative speech editor" />
 </svelte:head>
 

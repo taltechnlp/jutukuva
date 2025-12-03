@@ -22,8 +22,8 @@ let pendingDeepLinkUrl = null;
 function handleDeepLink(url) {
 	console.log('[Deep Link] Received URL:', url);
 
-	// Parse kirikaja://join/CODE format
-	const match = url.match(/^kirikaja:\/\/join\/([A-Z0-9]+)$/i);
+	// Parse jutukuva://join/CODE format
+	const match = url.match(/^jutukuva:\/\/join\/([A-Z0-9]+)$/i);
 	if (match) {
 		const sessionCode = match[1].toUpperCase();
 		console.log('[Deep Link] Session code:', sessionCode);
@@ -39,15 +39,15 @@ function handleDeepLink(url) {
 	}
 }
 
-// Register as default protocol handler for kirikaja://
+// Register as default protocol handler for jutukuva://
 if (process.defaultApp) {
 	// Development: need to register with path to electron executable
 	if (process.argv.length >= 2) {
-		app.setAsDefaultProtocolClient('kirikaja', process.execPath, [path.resolve(process.argv[1])]);
+		app.setAsDefaultProtocolClient('jutukuva', process.execPath, [path.resolve(process.argv[1])]);
 	}
 } else {
 	// Production
-	app.setAsDefaultProtocolClient('kirikaja');
+	app.setAsDefaultProtocolClient('jutukuva');
 }
 
 // Handle protocol on macOS (app already running)
@@ -68,7 +68,7 @@ if (!gotTheLock) {
 			mainWindow.focus();
 		}
 		// On Windows, the protocol URL is in commandLine
-		const url = commandLine.find(arg => arg.startsWith('kirikaja://'));
+		const url = commandLine.find(arg => arg.startsWith('jutukuva://'));
 		if (url) {
 			handleDeepLink(url);
 		}

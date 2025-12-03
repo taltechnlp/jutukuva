@@ -25,7 +25,7 @@ export function initBroadcastServer(port = 8082) {
 			// Send welcome message
 			ws.send(JSON.stringify({
 				type: 'connected',
-				message: 'Connected to Kirikaja subtitle broadcast',
+				message: 'Connected to Jutukuva subtitle broadcast',
 				timestamp: new Date().toISOString()
 			}));
 
