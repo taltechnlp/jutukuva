@@ -133,7 +133,7 @@
 	}
 </script>
 
-<div class="container mx-auto p-6 max-w-6xl">
+<div>
 	<div class="mb-6">
 		<h1 class="text-3xl font-bold mb-2">{$_('settings.dictionaries.title', { default: 'Text Snippet Dictionaries' })}</h1>
 		<p class="text-base-content/70">
