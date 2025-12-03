@@ -63,6 +63,9 @@
 	// Auto-scroll resize observer
 	let resizeObserver: ResizeObserver | null = null;
 
+	// Store unsubscribe function for speaker store
+	let unsubscribeSpeakers: (() => void) | null = null;
+
 	// Deduplication state (kept OUTSIDE editor to avoid race conditions)
 	// This tracks all words that have been "committed" (exist in previous paragraphs)
 	let committedWords = new Set<string>();
@@ -244,9 +247,9 @@
 
 	function updateSpeaker(id: string, name: string): void {
 		if (collaborationManager) {
-			collaborationManager.updateSpeaker(id, name);
+			collaborationManager.updateSpeaker(id, { name });
 		} else {
-			speakerStore.updateSpeaker(id, name);
+			speakerStore.updateSpeaker(id, { name });
 			speakers = speakerStore.getSpeakers();
 			saveSpeakers();
 		}
@@ -288,7 +291,7 @@
 		}
 
 		// Subscribe to speaker store changes in solo mode
-		const unsubscribeSpeakers = speakerStore.subscribe((storeSpeakers) => {
+		unsubscribeSpeakers = speakerStore.subscribe((storeSpeakers) => {
 			if (!collaborationManager) {
 				speakers = storeSpeakers;
 			}
@@ -440,14 +443,15 @@
 		if (containerElement) {
 			resizeObserver.observe(containerElement);
 		}
-
-		// Return cleanup function
-		return () => {
-			unsubscribeSpeakers();
-		};
 	});
 
 	onDestroy(() => {
+		// Unsubscribe from speaker store
+		if (unsubscribeSpeakers) {
+			unsubscribeSpeakers();
+			unsubscribeSpeakers = null;
+		}
+
 		// Clear auto-save interval
 		if (autoSaveInterval) {
 			clearInterval(autoSaveInterval);

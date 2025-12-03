@@ -30,7 +30,7 @@
 		{
 			href: '/settings/dictionaries',
 			labelKey: 'nav.textSnippets',
-			labelDefault: 'Text Snippets',
+			labelDefault: 'Substitutions',
 			exact: false
 		}
 	];
@@ -45,7 +45,7 @@
 				<!-- Left: Logo -->
 				<div class="flex-shrink-0 flex items-center w-[200px]">
 					<a href="/" class="text-xl font-bold tracking-tight hover:opacity-80 transition-opacity">
-						{$_('app.title', { default: 'Jutukuva' })}
+						Jutukuva
 					</a>
 				</div>
 

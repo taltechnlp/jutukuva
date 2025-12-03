@@ -4,7 +4,7 @@
   },
   "nav": {
     "sessions": "Istunnot",
-    "textSnippets": "Tekstipätkät"
+    "textSnippets": "Korvaukset"
   },
   "theme": {
     "light": "Vaalea",
@@ -520,6 +520,12 @@
       "editing": "Muokkaus",
       "undo": "Kumoa",
       "redo": "Tee uudelleen",
+      "newParagraph": "Luo uusi kappale",
+      "selectNextWord": "Valitse seuraava sana",
+      "selectPreviousWord": "Valitse edellinen sana",
+      "textSnippets": "Korvaukset",
+      "applySnippet": "Käytä korvausta (kun vihjeteksti näkyy)",
+      "cancelSnippet": "Peruuta korvaus ja lisää välilyönti",
       "close": "Sulje",
       "or": "tai"
     },
@@ -567,7 +573,9 @@
     "join": "Liity",
     "or": "TAI",
     "start_session": "Aloita uusi istunto",
-    "guest_cannot_record": "Vain isäntä voi nauhoittaa"
+    "guest_cannot_record": "Vain isäntä voi nauhoittaa",
+    "share_session": "Jaa istunto",
+    "end_session": "Lopeta istunto"
   },
   "sessions": {
     "title": "Istunnot",
@@ -656,21 +664,21 @@
       "namePlaceholder": "esim. Lääketieteelliset termit",
       "create": "Luo",
       "entries": "merkintää",
-      "searchPlaceholder": "Etsi pätkiä...",
+      "searchPlaceholder": "Etsi korvauksia...",
       "addEntry": "Lisää",
       "noResults": "Hakua vastaavia merkintöjä ei löytynyt",
-      "noEntries": "Ei merkintöjä vielä. Lisää ensimmäinen pätkäsi!",
+      "noEntries": "Ei merkintöjä vielä. Lisää ensimmäinen korvauksesi!",
       "trigger": "Laukaisin",
       "replacement": "Korvaus",
       "addedOn": "Lisätty",
       "confirmDeleteEntry": "Poista tämä merkintä?",
-      "addNewEntry": "Lisää uusi pätkä",
+      "addNewEntry": "Lisää uusi korvaus",
       "triggerPlaceholder": "esim. amb",
       "triggerHelp": "Teksti, jonka kirjoitat käynnistääksesi korvauksen",
       "replacementPlaceholder": "esim. ambulanssi",
       "replacementHelp": "Teksti, joka korvaa laukaisimen",
       "add": "Lisää",
-      "duplicateTrigger": "Tällä laukaisimella oleva pätkä on jo olemassa",
+      "duplicateTrigger": "Tällä laukaisimella oleva korvaus on jo olemassa",
       "export": "Vie",
       "import": "Tuo",
       "builtin": "Sisäänrakennettu",

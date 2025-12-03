@@ -141,7 +141,7 @@
 		</button>
 
 		{#if showSpeakerDropdown}
-			<div class="speaker-manager-dropdown bg-base-100 border-base-300" use:clickOutside onoutclick={closeSpeakerDropdown}>
+			<div class="speaker-manager-dropdown bg-base-100 border-base-300" use:clickOutside={closeSpeakerDropdown}>
 				<div class="dropdown-header bg-base-100 border-base-300">
 					<h4>{$_('speakers.manageSpeakers')}</h4>
 				</div>

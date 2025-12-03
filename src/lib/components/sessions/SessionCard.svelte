@@ -51,7 +51,7 @@
 
 	function getStatusText(status: string): string {
 		const statusKey = `sessions.status.${status}`;
-		return $_<string>(statusKey, { default: status.charAt(0).toUpperCase() + status.slice(1) });
+		return $_(statusKey, { default: status.charAt(0).toUpperCase() + status.slice(1) });
 	}
 
 	function isUpcoming(): boolean {
