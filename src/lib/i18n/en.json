@@ -4,7 +4,7 @@
   },
   "nav": {
     "sessions": "Sessions",
-    "textSnippets": "Text Snippets"
+    "textSnippets": "Substitutions"
   },
   "theme": {
     "light": "Light",
@@ -565,9 +565,9 @@
       "redo": "Redo",
       "selectNextWord": "Select next word",
       "selectPreviousWord": "Select previous word",
-      "textSnippets": "Text Snippets",
-      "applySnippet": "Apply snippet (when ghost text shown)",
-      "cancelSnippet": "Cancel snippet and insert space",
+      "textSnippets": "Substitutions",
+      "applySnippet": "Apply substitution (when ghost text shown)",
+      "cancelSnippet": "Cancel substitution and insert space",
       "close": "Close",
       "or": "or"
     },
@@ -615,7 +615,9 @@
     "join": "Join",
     "or": "OR",
     "start_session": "Start New Session",
-    "guest_cannot_record": "Only the host can record"
+    "guest_cannot_record": "Only the host can record",
+    "share_session": "Share Session",
+    "end_session": "End Session"
   },
   "sessions": {
     "title": "Sessions",
@@ -689,8 +691,8 @@
   },
   "settings": {
     "dictionaries": {
-      "title": "Text Snippet Dictionaries",
-      "description": "Manage your text snippet dictionaries. Create custom shortcuts that automatically expand as you type.",
+      "title": "Substitution Dictionaries",
+      "description": "Manage your substitution dictionaries. Create custom shortcuts that automatically expand as you type.",
       "myDictionaries": "My Dictionaries",
       "new": "New Dictionary",
       "noDictionaries": "No dictionaries yet",
@@ -704,21 +706,21 @@
       "namePlaceholder": "e.g., Medical Terms",
       "create": "Create",
       "entries": "entries",
-      "searchPlaceholder": "Search snippets...",
+      "searchPlaceholder": "Search substitutions...",
       "addEntry": "Add",
       "noResults": "No entries match your search",
-      "noEntries": "No entries yet. Add your first snippet!",
+      "noEntries": "No entries yet. Add your first substitution!",
       "trigger": "Trigger",
       "replacement": "Replacement",
       "addedOn": "Added",
       "confirmDeleteEntry": "Delete this entry?",
-      "addNewEntry": "Add New Snippet",
+      "addNewEntry": "Add New Substitution",
       "triggerPlaceholder": "e.g., amb",
       "triggerHelp": "The text you type to trigger the replacement",
       "replacementPlaceholder": "e.g., ambulance",
       "replacementHelp": "The text that will replace the trigger",
       "add": "Add",
-      "duplicateTrigger": "A snippet with this trigger already exists",
+      "duplicateTrigger": "A substitution with this trigger already exists",
       "export": "Export",
       "import": "Import",
       "builtin": "Built-in",

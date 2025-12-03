@@ -112,8 +112,8 @@ export class CollaborationManager {
 		});
 
 		// Listen for connection errors
-		this.provider.on('connection-error', (error: Error) => {
-			console.error('[CollaborationManager] Connection error:', error);
+		this.provider.on('connection-error', (event: Event) => {
+			console.error('[CollaborationManager] Connection error:', event);
 		});
 
 		// Set user info in awareness

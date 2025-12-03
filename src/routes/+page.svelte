@@ -1373,7 +1373,7 @@
 						{#if !sessionInfo}
 							<li><h3 class="menu-title text-sm font-semibold">{$_('collaboration.collaborative_session')}</h3></li>
 							<li>
-								<button class="gap-3" onclick={() => startCollaborativeSession()}>
+								<button class="gap-3 cursor-pointer" onclick={() => startCollaborativeSession()}>
 									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
 									</svg>
@@ -1385,7 +1385,7 @@
 								<div class="join w-full p-0">
 									<input
 										type="text"
-										placeholder="CODE"
+										placeholder={$_('collaboration.enter_code')}
 										class="input input-sm input-bordered join-item w-full font-mono uppercase"
 										maxlength="6"
 										bind:value={joinSessionCode}
@@ -1414,12 +1414,12 @@
 							<li><h3 class="menu-title text-sm font-semibold">{$_('collaboration.session_active')}</h3></li>
 							<li>
 								<div class="flex flex-col items-start gap-1 cursor-default hover:bg-transparent p-3">
-									<span class="text-xs opacity-70">Code</span>
+									<span class="text-xs opacity-70">{$_('share_session.code_label')}</span>
 									<span class="font-mono text-lg font-bold select-all">{sessionInfo.code}</span>
 								</div>
 							</li>
 							<li>
-								<button class="gap-3" onclick={() => (showShareModal = true)}>
+								<button class="gap-3 cursor-pointer" onclick={() => (showShareModal = true)}>
 									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
 									</svg>
@@ -1427,7 +1427,7 @@
 								</button>
 							</li>
 							<li>
-								<button class="text-error gap-3" onclick={() => (showEndSessionModal = true)}>
+								<button class="text-error gap-3 cursor-pointer" onclick={() => (showEndSessionModal = true)}>
 									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
 									</svg>

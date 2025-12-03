@@ -3,7 +3,7 @@
  */
 
 import type { Node } from 'prosemirror-model';
-import type { EditorView, NodeView } from 'prosemirror-view';
+import type { EditorView, NodeView, ViewMutationRecord } from 'prosemirror-view';
 import type { Speaker } from '$lib/collaboration/types';
 import { speakerDropdownKey } from '../plugins/keyboardShortcuts';
 import SpeakerPrefix from '../SpeakerPrefix.svelte';
@@ -157,7 +157,10 @@ export function createParagraphNodeView(
 		},
 
 		// Prevent ProseMirror from seeing mutations in prefix
-		ignoreMutation(mutation: MutationRecord): boolean {
+		ignoreMutation(mutation: ViewMutationRecord): boolean {
+			if (mutation.type === 'selection') {
+				return false;
+			}
 			return !contentDOM.contains(mutation.target);
 		}
 	};

@@ -60,7 +60,7 @@
 </script>
 
 {#if isOpen}
-	<div class="speaker-dropdown" use:clickOutside onoutclick={handleOutclick}>
+	<div class="speaker-dropdown" use:clickOutside={handleOutclick}>
 		<!-- New speaker input -->
 		<div class="dropdown-input">
 			<input

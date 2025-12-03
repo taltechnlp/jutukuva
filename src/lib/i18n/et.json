@@ -4,7 +4,7 @@
   },
   "nav": {
     "sessions": "Sessioonid",
-    "textSnippets": "Tekstilõigud"
+    "textSnippets": "Asendused"
   },
   "theme": {
     "light": "Hele",
@@ -545,6 +545,12 @@
       "editing": "Redigeerimine",
       "undo": "Võta tagasi",
       "redo": "Tee uuesti",
+      "newParagraph": "Loo uus lõik",
+      "selectNextWord": "Vali järgmine sõna",
+      "selectPreviousWord": "Vali eelmine sõna",
+      "textSnippets": "Asendused",
+      "applySnippet": "Rakenda asendus (kui viirastustekst on nähtav)",
+      "cancelSnippet": "Tühista asendus ja lisa tühik",
       "close": "Sulge",
       "or": "või"
     },
@@ -604,7 +610,9 @@
     "join": "Liitu",
     "or": "VÕI",
     "start_session": "Alusta uut sessiooni",
-    "guest_cannot_record": "Ainult peremees saab salvestada"
+    "guest_cannot_record": "Ainult peremees saab salvestada",
+    "share_session": "Jaga sessiooni",
+    "end_session": "Lõpeta sessioon"
   },
   "sessions": {
     "title": "Sessioonid",
@@ -678,8 +686,8 @@
   },
   "settings": {
     "dictionaries": {
-      "title": "Tekstilõikude sõnastikud",
-      "description": "Halda oma tekstilõikude sõnastikke. Loo kohandatud otseteid, mis laienevad automaatselt kirjutamise ajal.",
+      "title": "Asenduste sõnastikud",
+      "description": "Halda oma asenduste sõnastikke. Loo kohandatud otseteid, mis laienevad automaatselt kirjutamise ajal.",
       "myDictionaries": "Minu sõnastikud",
       "new": "Uus sõnastik",
       "noDictionaries": "Sõnastikud puuduvad",
@@ -693,21 +701,21 @@
       "namePlaceholder": "nt Meditsiiniterminid",
       "create": "Loo",
       "entries": "kirjet",
-      "searchPlaceholder": "Otsi lõike...",
+      "searchPlaceholder": "Otsi asendusi...",
       "addEntry": "Lisa",
       "noResults": "Ühtegi kirjet ei leitud",
-      "noEntries": "Kirjed puuduvad. Lisa oma esimene lõik!",
+      "noEntries": "Kirjed puuduvad. Lisa oma esimene asendus!",
       "trigger": "Päästik",
       "replacement": "Asendus",
       "addedOn": "Lisatud",
       "confirmDeleteEntry": "Kustuta see kirje?",
-      "addNewEntry": "Lisa uus lõik",
+      "addNewEntry": "Lisa uus asendus",
       "triggerPlaceholder": "nt kiir",
       "triggerHelp": "Tekst, mille sisestamisel käivitub asendus",
       "replacementPlaceholder": "nt kiirabi",
       "replacementHelp": "Tekst, mis asendab päästiku",
       "add": "Lisa",
-      "duplicateTrigger": "Selle päästikuga lõik on juba olemas",
+      "duplicateTrigger": "Selle päästikuga asendus on juba olemas",
       "export": "Ekspordi",
       "import": "Impordi",
       "builtin": "Sisseehitatud",
