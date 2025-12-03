@@ -131,6 +131,10 @@ declare global {
 			setSetting: (key: string, value: string) => Promise<void>;
 			getSetting: (key: string) => Promise<string | null>;
 			onDeepLinkJoin: (callback: (sessionCode: string) => void) => void;
+			downloadBlackHole: () => Promise<{ success: boolean; error?: string; path?: string }>;
+			onDownloadProgress: (callback: (progress: number) => void) => void;
+			openAudioMIDISetup: () => Promise<void>;
+			resetPermissionCheck: () => Promise<void>;
 		};
 	}
 
