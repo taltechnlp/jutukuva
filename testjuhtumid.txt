@@ -1,4 +1,4 @@
-KIRIKAJA TESTJUHTUMID
+JUTUKUVA TESTJUHTUMID
 =====================
 
 Viimati uuendatud: 2025-11-26
@@ -57,7 +57,7 @@ Eeltingimus: Kasutaja on sessiooni seadetes
 Sammud:
   1. Ava sõnastiku/snippetide sektsioon
   2. Vajuta "Lisa uus"
-  3. Sisesta lühend (nt "kr" -> "Kirikaja")
+  3. Sisesta lühend (nt "jk" -> "Jutukuva")
   4. Sisesta täistekst
   5. Salvesta
 Oodatav tulemus: Snippet salvestatakse ja on kasutamiseks valmis

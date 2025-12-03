@@ -104,8 +104,8 @@ Then add the modal to your template:
 To test the setup flow:
 
 1. Build the app: `npm run build && npx electron-builder --mac --dir`
-2. Sign it: `codesign --force --deep --sign - --entitlements build/entitlements.mac.plist dist/mac-arm64/kirikaja.app`
-3. Run: `open dist/mac-arm64/kirikaja.app`
+2. Sign it: `codesign --force --deep --sign - --entitlements build/entitlements.mac.plist dist/mac-arm64/jutukuva.app`
+3. Run: `open dist/mac-arm64/jutukuva.app`
 4. Switch to "System Audio" - wizard should appear
 5. Follow the steps to install BlackHole
 6. After setup, the app will remember and never show the wizard again

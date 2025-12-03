@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Kirikaja web viewer allows users to join collaborative editing sessions through a web browser without installing the desktop application. This guide covers the complete setup and deployment process.
+The Jutukuva web viewer allows users to join collaborative editing sessions through a web browser without installing the desktop application. This guide covers the complete setup and deployment process.
 
 ## Architecture
 
@@ -56,7 +56,7 @@ All components are shared between desktop and web:
 ### ✅ URL Structure
 - `https://tekstiks.ee/` - Landing page
 - `https://tekstiks.ee/kt/ABC123` - Join session ABC123
-- Desktop app: `kirikaja://join/ABC123` (deep link, future feature)
+- Desktop app: `jutukuva://join/ABC123` (deep link, future feature)
 
 ## Quick Start
 
@@ -179,7 +179,7 @@ The `ShareSessionModal` now shows:
 
 1. **Session Code**: `ABC123` (6 characters, always uppercase)
 2. **Web Viewer URL**: `https://tekstiks.ee/kt/ABC123` (works everywhere)
-3. **Desktop App URL**: `kirikaja://join/ABC123` (Electron deep link, if running in Electron)
+3. **Desktop App URL**: `jutukuva://join/ABC123` (Electron deep link, if running in Electron)
 4. **QR Code**: Always encodes web viewer URL for mobile compatibility
 
 ### Smart URL Detection
@@ -195,7 +195,7 @@ The `ShareSessionModal` now shows:
 | Production Web | `https://tekstiks.ee/kt/ABC123` | Web browser |
 | Local Web Dev | `http://localhost:5174/kt/ABC123` | Web browser |
 | Desktop App | `${window.location.origin}?join=ABC123` | Electron app |
-| Deep Link (future) | `kirikaja://join/ABC123` | Electron app |
+| Deep Link (future) | `jutukuva://join/ABC123` | Electron app |
 
 ## Component Compatibility
 
@@ -263,7 +263,7 @@ const isElectron = typeof window !== 'undefined' && window.electronAPI !== undef
 
 ### Recommended Enhancements
 
-- [ ] Implement Electron deep link handler (`kirikaja://join/CODE`)
+- [ ] Implement Electron deep link handler (`jutukuva://join/CODE`)
 - [ ] Integrate yjs-server + web-viewer into single deployment
 - [ ] Add session persistence for web viewers
 - [ ] Implement session passwords/access control

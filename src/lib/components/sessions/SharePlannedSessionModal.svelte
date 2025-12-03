@@ -19,7 +19,7 @@
 	// Get URLs
 	const webViewerUrl = import.meta.env.VITE_WEB_VIEWER_URL || 'https://tekstiks.ee/kk';
 	const webJoinUrl = `${webViewerUrl}/${session.session_code}`;
-	const electronJoinUrl = `kirikaja://join/${session.session_code}`;
+	const electronJoinUrl = `jutukuva://join/${session.session_code}`;
 	const desktopJoinUrl = isElectron ? electronJoinUrl : '';
 
 	// Generate QR code on mount
