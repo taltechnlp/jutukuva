@@ -96,6 +96,8 @@
 	let collaborationConnected = $state(false);
 	let showShareModal = $state(false);
 	let showEndSessionModal = $state(false);
+	let showCollabMenu = $state(false); // New state for collab menu
+	let showSettings = $state(false);   // New state for settings menu
 	let joinSessionCode = $state('');
 	let currentDbSession = $state<TranscriptionSession | null>(null);
 
@@ -1300,416 +1302,271 @@
 	<title>{$_('dictate.pageTitle')} | tekstiks.ee</title>
 </svelte:head>
 
-<div class="bg-base-100">
-	<div class="container mx-auto px-4 py-8 max-w-4xl xl:max-w-7xl">
-	<!-- Header -->
-	<div class="mb-8">
-		<h1 class="text-4xl font-bold mb-4">{$_('dictate.pageHeading')}</h1>
-		<div class="prose max-w-none">
-			<p class="mb-2">{$_('dictate.intro1')}</p>
-			<p class="mb-2">{$_('dictate.intro2')}</p>
-			<p class="mb-4">{$_('dictate.intro3')}</p>
-		</div>
-	</div>
+<div class="flex flex-col bg-base-100">
+	<!-- Toolbar -->
+	<div class="navbar bg-base-100 border-b border-base-200 shrink-0 z-20">
+		<div class="grid grid-cols-3 w-full items-center gap-4">
+			<!-- Left: Logo & Status -->
+			<div class="flex items-center gap-3">
+				<h1 class="text-xl font-bold text-primary tracking-tight">tekstiks</h1>
+				
+			<!-- Status Badges -->
+			{#if isRecording}
+				<div class="badge badge-error gap-2 animate-pulse max-w-full">
+					<div class="rounded-full bg-white shrink-0"></div>
+					<span class="hidden sm:inline truncate max-w-[200px]">{isSpeaking ? $_('dictate.speakingDetected') : $_('dictate.listeningForSpeech')}</span>
+				</div>
+			{:else if isWasmLoading || !isWasmReady}
+				<div class="badge badge-info gap-2 max-w-full">
+					<span class="loading loading-spinner loading-xs shrink-0"></span>
+					<span class="hidden sm:inline truncate max-w-[200px]">{initializationStatus}</span>
+				</div>
+			{:else if isWasmReady && isConnected}
+				<div class="badge badge-success badge-outline gap-2 max-w-full">
+					<div class="rounded-full bg-success shrink-0"></div>
+					<span class="hidden sm:inline truncate max-w-[200px]">{initializationStatus}</span>
+				</div>
+			{/if}
 
-	<!-- Error Messages -->
-	{#if connectionError}
-		<div class="alert alert-error mb-6">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="stroke-current shrink-0 h-6 w-6"
-				fill="none"
-				viewBox="0 0 24 24"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-				/>
-			</svg>
-			<span>{connectionError}</span>
-		</div>
-	{/if}
-
-	{#if microphoneError}
-		<div class="alert alert-warning mb-6">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="stroke-current shrink-0 h-6 w-6"
-				fill="none"
-				viewBox="0 0 24 24"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-				/>
-			</svg>
-			<span>{microphoneError}</span>
-		</div>
-	{/if}
-
-	{#if vadError}
-		<div class="alert alert-error mb-6">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="stroke-current shrink-0 h-6 w-6"
-				fill="none"
-				viewBox="0 0 24 24"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-				/>
-			</svg>
-			<span>{vadError}</span>
-		</div>
-	{/if}
-
-	<!-- Collaboration Controls -->
-	<div class="bg-base-100 border border-base-300 rounded-lg overflow-hidden mb-6">
-		<!-- Header -->
-		<div class="px-4 py-3 bg-base-200 border-b border-base-300">
-			<h2 class="text-base font-semibold m-0 text-base-content">
 				{#if sessionInfo}
-					{$_('collaboration.session_active', { default: 'Active Session' })}
-				{:else}
-					{$_('collaboration.collaborative_session', { default: 'Collaborative Session' })}
+					<div class="badge badge-secondary gap-2">
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+						</svg>
+						{sessionInfo.code}
+					</div>
 				{/if}
-			</h2>
-		</div>
+			</div>
 
-		<!-- Body -->
-		<div class="p-6">
-			{#if sessionInfo}
-				<!-- Session Status -->
-				<SessionStatus
-					{sessionInfo}
-					{participants}
-					connected={collaborationConnected}
-					onShowShareModal={() => (showShareModal = true)}
-					onEndSession={() => (showEndSessionModal = true)}
-				/>
-			{:else}
-				<!-- Three Options -->
-				<p class="text-sm text-base-content/70 mb-6">{$_('collaboration.choose_option')}</p>
-				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-					<!-- Option 1: Join Existing Session -->
-					<div class="card bg-base-200 border border-base-300 hover:border-secondary transition-colors">
-						<div class="card-body p-5">
-							<div class="flex items-center gap-3 mb-3">
-								<div class="p-2 rounded-lg bg-secondary/20">
-									<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-									</svg>
-								</div>
-								<h3 class="card-title text-base m-0">{$_('collaboration.join_existing')}</h3>
-							</div>
-							<p class="text-sm text-base-content/70 mb-4">{$_('collaboration.join_existing_desc')}</p>
-							<div class="flex gap-2">
-								<input
-									type="text"
-									placeholder={$_('collaboration.enter_code')}
-									class="input input-sm input-bordered flex-1 font-mono uppercase"
-									maxlength="6"
-									bind:value={joinSessionCode}
-									oninput={(e) => {
-										joinSessionCode = e.currentTarget.value.toUpperCase();
-									}}
-									onkeydown={(e) => {
-										if (e.key === 'Enter' && joinSessionCode.length === 6) {
-											joinCollaborativeSession(joinSessionCode);
-										}
-									}}
-								/>
-								<button
-									class="btn btn-sm btn-secondary"
-									disabled={joinSessionCode.length !== 6}
-									onclick={() => joinCollaborativeSession(joinSessionCode)}
-								>
-									{$_('collaboration.join')}
-								</button>
-							</div>
-						</div>
+			<!-- Center: Recording Control -->
+			<div class="flex justify-center">
+				{#if !isRecording}
+					<button
+						class="btn btn-circle btn-primary btn-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+						onclick={startRecording}
+						disabled={!isWasmReady || (sessionInfo?.role === 'guest')}
+						title={sessionInfo?.role === 'guest' ? $_('collaboration.guest_cannot_record') : $_('dictate.startRecording')}
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+						</svg>
+					</button>
+				{:else}
+					<button class="btn btn-circle btn-error btn-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200" onclick={stopRecording}>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+						</svg>
+					</button>
+				{/if}
+			</div>
+
+			<!-- Right: Tools -->
+			<div class="flex justify-end items-center gap-2">
+				<!-- Collaboration Menu -->
+				<div class="dropdown dropdown-end">
+					<div tabindex="0" role="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('collaboration.collaborative_session')}>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+						</svg>
 					</div>
-
-					<!-- Option 2: Quick Start Session -->
-					<div class="card bg-base-200 border border-base-300 hover:border-primary transition-colors">
-						<div class="card-body p-5">
-							<div class="flex items-center gap-3 mb-3">
-								<div class="p-2 rounded-lg bg-primary/20">
-									<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-									</svg>
-								</div>
-								<h3 class="card-title text-base m-0">{$_('collaboration.quick_start')}</h3>
-							</div>
-							<p class="text-sm text-base-content/70 mb-4">{$_('collaboration.quick_start_desc')}</p>
-							<button class="btn btn-sm btn-primary w-full" onclick={() => startCollaborativeSession()}>
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-								</svg>
-								{$_('collaboration.start_session')}
-							</button>
-						</div>
-					</div>
-
-					<!-- Option 3: Manage Sessions -->
-					{#if browser && window.db}
-						<div class="card bg-base-200 border border-base-300 hover:border-accent transition-colors">
-							<div class="card-body p-5">
-								<div class="flex items-center gap-3 mb-3">
-									<div class="p-2 rounded-lg bg-accent/20">
-										<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-										</svg>
-									</div>
-									<h3 class="card-title text-base m-0">{$_('collaboration.manage_sessions')}</h3>
-								</div>
-								<p class="text-sm text-base-content/70 mb-4">{$_('collaboration.manage_sessions_desc')}</p>
-								<a href="/sessions" class="btn btn-sm btn-accent w-full">
+					<ul tabindex="0" class="dropdown-content z-[1] menu p-3 shadow-xl bg-base-100 rounded-box w-80 border border-base-300 mt-2">
+						{#if !sessionInfo}
+							<li><h3 class="menu-title text-sm font-semibold">{$_('collaboration.collaborative_session')}</h3></li>
+							<li>
+								<button class="gap-3" onclick={() => startCollaborativeSession()}>
 									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+									</svg>
+									{$_('collaboration.start_session')}
+								</button>
+							</li>
+							<li class="menu-title mt-3 text-sm font-semibold">{$_('collaboration.join_existing')}</li>
+							<li class="p-2">
+								<div class="join w-full p-0">
+									<input
+										type="text"
+										placeholder="CODE"
+										class="input input-sm input-bordered join-item w-full font-mono uppercase"
+										maxlength="6"
+										bind:value={joinSessionCode}
+										oninput={(e) => { joinSessionCode = e.currentTarget.value.toUpperCase(); }}
+										onkeydown={(e) => { if (e.key === 'Enter' && joinSessionCode.length === 6) joinCollaborativeSession(joinSessionCode); }}
+									/>
+									<button
+										class="btn btn-sm btn-secondary join-item"
+										disabled={joinSessionCode.length !== 6}
+										onclick={() => joinCollaborativeSession(joinSessionCode)}
+									>
+										{$_('collaboration.join')}
+									</button>
+								</div>
+							</li>
+							<div class="divider my-2"></div>
+							<li>
+								<a href="/sessions" class="gap-3">
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
 									</svg>
 									{$_('collaboration.manage_sessions')}
 								</a>
-							</div>
-						</div>
-					{/if}
-				</div>
-			{/if}
-		</div>
-	</div>
-
-	<!-- Recording Controls -->
-	<div class="bg-base-100 border border-base-300 rounded-lg overflow-hidden mb-6">
-		<!-- Header -->
-		<div class="px-4 py-3 bg-base-200 border-b border-base-300">
-			<h2 class="text-base font-semibold m-0 text-base-content">Eesti keele kõnetuvastus</h2>
-		</div>
-
-		<!-- Body -->
-		<div class="p-8">
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-8 relative">
-				<!-- Column Divider (only visible on desktop) -->
-				<div class="absolute left-1/2 top-0 bottom-0 w-px bg-base-300 hidden md:block"></div>
-
-				<!-- Left Column: Status and Controls -->
-				<div class="flex flex-col gap-4">
-					<!-- Status Display -->
-					<div class="mb-2">
-						{#if isRecording}
-							<!-- VAD Status when recording -->
-							<div class="badge gap-2 p-3" class:badge-info={!isSpeaking} class:badge-success={isSpeaking}>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									class="h-4 w-4"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-									/>
-								</svg>
-								{#if isSpeaking}
-									<span>{$_('dictate.speakingDetected')}</span>
-								{:else}
-									<span>{$_('dictate.listeningForSpeech')}</span>
-								{/if}
-							</div>
-						{:else if isWasmLoading || !isWasmReady}
-							<!-- Connection status when not recording -->
-							<div class="badge badge-info gap-2 p-3">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									class="h-4 w-4 animate-spin"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-									/>
-								</svg>
-								<span>{initializationStatus}</span>
-							</div>
-						{:else if isWasmReady && isConnected}
-							<div class="badge badge-success gap-2 p-3">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									class="h-4 w-4"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-									/>
-								</svg>
-								<span>{initializationStatus}</span>
-							</div>
+							</li>
+						{:else}
+							<li><h3 class="menu-title text-sm font-semibold">{$_('collaboration.session_active')}</h3></li>
+							<li>
+								<div class="flex flex-col items-start gap-1 cursor-default hover:bg-transparent p-3">
+									<span class="text-xs opacity-70">Code</span>
+									<span class="font-mono text-lg font-bold select-all">{sessionInfo.code}</span>
+								</div>
+							</li>
+							<li>
+								<button class="gap-3" onclick={() => (showShareModal = true)}>
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+									</svg>
+									{$_('collaboration.share_session')}
+								</button>
+							</li>
+							<li>
+								<button class="text-error gap-3" onclick={() => (showEndSessionModal = true)}>
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+									</svg>
+									{$_('collaboration.end_session')}
+								</button>
+							</li>
 						{/if}
-					</div>
+					</ul>
+				</div>
 
-					<!-- Audio Source Selector (Hidden for guests) -->
-					{#if sessionInfo?.role !== 'guest'}
-					<div class="form-control">
-						<label class="label">
-							<span class="label-text font-semibold">{$_('dictate.audioSource')}</span>
-						</label>
-						<select
-							class="select select-bordered w-full"
-							bind:value={audioSourceType}
-							onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
-							disabled={isAudioSourceSwitching || !isWasmReady}
-						>
-							<option value="microphone">🎤 {$_('dictate.audioSourceMicrophone')}</option>
-							{#if systemAudioAvailable}
-								<option value="system">🔊 {$_('dictate.audioSourceSystem')}</option>
-							{/if}
-						</select>
+				<!-- Settings Menu -->
+				<div class="dropdown dropdown-end">
+					<div tabindex="0" role="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('dictate.audioSource')}>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+						</svg>
 					</div>
-
-					<!-- Device Selector (if devices available or system audio mode) -->
-					{#if availableAudioDevices.length > 0 || audioSourceType === 'system'}
-						<div class="form-control">
-							<label class="label">
-								<span class="label-text font-semibold">
-									{audioSourceType === 'system' && availableAudioDevices.some(d => d.kind === 'desktop')
-										? $_('dictate.captureSource')
-										: $_('dictate.device')}
-								</span>
-							</label>
+					<ul tabindex="0" class="dropdown-content z-[1] menu p-3 shadow-xl bg-base-100 rounded-box w-72 border border-base-300 mt-2">
+						<li><h3 class="menu-title text-sm font-semibold">{$_('dictate.audioSource')}</h3></li>
+						
+						<!-- Source Type -->
+						<li class="mb-2">
 							<select
-								class="select select-bordered w-full"
-								bind:value={selectedDeviceId}
+								class="select select-bordered select-sm w-full"
+								bind:value={audioSourceType}
 								onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
 								disabled={isAudioSourceSwitching || !isWasmReady}
 							>
-								<option value={null}>{$_('dictate.deviceDefault')}</option>
-								{#each availableAudioDevices as device}
-									<option value={device.deviceId}>{device.label}</option>
-								{/each}
+								<option value="microphone">🎤 {$_('dictate.audioSourceMicrophone')}</option>
+								{#if systemAudioAvailable}
+									<option value="system">🔊 {$_('dictate.audioSourceSystem')}</option>
+								{/if}
 							</select>
-						</div>
-					{/if}
+						</li>
 
-					<!-- Switching indicator -->
-					{#if isAudioSourceSwitching}
-						<div class="alert alert-info">
-							<span class="loading loading-spinner loading-sm"></span>
-							<span>Switching audio source...</span>
-						</div>
-					{/if}
-
-					<!-- Platform-specific setup guide -->
-					{#if audioSourceType === 'system' && !systemAudioAvailable && audioSourceManager}
-						{@const setupInstructions = audioSourceManager.getSetupInstructions()}
-						<div class="alert alert-warning">
-							<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-							</svg>
-							<div class="flex flex-col gap-2 w-full">
-								<h3 class="font-bold">{setupInstructions.title}</h3>
-								<ol class="list-decimal list-inside space-y-1 text-sm">
-									{#each setupInstructions.steps as step}
-										<li>{step}</li>
+						<!-- Device Selection -->
+						{#if availableAudioDevices.length > 0 || audioSourceType === 'system'}
+							<li><h3 class="menu-title text-xs opacity-70 mt-2">
+								{audioSourceType === 'system' && availableAudioDevices.some(d => d.kind === 'desktop')
+									? $_('dictate.captureSource')
+									: $_('dictate.device')}
+							</h3></li>
+							<li>
+								<select
+									class="select select-bordered select-sm w-full"
+									bind:value={selectedDeviceId}
+									onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
+									disabled={isAudioSourceSwitching || !isWasmReady}
+								>
+									<option value={null}>{$_('dictate.deviceDefault')}</option>
+									{#each availableAudioDevices as device}
+										<option value={device.deviceId}>{device.label}</option>
 									{/each}
-								</ol>
-							</div>
-						</div>
-					{/if}
-					{/if}
-				</div>
+								</select>
+							</li>
+						{/if}
 
-				<!-- Right Column: Recording Button -->
-				<div class="flex flex-col items-center justify-center">
-					{#if !isRecording}
-						<div class="flex flex-col items-center gap-3">
-							<button
-								class="btn btn-circle btn-primary w-32 h-32 hover:scale-105 transition-transform shadow-lg"
-								onclick={startRecording}
-								disabled={!isWasmReady || (sessionInfo?.role === 'guest')}
-								title={sessionInfo?.role === 'guest' ? $_('collaboration.guest_cannot_record', { default: 'Only the host can record' }) : ''}
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									class="h-16 w-16"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-									stroke-width="2"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-									/>
-								</svg>
-							</button>
-							<span class="text-lg font-semibold">{$_('dictate.startRecording')}</span>
-						</div>
-					{:else}
-						<div class="flex flex-col items-center gap-3">
-							<button class="btn btn-circle btn-error w-32 h-32 animate-pulse shadow-lg" onclick={stopRecording}>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									class="h-16 w-16"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-									stroke-width="2"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-									/>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
-									/>
-								</svg>
-							</button>
-							<span class="text-lg font-semibold">{$_('dictate.stopRecording')}</span>
-						</div>
-					{/if}
+						<!-- Switching Indicator -->
+						{#if isAudioSourceSwitching}
+							<li class="mt-2 text-center text-xs opacity-50">
+								<span class="loading loading-spinner loading-xs"></span>
+								<span>Switching...</span>
+							</li>
+						{/if}
+					</ul>
 				</div>
 			</div>
 		</div>
 	</div>
 
-<!-- Speech Editor -->
-<div class="mb-6">
-	{#key sessionInfo?.code || 'solo'}
-		<SpeechEditor
-			bind:this={speechEditor}
-			collaborationManager={collaborationManager}
-			config={{
-				fontSize: 16,
-				onWordApproved: handleWordApproved,
-				onSubtitleEmit: handleSubtitleEmit
-			}}
-		/>
-	{/key}
-</div>
+	<!-- Error Messages Overlay -->
+	<div class="absolute top-20 left-0 right-0 z-10 px-4 pointer-events-none flex flex-col items-center gap-3">
+		{#if connectionError}
+			<div class="alert alert-error shadow-xl max-w-lg pointer-events-auto animate-in fade-in slide-in-from-top-2 duration-300">
+				<div class="flex gap-3 items-center flex-1">
+					<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+					<span class="text-sm">{connectionError}</span>
+				</div>
+				<button class="btn btn-ghost btn-sm btn-circle" onclick={() => connectionError = ''}>✕</button>
+			</div>
+		{/if}
+		{#if microphoneError}
+			<div class="alert alert-warning shadow-xl max-w-lg pointer-events-auto animate-in fade-in slide-in-from-top-2 duration-300">
+				<div class="flex gap-3 items-center flex-1">
+					<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+					<span class="text-sm">{microphoneError}</span>
+				</div>
+				<button class="btn btn-ghost btn-sm btn-circle" onclick={() => microphoneError = ''}>✕</button>
+			</div>
+		{/if}
+		{#if vadError}
+			<div class="alert alert-error shadow-xl max-w-lg pointer-events-auto animate-in fade-in slide-in-from-top-2 duration-300">
+				<div class="flex gap-3 items-center flex-1">
+					<svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+					<span class="text-sm">{vadError}</span>
+				</div>
+				<button class="btn btn-ghost btn-sm btn-circle" onclick={() => vadError = ''}>✕</button>
+			</div>
+		{/if}
+		
+		<!-- macOS Setup Guide (if needed) -->
+		{#if audioSourceType === 'system' && !systemAudioAvailable && audioSourceManager}
+			{@const setupInstructions = audioSourceManager.getSetupInstructions()}
+			<div class="alert alert-warning shadow-xl max-w-lg pointer-events-auto animate-in fade-in slide-in-from-top-2 duration-300">
+				<div class="flex flex-col gap-2 w-full">
+					<h3 class="font-bold text-sm">{setupInstructions.title}</h3>
+					<ol class="list-decimal list-inside space-y-1 text-xs">
+						{#each setupInstructions.steps as step}
+							<li>{step}</li>
+						{/each}
+					</ol>
+				</div>
+				<button class="btn btn-ghost btn-sm btn-circle absolute top-2 right-2" onclick={() => audioSourceType = 'microphone'}>✕</button>
+			</div>
+		{/if}
+	</div>
+
+	<!-- Main Content: Editor -->
+	<div class=" relative">
+		<div class=" w-full overflow-y-auto">
+			<div>
+				{#key sessionInfo?.code || 'solo'}
+					<SpeechEditor
+						bind:this={speechEditor}
+						collaborationManager={collaborationManager}
+						config={{
+							fontSize: 16,
+							onWordApproved: handleWordApproved,
+							onSubtitleEmit: handleSubtitleEmit
+						}}
+					/>
+				{/key}
+			</div>
+		</div>
 	</div>
 </div>
+
 
 <!-- Share Session Modal -->
 {#if showShareModal && sessionInfo}
