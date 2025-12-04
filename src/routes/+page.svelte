@@ -103,6 +103,8 @@
 	let showSettings = $state(false);   // New state for settings menu
 	let joinSessionCode = $state('');
 	let currentDbSession = $state<TranscriptionSession | null>(null);
+	let plannedAndActiveSessions = $state<TranscriptionSession[]>([]);
+	let isLoadingSessions = $state(false);
 
 	// ═══════════════════════════════════════════════════════════════
 	// MODEL TYPE HELPERS
@@ -129,6 +131,35 @@
 	// ═══════════════════════════════════════════════════════════════
 	// COLLABORATION FUNCTIONS
 	// ═══════════════════════════════════════════════════════════════
+
+	/**
+	 * Load planned and active sessions for the dropdown
+	 */
+	async function loadCollaborationSessions() {
+		if (!window.db || !browser) return;
+
+		isLoadingSessions = true;
+		try {
+			const [planned, active] = await Promise.all([
+				window.db.getSessionsByStatus('planned'),
+				window.db.getSessionsByStatus('active')
+			]);
+			// Combine and sort by scheduled_date (upcoming first) then created_at
+			plannedAndActiveSessions = [...planned, ...active].sort((a, b) => {
+				// Active sessions first
+				if (a.status === 'active' && b.status !== 'active') return -1;
+				if (b.status === 'active' && a.status !== 'active') return 1;
+				// Then by scheduled date
+				const dateA = a.scheduled_date || a.created_at;
+				const dateB = b.scheduled_date || b.created_at;
+				return new Date(dateA).getTime() - new Date(dateB).getTime();
+			});
+		} catch (err) {
+			console.error('[COLLAB] Failed to load sessions:', err);
+		} finally {
+			isLoadingSessions = false;
+		}
+	}
 
 	/**
 	 * Start a new collaborative session as host
@@ -1363,12 +1394,12 @@
 			<div class="flex justify-end items-center gap-2">
 				<!-- Collaboration Menu -->
 				<div class="dropdown dropdown-end">
-					<div tabindex="0" role="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('collaboration.collaborative_session')}>
+					<div tabindex="0" role="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('collaboration.collaborative_session')} onfocus={() => loadCollaborationSessions()}>
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
 						</svg>
 					</div>
-					<ul tabindex="0" class="dropdown-content z-[1] menu p-3 shadow-xl bg-base-100 rounded-box w-80 border border-base-300 mt-2">
+					<ul tabindex="0" class="dropdown-content z-[1] menu p-3 shadow-xl bg-base-100 rounded-box w-80 border border-base-300 mt-2 max-h-[70vh] overflow-y-auto">
 						{#if !sessionInfo}
 							<li><h3 class="menu-title text-sm font-semibold">{$_('collaboration.collaborative_session')}</h3></li>
 							<li>
@@ -1400,6 +1431,43 @@
 									</button>
 								</div>
 							</li>
+
+							<!-- Planned & Active Sessions -->
+							{#if plannedAndActiveSessions.length > 0 || isLoadingSessions}
+								<div class="divider my-2"></div>
+								<li class="menu-title text-sm font-semibold">{$_('collaboration.your_sessions')}</li>
+								{#if isLoadingSessions}
+									<li class="p-2">
+										<div class="flex justify-center">
+											<span class="loading loading-spinner loading-sm"></span>
+										</div>
+									</li>
+								{:else}
+									{#each plannedAndActiveSessions.slice(0, 5) as session (session.id)}
+										<li>
+											<button class="flex flex-col items-start gap-0.5 py-2 cursor-pointer" onclick={() => startCollaborativeSession(session.id)}>
+												<div class="flex items-center gap-2 w-full">
+													<span class="font-medium text-sm truncate flex-1 text-left">{session.name}</span>
+													<span class={`badge badge-xs ${session.status === 'active' ? 'badge-success' : 'badge-info'}`}>
+														{$_(`sessions.status.${session.status}`)}
+													</span>
+												</div>
+												<div class="flex items-center gap-3 text-xs opacity-70 w-full">
+													{#if session.session_code}
+														<span class="font-mono">{session.session_code}</span>
+													{/if}
+													{#if session.scheduled_date}
+														<span>{new Date(session.scheduled_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+													{:else}
+														<span>{new Date(session.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+													{/if}
+												</div>
+											</button>
+										</li>
+									{/each}
+								{/if}
+							{/if}
+
 							<div class="divider my-2"></div>
 							<li>
 								<a href="/sessions" class="gap-3">

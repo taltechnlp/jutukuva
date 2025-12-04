@@ -612,7 +612,8 @@
     "start_session": "Alusta uut sessiooni",
     "guest_cannot_record": "Ainult peremees saab salvestada",
     "share_session": "Jaga sessiooni",
-    "end_session": "Lõpeta sessioon"
+    "end_session": "Lõpeta sessioon",
+    "your_sessions": "Sinu sessioonid"
   },
   "sessions": {
     "title": "Sessioonid",
