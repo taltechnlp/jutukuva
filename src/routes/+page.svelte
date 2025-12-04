@@ -29,16 +29,14 @@
 
 	// Audio processing constants
 	const SAMPLE_RATE = 16000;
-	const WS_URL = 'wss://tekstiks.ee/asr/v2';
 	const DEBUG_VAD = false; // Set to true to enable verbose VAD logging
 
-	// WebSocket connection
-	let ws: WebSocket | null = null;
+	// Local ASR state (sherpa-onnx via Electron IPC)
+	let asrInitialized = $state(false);
+	let asrSessionActive = $state(false);
 	let sessionId: string | null = null;
-	let reconnectTimer: NodeJS.Timeout | null = null;
-	let reconnectAttempts = 0;
-	const MAX_RECONNECT_ATTEMPTS = 5;
-	const RECONNECT_DELAY = 2000; // 2 seconds
+	let modelDownloadProgress = $state<ASRDownloadProgress | null>(null);
+	let isDownloadingModel = $state(false);
 
 	// VAD instance
 	let vad: MicVAD | null = null;
@@ -564,7 +562,7 @@
 
 				// Stream frame in real-time if speech is active
 				if (isSpeaking) {
-					sendAudio(frame);
+					sendAudioToASR(frame);
 				}
 			},
 
@@ -586,7 +584,7 @@
 
 				// Send pre-speech buffer first
 				for (const bufferedFrame of audioBuffer) {
-					sendAudio(bufferedFrame);
+					sendAudioToASR(bufferedFrame);
 				}
 				audioBuffer = [];
 			},
@@ -640,23 +638,40 @@
 		console.log('[INIT-VAD] ✓ VAD initialized successfully');
 	}
 
-	// Initialize system: pre-load WASM and connect WebSocket
+	// Initialize system: pre-load WASM and initialize local ASR
 	async function initializeSystem() {
 		try {
 			console.log('[INIT] Starting system initialization...');
 
-			// Step 1: Connect to WebSocket
-			initializationStatusKey = 'dictate.connectingToServer';
-			console.log('[INIT] Connecting to WebSocket:', WS_URL);
-			await connectWebSocket();
-			await new Promise((resolve) => setTimeout(resolve, 500));
+			// Step 1: Initialize local ASR (sherpa-onnx)
+			if (window.asr) {
+				initializationStatusKey = 'dictate.initializingASR';
+				console.log('[INIT] Initializing local ASR...');
 
-			if (!isConnected) {
-				vadError = $_('dictate.failedToConnect');
-				console.error('[INIT] Failed to connect to WebSocket server');
-				return;
+				// Listen for download progress
+				window.asr.onDownloadProgress((progress) => {
+					modelDownloadProgress = progress;
+					isDownloadingModel = progress.overallProgress < 100;
+				});
+
+				const asrResult = await window.asr.initialize();
+
+				if (!asrResult.success) {
+					vadError = asrResult.error || $_('dictate.failedToInitializeASR');
+					console.error('[INIT] Failed to initialize ASR:', asrResult.error);
+					initializationStatusKey = 'dictate.initializationFailed';
+					return;
+				}
+
+				asrInitialized = true;
+				isConnected = true; // Keep for UI compatibility
+				isDownloadingModel = false;
+				console.log('[INIT] ✓ Local ASR initialized');
+			} else {
+				console.warn('[INIT] ASR API not available (not in Electron)');
+				// In non-Electron environment, just skip ASR initialization
+				isConnected = false;
 			}
-			console.log('[INIT] ✓ WebSocket connected');
 
 			// Step 2: Pre-load VAD WASM models
 			initializationStatusKey = 'dictate.loadingVadModel';
@@ -686,83 +701,62 @@
 		}
 	}
 
-	// Connect to WebSocket server
-	async function connectWebSocket() {
+	// Start ASR session (replaces connectWebSocket)
+	async function startASRSession() {
+		if (!window.asr || !asrInitialized) {
+			connectionError = $_('dictate.asrNotInitialized', { default: 'ASR not initialized' });
+			return false;
+		}
+
 		try {
 			connectionError = '';
+			console.log('[ASR] Starting session...');
 
-			// Clear any existing reconnect timer
-			if (reconnectTimer) {
-				clearTimeout(reconnectTimer);
-				reconnectTimer = null;
+			const result = await window.asr.start();
+
+			if (result.success) {
+				asrSessionActive = true;
+				sessionId = result.sessionId || null;
+				isConnected = true; // Keep for UI compatibility
+				console.log('[ASR] Session started:', sessionId);
+				return true;
+			} else {
+				connectionError = result.error || $_('dictate.failedToStartASR');
+				console.error('[ASR] Failed to start session:', result.error);
+				return false;
 			}
-
-			ws = new WebSocket(WS_URL);
-
-			ws.onopen = () => {
-				console.log('WebSocket connected');
-				isConnected = true;
-				reconnectAttempts = 0; // Reset reconnection counter on successful connection
-			};
-
-			ws.onmessage = (event) => {
-				try {
-					const message = JSON.parse(event.data);
-					handleServerMessage(message);
-				} catch (e) {
-					console.error('Failed to parse server message:', e);
-				}
-			};
-
-			ws.onclose = (event) => {
-				console.log('WebSocket disconnected', event.code, event.reason);
-				isConnected = false;
-				sessionId = null;
-
-				// Attempt automatic reconnection if not manually closed (code 1000)
-				if (event.code !== 1000 && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-					reconnectAttempts++;
-					console.log(`[RECONNECT] Attempting reconnection ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} in ${RECONNECT_DELAY}ms...`);
-					connectionError = `Reconnecting... (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`;
-
-					reconnectTimer = setTimeout(() => {
-						console.log('[RECONNECT] Reconnecting now...');
-						connectWebSocket();
-					}, RECONNECT_DELAY);
-				} else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-					console.error('[RECONNECT] Max reconnection attempts reached');
-					connectionError = $_('dictate.reconnectionFailed', { default: 'Connection lost. Please refresh the page.' });
-				}
-			};
-
-			ws.onerror = (error) => {
-				console.error('WebSocket error:', error);
-				if (reconnectAttempts === 0) {
-					connectionError = $_('dictate.noConnections');
-				}
-				isConnected = false;
-			};
-		} catch (error) {
-			console.error('Failed to connect:', error);
-			connectionError = $_('dictate.noConnections');
+		} catch (error: any) {
+			console.error('[ASR] Error starting session:', error);
+			connectionError = error.message || $_('dictate.failedToStartASR');
+			return false;
 		}
 	}
 
-	// Disconnect WebSocket
-	function disconnectWebSocket() {
-		// Clear reconnection timer
-		if (reconnectTimer) {
-			clearTimeout(reconnectTimer);
-			reconnectTimer = null;
-		}
+	// Stop ASR session (replaces disconnectWebSocket)
+	async function stopASRSession() {
+		if (!window.asr) return;
 
-		if (ws) {
-			ws.close();
-			ws = null;
+		try {
+			console.log('[ASR] Stopping session...');
+			const result = await window.asr.stop();
+
+			// Handle final transcript if any
+			if (result.text?.trim()) {
+				handleTranscript_streaming({
+					text: result.text,
+					is_final: true
+				});
+			}
+
+			asrSessionActive = false;
+			sessionId = null;
+			// Keep isConnected = true since ASR is still initialized
+			console.log('[ASR] Session stopped');
+		} catch (error) {
+			console.error('[ASR] Error stopping session:', error);
+			asrSessionActive = false;
+			sessionId = null;
 		}
-		isConnected = false;
-		sessionId = null;
-		reconnectAttempts = 0;
 	}
 
 	// ═══════════════════════════════════════════════════════════════
@@ -772,33 +766,11 @@
 	/**
 	 * Handle transcript messages for streaming models (ET/EN).
 	 * Streaming models return full hypothesis each time, so we replace the partial.
+	 * Note: With local ASR, we won't receive [Session Ended] messages, but
+	 * we keep this handler for the transcript processing logic.
 	 */
 	function handleTranscript_streaming(message: any) {
-		// Check for unexpected session end BEFORE inserting into editor
-		if (message.is_final && message.text.trim() === '[Session Ended]') {
-			// Save the partial transcript to final before starting new session
-			if (partialTranscript.trim()) {
-				transcript += (transcript ? ' ' : '') + partialTranscript.trim();
-			}
-			partialTranscript = '';
-
-			// Clear old session ID immediately so audio won't be sent until new session is ready
-			sessionId = null;
-
-			// If still recording, start a new session immediately
-			if (isRecording) {
-				const language = isOfflineModel(selectedLanguage) ? 'parakeet_tdt_v3' : selectedLanguage;
-				sendMessage({
-					type: 'start',
-					sample_rate: SAMPLE_RATE,
-					format: 'pcm',
-					language: language
-				});
-			}
-			return;
-		}
-
-		// Insert into speech editor (after checking for session end)
+		// Insert into speech editor
 		if (speechEditor && message.text.trim()) {
 			speechEditor.insertStreamingText({
 				text: message.text + ' ',
@@ -878,61 +850,13 @@
 
 	/**
 	 * Handle transcript messages for offline models (Parakeet).
-	 * Offline models give incremental text across sessions, so we concatenate.
+	 * Note: With local ASR (sherpa-onnx), offline models are not supported.
+	 * This function is kept for compatibility but won't be called.
 	 */
 	function handleTranscript_offline(message: any) {
-		console.log('[OFFLINE] Received transcript:', message.text, 'is_final:', message.is_final);
-
-		if (message.is_final) {
-			// Check if server is ending the session (15-second buffer limit)
-			if (message.text.trim() === '[Session Ended]') {
-				console.log('[OFFLINE] Server ended session (15s buffer). Starting new session...');
-				// Save the partial transcript to final before starting new session
-				if (partialTranscript.trim()) {
-					transcript += (transcript ? ' ' : '') + partialTranscript.trim();
-				}
-				partialTranscript = '';
-
-				// DON'T clear sessionId - keep it until new 'ready' arrives so audio can continue
-				// sessionId will be updated when the new 'ready' message arrives
-
-				// If still recording, start a new session immediately
-				if (isRecording) {
-					const language = isOfflineModel(selectedLanguage) ? 'parakeet_tdt_v3' : selectedLanguage;
-					console.log('[OFFLINE] Sending new start message with language:', language);
-					sendMessage({
-						type: 'start',
-						sample_rate: SAMPLE_RATE,
-						format: 'pcm',
-						language: language
-					});
-				}
-				return;
-			}
-
-			// Add to final transcript
-			if (message.text.trim()) {
-				console.log('[OFFLINE] Adding to final transcript:', message.text.trim());
-				transcript += (transcript ? ' ' : '') + message.text.trim();
-			}
-			partialTranscript = '';
-		} else {
-			// Show as partial transcript
-			console.log('[OFFLINE] Setting partial transcript:', message.text);
-
-			// For offline models: finalize previous partial before setting new one
-			// (text is incremental across sessions)
-			if (isRecording && partialTranscript.trim() && message.text.trim()) {
-				console.log('[OFFLINE] Finalizing previous partial before new partial (session chaining)');
-				transcript += (transcript ? ' ' : '') + partialTranscript.trim();
-			}
-
-			if (message.text.trim() || !partialTranscript) {
-				partialTranscript = message.text;
-			} else {
-				console.log('[OFFLINE] Ignoring empty partial transcript - keeping existing text');
-			}
-		}
+		// Local ASR only supports streaming models (ET/EN)
+		// Route to streaming handler
+		handleTranscript_streaming(message);
 	}
 
 	/**
@@ -989,66 +913,41 @@
 	}
 
 	// ═══════════════════════════════════════════════════════════════
-	// MAIN MESSAGE HANDLER (DELEGATES TO STREAMING OR OFFLINE)
+	// SEND AUDIO TO LOCAL ASR
 	// ═══════════════════════════════════════════════════════════════
 
 	/**
-	 * Main server message handler - delegates to streaming or offline handlers.
+	 * Send audio samples to local ASR (sherpa-onnx via IPC).
+	 * Replaces the old WebSocket-based sendAudio().
 	 */
-	function handleServerMessage(message: any) {
-		// Delegate to appropriate handler based on model type
-		if (isOfflineModel(selectedLanguage)) {
-			handleServerMessage_offline(message);
-		} else {
-			handleServerMessage_streaming(message);
-		}
-	}
-
-	// Send WebSocket message
-	function sendMessage(message: any) {
-		if (ws && ws.readyState === WebSocket.OPEN) {
-			ws.send(JSON.stringify(message));
-		}
-	}
-
-	// Convert Float32Array to Int16Array
-	function float32ToInt16(float32Array: Float32Array): Int16Array {
-		const int16Array = new Int16Array(float32Array.length);
-		for (let i = 0; i < float32Array.length; i++) {
-			const s = Math.max(-1, Math.min(1, float32Array[i]));
-			int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
-		}
-		return int16Array;
-	}
-
-	// Send audio to server
-	function sendAudio(audioData: Float32Array) {
-		if (!ws || ws.readyState !== WebSocket.OPEN) {
+	async function sendAudioToASR(audioData: Float32Array) {
+		if (!window.asr || !asrSessionActive) {
 			return;
 		}
 
-		// Don't send audio if session has ended
-		if (!sessionId) {
-			console.warn('[AUDIO] Skipping audio send - no active session');
-			return;
+		try {
+			const result = await window.asr.sendAudio(audioData);
+
+			if (result.error) {
+				console.warn('[ASR] Audio processing error:', result.error);
+				// If session died, try to restart
+				if (result.error.includes('No active session') && isRecording) {
+					console.log('[ASR] Session died, restarting...');
+					await startASRSession();
+				}
+				return;
+			}
+
+			// Handle transcript result
+			if (result.text !== undefined) {
+				handleTranscript_streaming({
+					text: result.text,
+					is_final: result.isFinal
+				});
+			}
+		} catch (error) {
+			console.error('[ASR] IPC error:', error);
 		}
-
-		// Convert Float32 to Int16
-		const int16Data = float32ToInt16(audioData);
-		const bytes = new Uint8Array(int16Data.buffer);
-
-		// Convert to base64 without using apply (avoids stack overflow)
-		let binary = '';
-		const len = bytes.byteLength;
-		for (let i = 0; i < len; i++) {
-			binary += String.fromCharCode(bytes[i]);
-		}
-		const base64 = btoa(binary);
-
-		sendMessage({
-			type: 'audio',
-			data: base64
-		});
 	}
 
 	// Start recording with VAD (VAD already initialized, just start microphone)
@@ -1060,19 +959,11 @@
 
 			console.log('[START] Starting recording...');
 
-			// If not connected, attempt to connect first
-			if (!isConnected || !ws) {
-				console.log('[START] Not connected, attempting to connect...');
-				await connectWebSocket();
-
-				// Wait a moment for connection to establish
-				await new Promise(resolve => setTimeout(resolve, 1000));
-
-				if (!isConnected || !ws) {
-					connectionError = $_('dictate.noConnections');
-					console.error('[START] Failed to connect to server');
-					return;
-				}
+			// Check if ASR is initialized
+			if (!asrInitialized || !window.asr) {
+				console.log('[START] ASR not initialized');
+				connectionError = $_('dictate.asrNotInitialized', { default: 'Speech recognition not available' });
+				return;
 			}
 
 			// Reinitialize VAD if it was destroyed
@@ -1099,18 +990,13 @@
 				return;
 			}
 
-			// Send start message to establish session
-			// ET and EN use dedicated models, all others use Parakeet (auto LID)
-			const offline = isOfflineModel(selectedLanguage);
-			const language = offline ? 'parakeet_tdt_v3' : selectedLanguage;
-			const modelType = offline ? 'OFFLINE' : 'STREAMING';
-			console.log(`[START] [${modelType}] Sending start message with language:`, language);
-			sendMessage({
-				type: 'start',
-				sample_rate: SAMPLE_RATE,
-				format: 'pcm',
-				language: language
-			});
+			// Start ASR session
+			console.log('[START] Starting ASR session...');
+			const sessionStarted = await startASRSession();
+			if (!sessionStarted) {
+				console.error('[START] Failed to start ASR session');
+				return;
+			}
 
 			// Reset frame counter for this recording session
 			frameCount = 0;
@@ -1210,16 +1096,11 @@
 		// Clear audio buffer for next recording
 		audioBuffer = [];
 
-		// Send stop message
-		if (ws && ws.readyState === WebSocket.OPEN && sessionId) {
-			sendMessage({ type: 'stop' });
-		}
+		// Stop ASR session and get final transcript
+		await stopASRSession();
 
-		// Wait longer for final results from offline models
-		// Server needs time to process remaining buffer (< 15s) before finalizing
-		const isOffline = isOfflineModel(selectedLanguage);
-		const waitTime = isOffline ? 3000 : 1000; // 3s for offline, 1s for streaming
-		await new Promise(resolve => setTimeout(resolve, waitTime));
+		// Small delay for UI to settle
+		await new Promise(resolve => setTimeout(resolve, 500));
 	}
 
 	// Clear transcript
@@ -1324,13 +1205,60 @@
 			}
 		}
 
-		disconnectWebSocket();
+		// Clean up ASR download progress listener
+		if (window.asr) {
+			window.asr.removeDownloadProgressListener();
+		}
 	});
 </script>
 
 <svelte:head>
 	<title>{$_('dictate.pageTitle')} | Jutukuva</title>
 </svelte:head>
+
+<!-- Model Download Progress Modal -->
+{#if isDownloadingModel && modelDownloadProgress}
+	<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+		<div class="bg-base-100 p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+			<h3 class="text-lg font-semibold mb-4">
+				{$_('dictate.downloadingModel', { default: 'Downloading speech recognition model...' })}
+			</h3>
+			<div class="space-y-3">
+				<!-- Overall progress bar -->
+				<div>
+					<div class="flex justify-between text-sm mb-1">
+						<span>{$_('dictate.overallProgress', { default: 'Overall progress' })}</span>
+						<span>{modelDownloadProgress.overallProgress}%</span>
+					</div>
+					<div class="w-full bg-base-300 rounded-full h-3">
+						<div
+							class="bg-primary h-3 rounded-full transition-all duration-300"
+							style="width: {modelDownloadProgress.overallProgress}%"
+						></div>
+					</div>
+				</div>
+				<!-- Current file -->
+				<div class="text-sm text-base-content/70">
+					<p>
+						{$_('dictate.downloadingFile', { default: 'Downloading' })}: {modelDownloadProgress.currentFile}
+					</p>
+					<p class="text-xs mt-1">
+						{$_('dictate.fileProgress', {
+							default: 'File {completed} of {total}',
+							values: {
+								completed: modelDownloadProgress.completedFiles + 1,
+								total: modelDownloadProgress.totalFiles
+							}
+						})}
+					</p>
+				</div>
+			</div>
+			<p class="text-xs text-base-content/50 text-center mt-4">
+				{$_('dictate.downloadOnce', { default: 'This only needs to be done once.' })}
+			</p>
+		</div>
+	</div>
+{/if}
 
 <div class="flex flex-col bg-base-100">
 	<!-- Toolbar -->

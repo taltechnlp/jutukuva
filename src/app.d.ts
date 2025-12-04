@@ -136,6 +136,49 @@ declare global {
 			openAudioMIDISetup: () => Promise<void>;
 			resetPermissionCheck: () => Promise<void>;
 		};
+		asr: {
+			initialize: () => Promise<ASRInitResult>;
+			start: () => Promise<ASRStartResult>;
+			sendAudio: (audioData: Float32Array) => Promise<ASRTranscriptResult>;
+			stop: () => Promise<ASRTranscriptResult>;
+			status: () => Promise<ASRStatus>;
+			onDownloadProgress: (callback: (progress: ASRDownloadProgress) => void) => void;
+			removeDownloadProgressListener: () => void;
+		};
+	}
+
+	interface ASRInitResult {
+		success: boolean;
+		error?: string;
+		alreadyInitialized?: boolean;
+	}
+
+	interface ASRStartResult {
+		success: boolean;
+		sessionId?: string;
+		error?: string;
+	}
+
+	interface ASRTranscriptResult {
+		text: string;
+		isFinal: boolean;
+		error?: string;
+	}
+
+	interface ASRStatus {
+		isInitialized: boolean;
+		hasActiveSession: boolean;
+		sessionId?: string | null;
+		modelPath?: string | null;
+		error?: string;
+	}
+
+	interface ASRDownloadProgress {
+		overallProgress: number;
+		currentFile: string;
+		fileProgress: number;
+		completedFiles: number;
+		totalFiles: number;
 	}
 
 	interface TranscriptionSession {
