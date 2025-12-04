@@ -9,9 +9,7 @@ import { Schema } from 'prosemirror-model';
  * - text: Text content with marks
  *
  * Marks:
- * - word: Mark each word with timing and approval state
- * - pending: Visual styling for unapproved words
- * - active: Highlight currently focused word for approval
+ * - word: Mark each word with timing information
  */
 
 export const speechSchema = new Schema({
@@ -71,23 +69,16 @@ export const speechSchema = new Schema({
 			attrs: {
 				id: {},
 				start: { default: 0 },
-				end: { default: 0 },
-				approved: { default: false },
-				final: { default: false }
+				end: { default: 0 }
 			},
 			toDOM(mark) {
-				// Determine CSS class based on approval state
-				const cssClass = mark.attrs.approved ? 'word-approved' : 'word-pending';
-
 				return [
 					'span',
 					{
-						class: cssClass,
+						class: 'word',
 						'data-word-id': mark.attrs.id,
 						'data-start': mark.attrs.start,
-						'data-end': mark.attrs.end,
-						'data-approved': mark.attrs.approved,
-						'data-final': mark.attrs.final
+						'data-end': mark.attrs.end
 					},
 					0
 				];
@@ -100,25 +91,11 @@ export const speechSchema = new Schema({
 						return {
 							id: el.getAttribute('data-word-id'),
 							start: parseFloat(el.getAttribute('data-start') || '0'),
-							end: parseFloat(el.getAttribute('data-end') || '0'),
-							approved: el.getAttribute('data-approved') === 'true',
-							final: el.getAttribute('data-final') === 'true'
+							end: parseFloat(el.getAttribute('data-end') || '0')
 						};
 					}
 				}
 			]
-		},
-		pending: {
-			toDOM() {
-				return ['span', { class: 'word-state-pending' }, 0];
-			},
-			parseDOM: [{ tag: 'span.word-state-pending' }]
-		},
-		active: {
-			toDOM() {
-				return ['span', { class: 'word-state-active' }, 0];
-			},
-			parseDOM: [{ tag: 'span.word-state-active' }]
 		}
 	}
 });
