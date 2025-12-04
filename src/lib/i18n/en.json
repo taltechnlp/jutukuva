@@ -582,6 +582,15 @@
       "wordsApprovedStatus": "{approved} / {total} words approved"
     }
   },
+  "end_session": {
+    "title": "End Session?",
+    "description": "Are you sure you want to end this session?",
+    "delete_content": "Delete all content (text and speakers)",
+    "delete_warning": "All transcription content and speakers will be permanently deleted. This cannot be undone.",
+    "keep_info": "The session will be marked as completed and content will be preserved for future reference.",
+    "cancel": "Cancel",
+    "confirm": "End Session"
+  },
   "share_session": {
     "title": "Share Session",
     "code_label": "Session Code",

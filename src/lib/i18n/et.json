@@ -577,6 +577,15 @@
     "end_session": "Lõpeta sessioon",
     "leave": "Lahku sessioonist"
   },
+  "end_session": {
+    "title": "Lõpeta sessioon?",
+    "description": "Kas oled kindel, et soovid selle sessiooni lõpetada?",
+    "delete_content": "Kustuta kogu sisu (tekst ja kõnelejad)",
+    "delete_warning": "Kogu transkriptsiooni sisu ja kõnelejad kustutatakse jäädavalt. Seda ei saa tagasi võtta.",
+    "keep_info": "Sessioon märgitakse lõpetatuks ja sisu säilitatakse edaspidiseks kasutamiseks.",
+    "cancel": "Tühista",
+    "confirm": "Lõpeta sessioon"
+  },
   "share_session": {
     "title": "Jaga sessiooni",
     "code_label": "Sessiooni kood",
