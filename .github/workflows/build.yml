@@ -38,7 +38,19 @@ jobs:
           cache: 'npm'
 
       - name: Install npm dependencies
-        run: npm ci
+        run: npm ci --omit=optional
+
+      - name: Install platform-specific sherpa-onnx (Linux)
+        if: matrix.platform == 'linux'
+        run: npm install sherpa-onnx-linux-x64@^1.12.18
+
+      - name: Install platform-specific sherpa-onnx (macOS)
+        if: matrix.platform == 'mac'
+        run: npm install sherpa-onnx-darwin-x64@^1.12.18 sherpa-onnx-darwin-arm64@^1.12.18
+
+      - name: Install platform-specific sherpa-onnx (Windows)
+        if: matrix.platform == 'win'
+        run: npm install sherpa-onnx-win-x64@^1.12.18
 
       - name: Rebuild native modules
         run: npm run rebuild
