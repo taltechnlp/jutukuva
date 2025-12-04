@@ -617,7 +617,8 @@
     "start_session": "Start New Session",
     "guest_cannot_record": "Only the host can record",
     "share_session": "Share Session",
-    "end_session": "End Session"
+    "end_session": "End Session",
+    "your_sessions": "Your Sessions"
   },
   "sessions": {
     "title": "Sessions",
