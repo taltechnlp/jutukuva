@@ -2,6 +2,7 @@
 	import { onMount, onDestroy, tick } from 'svelte';
 	import { page } from '$app/stores';
 	import { browser } from '$app/environment';
+	import { _ } from 'svelte-i18n';
 
 	// Import new UI components
 	import SubtitleDisplay from '$lib/components/SubtitleDisplay.svelte';
@@ -331,7 +332,7 @@
 
 <div class="app-root" data-mode={settings.viewMode} style={backgroundStyle}>
 	{#if !drawerOpen}
-		<button type="button" class="gear-button" aria-label="Open settings" onclick={() => (drawerOpen = true)}>
+		<button type="button" class="gear-button" aria-label={$_('aria.open_settings')} onclick={() => (drawerOpen = true)}>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
 				height="24px"
@@ -366,7 +367,7 @@
 		<button
 			type="button"
 			class="scroll-to-bottom"
-			aria-label="Scroll to bottom"
+			aria-label={$_('aria.scroll_to_bottom')}
 			onclick={scroller.scrollToBottom}
 		>
 			<svg
