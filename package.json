@@ -1,6 +1,6 @@
 {
   "name": "jutukuva",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "description": "Real-time caption editing application for live streaming and transcription",
   "author": {
     "name": "Jutukuva",
@@ -67,7 +67,7 @@
   },
   "build": {
     "appId": "com.jutukuva.app",
-    "productName": "Streaming Caption Editor",
+    "productName": "Jutukuva",
     "files": [
       "build/**/*",
       "electron/**/*",
