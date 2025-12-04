@@ -101,3 +101,32 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	// Deep link handler
 	onDeepLinkJoin: (callback) => ipcRenderer.on('deep-link-join', (event, sessionCode) => callback(sessionCode))
 });
+
+// Expose Local ASR API (sherpa-onnx)
+contextBridge.exposeInMainWorld('asr', {
+	// Initialize ASR (downloads model if needed)
+	initialize: () => ipcRenderer.invoke('asr:initialize'),
+
+	// Start an ASR session
+	start: () => ipcRenderer.invoke('asr:start'),
+
+	// Send audio samples for processing (Float32Array)
+	// Note: We transfer the underlying ArrayBuffer for efficiency
+	sendAudio: (audioData) => ipcRenderer.invoke('asr:audio', audioData.buffer),
+
+	// Stop the current ASR session
+	stop: () => ipcRenderer.invoke('asr:stop'),
+
+	// Get ASR status
+	status: () => ipcRenderer.invoke('asr:status'),
+
+	// Listen for model download progress
+	onDownloadProgress: (callback) => {
+		ipcRenderer.on('asr:download-progress', (event, progress) => callback(progress));
+	},
+
+	// Remove download progress listener
+	removeDownloadProgressListener: () => {
+		ipcRenderer.removeAllListeners('asr:download-progress');
+	}
+});

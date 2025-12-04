@@ -12,6 +12,14 @@ import {
 	getBroadcastServerStatus,
 	getConnectedClientsCount
 } from './broadcast-server.js';
+import {
+	initializeASR,
+	startSession as startASRSession,
+	stopSession as stopASRSession,
+	processAudio,
+	getStatus as getASRStatus,
+	cleanup as cleanupASR
+} from './asr/asr-manager.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -563,6 +571,66 @@ app.whenReady().then(() => {
 		}
 	});
 
+	// ═══════════════════════════════════════════════════════════════
+	// ASR IPC HANDLERS (Local speech recognition with sherpa-onnx)
+	// ═══════════════════════════════════════════════════════════════
+
+	// Initialize ASR (download model if needed, create recognizer)
+	ipcMain.handle('asr:initialize', async () => {
+		try {
+			const result = await initializeASR((progress) => {
+				// Send download progress to renderer
+				mainWindow?.webContents.send('asr:download-progress', progress);
+			});
+			return result;
+		} catch (error) {
+			console.error('[Main] ASR initialization error:', error);
+			return { success: false, error: error.message };
+		}
+	});
+
+	// Start ASR session
+	ipcMain.handle('asr:start', async () => {
+		try {
+			return startASRSession();
+		} catch (error) {
+			console.error('[Main] ASR start error:', error);
+			return { success: false, error: error.message };
+		}
+	});
+
+	// Process audio frame - receives ArrayBuffer, converts to Float32Array
+	ipcMain.handle('asr:audio', async (event, audioBuffer) => {
+		try {
+			// Convert ArrayBuffer back to Float32Array
+			const samples = new Float32Array(audioBuffer);
+			return processAudio(samples);
+		} catch (error) {
+			console.error('[Main] ASR audio processing error:', error);
+			return { text: '', isFinal: false, error: error.message };
+		}
+	});
+
+	// Stop ASR session
+	ipcMain.handle('asr:stop', async () => {
+		try {
+			return stopASRSession();
+		} catch (error) {
+			console.error('[Main] ASR stop error:', error);
+			return { text: '', isFinal: true, error: error.message };
+		}
+	});
+
+	// Get ASR status
+	ipcMain.handle('asr:status', async () => {
+		try {
+			return getASRStatus();
+		} catch (error) {
+			console.error('[Main] ASR status error:', error);
+			return { isInitialized: false, hasActiveSession: false, error: error.message };
+		}
+	});
+
 	createWindow();
 
 	app.on('activate', () => {
@@ -582,5 +650,6 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
 	// stopBroadcastServer();
+	cleanupASR();
 	closeDatabase();
 });

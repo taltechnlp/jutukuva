@@ -20,7 +20,7 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron . --no-sandbox\"",
     "electron:build": "npm run build && electron-builder",
-    "rebuild": "electron-rebuild --force --module-dir . --which better-sqlite3"
+    "rebuild": "electron-rebuild --force --module-dir . --which better-sqlite3 sherpa-onnx-node"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.1",
@@ -58,12 +58,20 @@
     "prosemirror-utils": "^1.2.2",
     "prosemirror-view": "^1.41.3",
     "qrcode": "^1.5.4",
+    "sherpa-onnx-node": "^1.12.18",
     "svelte-i18n": "^4.0.1",
     "uuid": "^11.0.6",
     "ws": "^8.18.0",
     "y-prosemirror": "^1.3.7",
     "y-websocket": "^3.0.0",
     "yjs": "^13.6.27"
+  },
+  "optionalDependencies": {
+    "sherpa-onnx-linux-x64": "^1.12.18",
+    "sherpa-onnx-linux-arm64": "^1.12.18",
+    "sherpa-onnx-darwin-x64": "^1.12.18",
+    "sherpa-onnx-darwin-arm64": "^1.12.18",
+    "sherpa-onnx-win-x64": "^1.12.18"
   },
   "build": {
     "appId": "com.jutukuva.app",
@@ -72,6 +80,10 @@
       "build/**/*",
       "electron/**/*",
       "package.json"
+    ],
+    "asarUnpack": [
+      "**/*.node",
+      "**/sherpa-onnx-node/**"
     ],
     "directories": {
       "buildResources": "assets",
@@ -101,7 +113,14 @@
       "extendInfo": {
         "NSScreenCaptureUsageDescription": "This app needs to access screen recording to capture system audio from specific windows and screens.",
         "NSMicrophoneUsageDescription": "This app needs microphone access for speech recognition."
-      }
+      },
+      "extraResources": [
+        {
+          "from": "node_modules/sherpa-onnx-darwin-${arch}",
+          "to": "sherpa-libs",
+          "filter": ["**/*"]
+        }
+      ]
     },
     "win": {
       "target": [
@@ -112,7 +131,14 @@
           ]
         }
       ],
-      "icon": "assets/icon.png"
+      "icon": "assets/icon.png",
+      "extraResources": [
+        {
+          "from": "node_modules/sherpa-onnx-win-x64",
+          "to": "sherpa-libs",
+          "filter": ["**/*"]
+        }
+      ]
     },
     "linux": {
       "target": [
@@ -130,7 +156,14 @@
         }
       ],
       "category": "Utility",
-      "icon": "assets/icon.png"
+      "icon": "assets/icon.png",
+      "extraResources": [
+        {
+          "from": "node_modules/sherpa-onnx-linux-x64",
+          "to": "sherpa-libs",
+          "filter": ["**/*"]
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
