@@ -5,7 +5,7 @@
 	import { page } from '$app/stores';
 	import { MicVAD } from '@ricky0123/vad-web';
 	import * as ort from 'onnxruntime-web';
-	import { SpeechEditor, ShareSessionModal, SessionStatus, EndSessionModal } from '$lib/components/prosemirror-speech';
+	import { SpeechEditor, ShareSessionModal, EndSessionModal } from '$lib/components/prosemirror-speech';
 	import type { SubtitleSegment } from '$lib/components/prosemirror-speech/utils/types';
 	import { AudioSourceManager, type AudioSourceType, type AudioDevice } from '$lib/audioSourceManager';
 	import MacOSAudioSetup from '$lib/components/MacOSAudioSetup.svelte';
@@ -1305,21 +1305,21 @@
 			<!-- Left: Logo & Status -->
 			<div class="flex items-center gap-3">
 								
-			<!-- Status Badges -->
+			<!-- Status Badge -->
 			{#if isRecording}
-				<div class="badge badge-error gap-2 animate-pulse max-w-full">
-					<div class="rounded-full bg-white shrink-0"></div>
-					<span class="hidden sm:inline truncate max-w-[200px]">{isSpeaking ? $_('dictate.speakingDetected') : $_('dictate.listeningForSpeech')}</span>
+				<div class="badge badge-error gap-2 animate-pulse">
+					<div class="w-2 h-2 rounded-full bg-white shrink-0"></div>
+					<span class="truncate max-w-[200px]">{isSpeaking ? $_('dictate.speakingDetected') : $_('dictate.listeningForSpeech')}</span>
 				</div>
 			{:else if isWasmLoading || !isWasmReady}
-				<div class="badge badge-info gap-2 max-w-full">
+				<div class="badge badge-info gap-2">
 					<span class="loading loading-spinner loading-xs shrink-0"></span>
-					<span class="hidden sm:inline truncate max-w-[200px]">{initializationStatus}</span>
+					<span class="truncate max-w-[200px]">{initializationStatus}</span>
 				</div>
 			{:else if isWasmReady && isConnected}
-				<div class="badge badge-success badge-outline gap-2 max-w-full">
-					<div class="rounded-full bg-success shrink-0"></div>
-					<span class="hidden sm:inline truncate max-w-[200px]">{initializationStatus}</span>
+				<div class="badge badge-success badge-outline gap-2">
+					<div class="w-2 h-2 rounded-full bg-success shrink-0"></div>
+					<span class="truncate max-w-[200px]">{initializationStatus}</span>
 				</div>
 			{/if}
 
