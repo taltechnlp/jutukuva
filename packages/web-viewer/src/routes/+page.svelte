@@ -17,19 +17,19 @@
 		<div class="max-w-md">
 			<h1 class="text-5xl font-bold mb-4">Jutukuva</h1>
 			<p class="text-xl mb-8">
-				{$_('web_viewer.tagline', { default: 'Real-time Collaborative Speech Editor' })}
+				{$_('web_viewer.tagline')}
 			</p>
 
 			<div class="card bg-base-100 shadow-xl">
 				<div class="card-body">
 					<h2 class="card-title justify-center">
-						{$_('web_viewer.join_session', { default: 'Join Session' })}
+						{$_('web_viewer.join_session')}
 					</h2>
 
 					<div class="form-control w-full">
 						<label class="label">
 							<span class="label-text">
-								{$_('web_viewer.enter_code', { default: 'Enter 6-character session code' })}
+								{$_('web_viewer.enter_code')}
 							</span>
 						</label>
 						<input
@@ -69,7 +69,7 @@
 									d="M14 5l7 7m0 0l-7 7m7-7H3"
 								/>
 							</svg>
-							{$_('web_viewer.join', { default: 'Join Session' })}
+							{$_('web_viewer.join')}
 						</button>
 					</div>
 				</div>
@@ -77,9 +77,7 @@
 
 			<div class="mt-8 text-sm text-base-content/60">
 				<p>
-					{$_('web_viewer.web_viewer_note', {
-						default: 'Web viewer (guest mode) - For recording, use the desktop app'
-					})}
+					{$_('web_viewer.web_viewer_note')}
 				</p>
 			</div>
 		</div>

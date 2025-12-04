@@ -1,30 +1,32 @@
 <script lang="ts">
+	import { _ } from 'svelte-i18n';
+
 	type ConnectionState = 'connected' | 'disconnected' | 'error';
-	
+
 	interface Props {
 		state: ConnectionState;
 	}
-	
+
 	let { state = 'disconnected' }: Props = $props();
-	
-	const statusConfig = {
+
+	const statusConfig = $derived({
 		connected: {
 			color: '#22c55e',
-			label: 'Connected',
+			label: $_('connection.connected'),
 			pulse: false
 		},
 		disconnected: {
 			color: '#f97316',
-			label: 'Disconnected',
+			label: $_('connection.disconnected'),
 			pulse: true
 		},
 		error: {
 			color: '#ef4444',
-			label: 'Connection Error',
+			label: $_('connection.error'),
 			pulse: true
 		}
-	};
-	
+	});
+
 	const config = $derived(statusConfig[state]);
 </script>
 

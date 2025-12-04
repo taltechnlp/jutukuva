@@ -1,19 +1,20 @@
 <script lang="ts">
+	import { _ } from 'svelte-i18n';
 	import type { DisplaySettings } from '$lib/types/display-settings';
 
 	interface Props {
 		text: string;
 		settings: DisplaySettings;
 		lastUpdated: number | null;
-		placeholder?: string;
 	}
 
 	let {
 		text,
 		settings,
-		lastUpdated,
-		placeholder = 'Waiting for transcription…',
+		lastUpdated
 	}: Props = $props();
+
+	const placeholder = $derived($_('subtitle.waiting'));
 
 	// Split text into paragraphs for proper spacing
 	const paragraphs = $derived.by(() => {

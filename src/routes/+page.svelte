@@ -12,6 +12,9 @@
 	import { CollaborationManager } from '$lib/collaboration/CollaborationManager';
 	import { generateSessionCode, normalizeSessionCode, isValidSessionCode } from '$lib/collaboration/sessionCode';
 	import type { SessionInfo, Participant } from '$lib/collaboration/types';
+	import SessionsModal from '$lib/components/modals/SessionsModal.svelte';
+	import DictionariesModal from '$lib/components/modals/DictionariesModal.svelte';
+	import { modalStore } from '$lib/stores/modalStore.svelte';
 
 	// Configure ONNX Runtime to use WASM only (disable WebGPU to avoid warnings)
 	if (browser) {
@@ -1587,3 +1590,16 @@
 		onCancel={() => (showEndSessionModal = false)}
 	/>
 {/if}
+
+<!-- Sessions Modal (SPA overlay) -->
+<SessionsModal
+	bind:open={modalStore.showSessionsModal}
+	onActivateSession={(sessionId) => startCollaborativeSession(sessionId)}
+	onClose={() => modalStore.closeSessions()}
+/>
+
+<!-- Dictionaries Modal (SPA overlay) -->
+<DictionariesModal
+	bind:open={modalStore.showDictionariesModal}
+	onClose={() => modalStore.closeDictionaries()}
+/>

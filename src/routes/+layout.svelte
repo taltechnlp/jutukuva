@@ -3,37 +3,67 @@
 	import '../app.css';
 	import '$lib/i18n';
 	import { _ } from 'svelte-i18n';
-	import { page } from '$app/stores';
 	import LanguageSelector from '$lib/components/LanguageSelector.svelte';
 	import ThemeSelector from '$lib/components/ThemeSelector.svelte';
 	import { theme } from '$lib/stores/theme';
+	import { modalStore } from '$lib/stores/modalStore.svelte';
 
 	// Initialize theme on mount
 	onMount(() => {
 		theme.init();
 	});
 
-	// Navigation items
-	const navItems = [
+	// Navigation items - now using action handlers instead of hrefs for modals
+	type NavItem = {
+		id: string;
+		labelKey: string;
+		labelDefault: string;
+		action?: () => void;
+	};
+
+	const navItems: NavItem[] = [
 		{
-			href: '/',
+			id: 'editor',
 			labelKey: 'app.title',
-			labelDefault: 'Speech Recognition',
-			exact: true
+			labelDefault: 'Speech Recognition'
 		},
 		{
-			href: '/sessions',
+			id: 'sessions',
 			labelKey: 'nav.sessions',
 			labelDefault: 'Sessions',
-			exact: false
+			action: () => modalStore.openSessions()
 		},
 		{
-			href: '/settings/dictionaries',
+			id: 'dictionaries',
 			labelKey: 'nav.textSnippets',
 			labelDefault: 'Substitutions',
-			exact: false
+			action: () => modalStore.openDictionaries()
 		}
 	];
+
+	// Determine which nav item is "active" based on modal state
+	function isNavActive(id: string): boolean {
+		if (id === 'sessions') return modalStore.showSessionsModal;
+		if (id === 'dictionaries') return modalStore.showDictionariesModal;
+		// Editor is active when no modal is open
+		return id === 'editor' && !modalStore.showSessionsModal && !modalStore.showDictionariesModal;
+	}
+
+	function handleNavClick(item: NavItem) {
+		// Close any open modal first if clicking editor
+		if (item.id === 'editor') {
+			modalStore.closeSessions();
+			modalStore.closeDictionaries();
+		} else if (item.action) {
+			// Close other modals before opening this one
+			if (item.id === 'sessions') {
+				modalStore.closeDictionaries();
+			} else if (item.id === 'dictionaries') {
+				modalStore.closeSessions();
+			}
+			item.action();
+		}
+	}
 </script>
 
 <div class="min-h-screen flex flex-col bg-base-100 font-sans selection:bg-primary/20">
@@ -53,18 +83,16 @@
 				<div class="hidden md:flex flex-1 justify-center">
 					<div class="flex items-center space-x-1 bg-base-200/50 p-1.5 rounded-full backdrop-blur-sm">
 						{#each navItems as item}
-							{@const isActive = item.exact 
-								? $page.url.pathname === item.href 
-								: (item.href === '/' ? $page.url.pathname === '/' : $page.url.pathname.startsWith(item.href))}
-							<a
-								href={item.href}
+							{@const isActive = isNavActive(item.id)}
+							<button
+								onclick={() => handleNavClick(item)}
 								class="relative px-5 py-2.5 text-sm font-medium rounded-full transition-all duration-200 ease-out
 								{isActive
 									? 'bg-white text-primary shadow-sm ring-1 ring-black/5 dark:bg-base-100 dark:text-primary dark:ring-white/10'
 									: 'text-base-content/60 hover:text-base-content hover:bg-base-200/50'}"
 							>
 								{$_(item.labelKey, { default: item.labelDefault })}
-							</a>
+							</button>
 						{/each}
 					</div>
 				</div>
@@ -84,11 +112,9 @@
 		<div class="md:hidden fixed bottom-0 left-0 right-0 bg-base-100/90 backdrop-blur-xl border-t border-base-200 pb-safe z-50 px-6 py-3">
 			<div class="flex justify-between items-center h-12">
 				{#each navItems as item}
-					{@const isActive = item.exact 
-						? $page.url.pathname === item.href 
-						: (item.href === '/' ? $page.url.pathname === '/' : $page.url.pathname.startsWith(item.href))}
-					<a
-						href={item.href}
+					{@const isActive = isNavActive(item.id)}
+					<button
+						onclick={() => handleNavClick(item)}
 						class="flex flex-col items-center justify-center w-full h-full space-y-1 rounded-xl transition-colors
 						{isActive ? 'text-primary bg-primary/5' : 'text-base-content/50 hover:text-base-content'}"
 					>
@@ -96,7 +122,7 @@
 						{#if isActive}
 							<span class="w-1 h-1 rounded-full bg-primary"></span>
 						{/if}
-					</a>
+					</button>
 				{/each}
 			</div>
 		</div>
