@@ -12,7 +12,7 @@
 	import { streamingTextPlugin, insertStreamingTextCommand, signalVadSpeechEndCommand } from './plugins/streamingText';
 	import { subtitleSegmentationPlugin, subtitleSegmentationKey } from './plugins/subtitleSegmentation';
 	import { textSnippetsPlugin, updateTextSnippetEntries, type TextSnippetEntry } from './plugins/textSnippets';
-	import type { EditorConfig, StreamingTextEvent, SubtitleSegment, Word } from './utils/types';
+	import type { EditorConfig, StreamingTextEvent, SubtitleSegment } from './utils/types';
 	import type { CollaborationManager } from '$lib/collaboration/CollaborationManager';
 	import type { Speaker } from '$lib/collaboration/types';
 	import { speakerStore } from '$lib/stores/speakerStore';
@@ -54,7 +54,6 @@
 	let autoScroll = $state(true);
 	let textSnippetEntries = $state<TextSnippetEntry[]>([]);
 	let wordCount = $state(0);
-	let approvedCount = $state(0);
 
 	// Auto-save state
 	let autoSaveInterval: ReturnType<typeof setInterval> | null = null;
@@ -499,8 +498,7 @@
 	export function stopTiming() {
 		recordingStartTime = null;
 
-		// Send a final empty transaction to signal end of streaming
-		// This will clear the streaming flag and allow auto-confirm to start
+		// Send a final transaction to signal end of streaming
 		if (editorView) {
 			const tr = editorView.state.tr;
 			tr.setMeta('streamingEnded', true);
@@ -567,8 +565,7 @@
 	export function getState() {
 		return {
 			segments,
-			wordCount,
-			approvedCount
+			wordCount
 		};
 	}
 

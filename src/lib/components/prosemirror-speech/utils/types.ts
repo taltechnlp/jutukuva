@@ -7,8 +7,6 @@ export type Word = {
 	text: string;
 	start: number; // timestamp in seconds
 	end: number; // timestamp in seconds
-	approved: boolean;
-	final: boolean; // true when word appears in 2+ consecutive ASR results
 };
 
 export type SubtitleSegment = {
@@ -20,8 +18,6 @@ export type SubtitleSegment = {
 	srt: string; // formatted SRT block
 };
 
-export type ApprovalMode = 'word' | 'sentence' | 'paragraph';
-
 export type StreamingTextEvent = {
 	text: string;
 	isFinal: boolean;
@@ -29,15 +25,8 @@ export type StreamingTextEvent = {
 	end?: number;
 };
 
-export type AutoConfirmConfig = {
-	enabled: boolean;
-	timeoutSeconds: number; // 5-15 seconds
-};
-
 export type EditorConfig = {
 	fontSize?: number;
 	theme?: 'light' | 'dark';
 	onSubtitleEmit?: (srt: string, segment: SubtitleSegment) => void;
-	onWordApproved?: (word: Word) => void;
-	autoConfirm?: AutoConfirmConfig;
 };

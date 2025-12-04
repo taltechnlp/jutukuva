@@ -6,7 +6,7 @@
 	import { MicVAD } from '@ricky0123/vad-web';
 	import * as ort from 'onnxruntime-web';
 	import { SpeechEditor, ShareSessionModal, SessionStatus, EndSessionModal } from '$lib/components/prosemirror-speech';
-	import type { SubtitleSegment, Word } from '$lib/components/prosemirror-speech/utils/types';
+	import type { SubtitleSegment } from '$lib/components/prosemirror-speech/utils/types';
 	import { AudioSourceManager, type AudioSourceType, type AudioDevice } from '$lib/audioSourceManager';
 	import MacOSAudioSetup from '$lib/components/MacOSAudioSetup.svelte';
 	import { CollaborationManager } from '$lib/collaboration/CollaborationManager';
@@ -296,10 +296,6 @@
 
 		// Reset current db session
 		currentDbSession = null;
-	}
-
-	// Handle word approved
-	function handleWordApproved(word: Word) {
 	}
 
 	// Handle subtitle segment emitted
@@ -1556,7 +1552,6 @@
 						collaborationManager={collaborationManager}
 						config={{
 							fontSize: 16,
-							onWordApproved: handleWordApproved,
 							onSubtitleEmit: handleSubtitleEmit
 						}}
 					/>

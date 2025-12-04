@@ -1,7 +1,7 @@
 /**
  * ProseMirror Speech Editor - Public API
  *
- * A reusable library for real-time speech editing with word-level approval
+ * A reusable library for real-time speech editing
  */
 
 export { default as SpeechEditor } from './SpeechEditor.svelte';
@@ -15,10 +15,8 @@ export { default as EndSessionModal } from './EndSessionModal.svelte';
 export type {
 	Word,
 	SubtitleSegment,
-	ApprovalMode,
 	StreamingTextEvent,
-	EditorConfig,
-	AutoConfirmConfig
+	EditorConfig
 } from './utils/types';
 
 export { speechSchema } from './schema';
