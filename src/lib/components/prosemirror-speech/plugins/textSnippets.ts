@@ -162,6 +162,15 @@ export function textSnippetsPlugin(options: { entries: TextSnippetEntry[] }): Pl
 
 				// If document changed, re-evaluate match
 				if (tr.docChanged) {
+					// Skip if this is ASR-inserted text (not user typing)
+					if (tr.getMeta('insertStreamingText')) {
+						return {
+							...state,
+							activeMatch: null,
+							decorations: DecorationSet.empty
+						};
+					}
+
 					const wordInfo = getWordAtCursor(newState);
 
 					if (wordInfo && wordInfo.word.length > 0) {
