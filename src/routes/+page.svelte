@@ -66,7 +66,7 @@
 	let frameCount = 0; // Track total frames received for debugging
 
 	// Post-speech buffer - continue sending audio to ASR after VAD detects silence
-	const POST_SPEECH_BUFFER_MS = 1000; // 1 second post-speech buffer
+	const POST_SPEECH_BUFFER_MS = 2500; // 2.5 second post-speech buffer
 	let postSpeechTimer: NodeJS.Timeout | null = null;
 
 	// UI State

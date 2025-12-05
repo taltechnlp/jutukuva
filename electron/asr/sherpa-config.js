@@ -102,9 +102,7 @@ export function getRecognizerConfig(modelDir) {
       provider: 'cpu',
       debug: 0,
     },
-    enableEndpoint: 1,
-    rule1MinTrailingSilence: 2.4,
-    rule2MinTrailingSilence: 1.2,
+    enableEndpoint: false,
   };
 }
 
