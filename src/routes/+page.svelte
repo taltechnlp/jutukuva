@@ -65,6 +65,10 @@
 	let audioBuffer: Float32Array[] = [];
 	let frameCount = 0; // Track total frames received for debugging
 
+	// Post-speech buffer - continue sending audio to ASR after VAD detects silence
+	const POST_SPEECH_BUFFER_MS = 1000; // 1 second post-speech buffer
+	let postSpeechTimer: NodeJS.Timeout | null = null;
+
 	// UI State
 	let isConnected = $state(false);
 	let isRecording = $state(false);
@@ -575,6 +579,13 @@
 				if (DEBUG_VAD) console.log('🎤 [VAD] Speech started - sending pre-speech buffer');
 				isSpeaking = true;
 
+				// Clear the post-speech timer since speech resumed
+				if (postSpeechTimer) {
+					if (DEBUG_VAD) console.log('🎤 [VAD] Cancelling post-speech timer - speech resumed');
+					clearTimeout(postSpeechTimer);
+					postSpeechTimer = null;
+				}
+
 				// Clear the speech end timer since speech resumed
 				if (speechEndTimer) {
 					clearTimeout(speechEndTimer);
@@ -591,9 +602,19 @@
 
 			onSpeechEnd: (audio: Float32Array) => {
 				if (DEBUG_VAD) console.log('🔇 [VAD] Speech ended, audio length:', audio.length);
-				isSpeaking = false;
 
-				// Clear any existing timer
+				// Don't stop sending audio immediately - continue for POST_SPEECH_BUFFER_MS
+				// This ensures trailing audio is still processed by ASR
+				if (postSpeechTimer) {
+					clearTimeout(postSpeechTimer);
+				}
+				postSpeechTimer = setTimeout(() => {
+					if (DEBUG_VAD) console.log('🔇 [VAD] Post-speech buffer expired, stopping audio to ASR');
+					isSpeaking = false;
+					postSpeechTimer = null;
+				}, POST_SPEECH_BUFFER_MS);
+
+				// Clear any existing paragraph timer
 				if (speechEndTimer) {
 					clearTimeout(speechEndTimer);
 				}
@@ -1070,6 +1091,12 @@
 		isRecording = false;
 		isVadActive = false;
 		isSpeaking = false;
+
+		// Clear post-speech timer
+		if (postSpeechTimer) {
+			clearTimeout(postSpeechTimer);
+			postSpeechTimer = null;
+		}
 
 		// Notify editor that recording ended (for final segment emission)
 		if (speechEditor && speechEditor.view) {
