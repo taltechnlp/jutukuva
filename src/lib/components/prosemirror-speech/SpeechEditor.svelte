@@ -5,6 +5,8 @@
 	import { EditorView } from 'prosemirror-view';
 	import { Node } from 'prosemirror-model';
 	import { history, undo as pmUndo, redo as pmRedo } from 'prosemirror-history';
+	import { baseKeymap } from 'prosemirror-commands';
+	import { keymap } from 'prosemirror-keymap';
 	import { initProseMirrorDoc } from 'y-prosemirror';
 	import { writable, type Writable } from 'svelte/store';
 	import { speechSchema } from './schema';
@@ -298,7 +300,8 @@
 
 		// Determine plugins based on collaboration mode
 		const basePlugins = [
-			keyboardShortcutsPlugin(),
+			keyboardShortcutsPlugin(),  // Custom shortcuts first (takes precedence)
+			keymap(baseKeymap),          // Base keymap for standard editing (joinBackward, etc.)
 			speakerDropdownPlugin(),
 			streamingTextPlugin(collaborationManager),
 			subtitleSegmentationPlugin(handleSegmentComplete),
