@@ -89,23 +89,25 @@ function findMatch(word: string, entries: TextSnippetEntry[]): TextSnippetEntry 
 }
 
 /**
- * Create ghost text decoration
+ * Create ghost text decoration with strikethrough on trigger and full replacement preview
  */
 function createGhostTextDecoration(match: TextSnippetMatch, doc: any): DecorationSet {
-	// Calculate the remaining text to show
-	const remainingText = match.replacement.slice(match.trigger.length);
+	const decorations: Decoration[] = [];
 
-	if (!remainingText) {
-		return DecorationSet.empty;
-	}
+	// Add strikethrough decoration to the trigger text
+	decorations.push(
+		Decoration.inline(match.from, match.to, {
+			class: 'snippet-trigger-strikethrough'
+		})
+	);
 
-	// Create a widget at the end of the matched text
+	// Add widget showing the full replacement as ghost text
 	const widget = Decoration.widget(
 		match.to,
 		() => {
 			const span = document.createElement('span');
 			span.className = 'snippet-ghost-text';
-			span.textContent = remainingText;
+			span.textContent = match.replacement;
 			return span;
 		},
 		{
@@ -113,8 +115,9 @@ function createGhostTextDecoration(match: TextSnippetMatch, doc: any): Decoratio
 			key: 'ghost-text'
 		}
 	);
+	decorations.push(widget);
 
-	return DecorationSet.create(doc, [widget]);
+	return DecorationSet.create(doc, decorations);
 }
 
 /**
@@ -133,7 +136,7 @@ export function textSnippetsPlugin(options: { entries: TextSnippetEntry[] }): Pl
 				};
 			},
 
-			apply(tr: Transaction, state: TextSnippetState): TextSnippetState {
+			apply(tr: Transaction, state: TextSnippetState, oldState: EditorState, newState: EditorState): TextSnippetState {
 				// Allow external updates to entries
 				const newEntries = tr.getMeta(textSnippetKey)?.entries;
 				if (newEntries) {
@@ -159,8 +162,7 @@ export function textSnippetsPlugin(options: { entries: TextSnippetEntry[] }): Pl
 
 				// If document changed, re-evaluate match
 				if (tr.docChanged) {
-					const newState = tr.doc;
-					const wordInfo = getWordAtCursor(tr as any);
+					const wordInfo = getWordAtCursor(newState);
 
 					if (wordInfo && wordInfo.word.length > 0) {
 						const match = findMatch(wordInfo.word, state.entries);
