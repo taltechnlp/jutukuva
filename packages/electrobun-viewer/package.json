@@ -1,0 +1,24 @@
+{
+  "name": "@jutukuva/electrobun-viewer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun run build:dev && electrobun dev",
+    "dev:watch": "electrobun dev",
+    "build:dev": "bun install && electrobun build",
+    "build:prod": "bun install && electrobun build --release",
+    "build:viewer": "bun run scripts/build-viewer.ts",
+    "dev": "bun run build:viewer && bun run start"
+  },
+  "dependencies": {
+    "electrobun": "^0.4.1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.5.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
