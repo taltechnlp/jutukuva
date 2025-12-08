@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - Jutukuva Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="settings-container">
+    <header class="settings-header">
+      <h1>Settings</h1>
+      <p>Configure your viewing preferences</p>
+    </header>
+
+    <main class="settings-content">
+      <!-- This is a standalone settings view that can be opened in a separate window -->
+      <!-- Most settings are handled in the main view's modal, but this provides an alternative -->
+      
+      <section class="settings-section">
+        <h2>About Jutukuva Viewer</h2>
+        <div class="about-info">
+          <p><strong>Version:</strong> 1.0.0</p>
+          <p><strong>Built with:</strong> Electrobun</p>
+          <p><strong>Runtime:</strong> Bun</p>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <h2>Keyboard Shortcuts</h2>
+        <div class="shortcuts-list">
+          <div class="shortcut-item">
+            <span class="shortcut-keys">⌘/Ctrl + O</span>
+            <span class="shortcut-desc">Toggle overlay window</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-keys">Escape</span>
+            <span class="shortcut-desc">Close modal dialogs</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-keys">Double-click</span>
+            <span class="shortcut-desc">Toggle click-through mode (on overlay)</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <h2>Links</h2>
+        <div class="links-list">
+          <a href="https://github.com/jutukuva" target="_blank" rel="noopener">GitHub Repository</a>
+          <a href="https://blackboard.sh/electrobun/docs/" target="_blank" rel="noopener">Electrobun Documentation</a>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
