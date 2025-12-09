@@ -59,8 +59,8 @@ const DEFAULT_SETTINGS: AppSettings = {
     backgroundOpacity: 0.85,
   },
   connection: {
-    yjsServerUrl: "ws://localhost:1234",
-    webViewerUrl: "http://localhost:5174",
+    yjsServerUrl: "wss://tekstiks.ee/kk",
+    webViewerUrl: "https://tekstiks.ee/kk",
     autoConnect: true,
   },
   lastSessionCode: null,

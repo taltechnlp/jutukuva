@@ -26,6 +26,8 @@ export default {
       "src/views/main/index.html": "views/main/index.html",
       "src/views/main/script.js": "views/main/script.js",
       "src/views/main/styles.css": "views/main/styles.css",
+      "src/views/main/yjs-client.js": "views/main/yjs-client.js",
+      "src/views/main/vendor/yjs-bundle.js": "views/main/vendor/yjs-bundle.js",
       "src/views/overlay/index.html": "views/overlay/index.html",
       "src/views/overlay/script.js": "views/overlay/script.js",
       "src/views/overlay/styles.css": "views/overlay/styles.css",
