@@ -10,7 +10,7 @@ dist/
 out/
 
 # Tauri build outputs
-src-tauri/target/
+**/src-tauri/target/
 
 # Database files
 *.sqlite
