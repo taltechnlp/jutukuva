@@ -16,7 +16,8 @@ const leaveBtn = document.getElementById('leaveBtn');
 const currentSessionCode = document.getElementById('currentSessionCode');
 const connectionStatus = document.getElementById('connectionStatus');
 const overlayToggle = document.getElementById('overlayToggle');
-const viewerFrame = document.getElementById('viewerFrame');
+const textDisplay = document.getElementById('textDisplay');
+const textContent = document.getElementById('textContent');
 const settingsBtn = document.getElementById('settingsBtn');
 const settingsModal = document.getElementById('settingsModal');
 const closeSettingsBtn = document.getElementById('closeSettingsBtn');
@@ -48,6 +49,7 @@ const subtitlePreview = document.getElementById('subtitlePreview');
 // State
 let currentSettings = null;
 let isOverlayActive = false;
+let yjsSync = null;
 
 // ═══════════════════════════════════════════════════════════════
 // Initialization
@@ -221,52 +223,97 @@ async function checkLastSession() {
 
 async function joinSession(code) {
   const normalizedCode = code.toUpperCase().trim();
-  
+
   if (normalizedCode.length !== 6) {
     console.error('[Main View] Invalid session code');
     return;
   }
-  
+
   console.log('[Main View] Joining session:', normalizedCode);
-  
+
   // Save last session code
   if (rpc) {
     await rpc.invoke('session:setLastCode', normalizedCode);
   }
-  
-  // Get viewer URL from settings
-  const viewerUrl = currentSettings?.connection?.webViewerUrl || 'http://localhost:5174';
-  const sessionUrl = `${viewerUrl}/${normalizedCode}`;
-  
+
+  // Get YJS server URL from settings
+  const yjsServerUrl = currentSettings?.connection?.yjsServerUrl || 'wss://tekstiks.ee/kk';
+
+  console.log('[Main View] Using YJS server URL:', yjsServerUrl);
+
   // Switch to viewer mode
   joinSection.style.display = 'none';
   viewerSection.style.display = 'flex';
   currentSessionCode.textContent = normalizedCode;
-  
-  // Load viewer in iframe
-  viewerFrame.src = sessionUrl;
-  
-  // Update connection status when iframe loads
-  viewerFrame.onload = () => {
-    connectionStatus.textContent = 'Connected';
-    connectionStatus.classList.add('connected');
-  };
+
+  // Initialize YJS sync
+  if (window.YjsTextSync) {
+    yjsSync = new window.YjsTextSync();
+    yjsSync.connect(normalizedCode, yjsServerUrl, {
+      onTextUpdate: (text) => {
+        console.log('[Main View] Text updated:', text.substring(0, 100));
+        updateTextDisplay(text);
+      },
+      onConnectionChange: (connected) => {
+        console.log('[Main View] Connection changed:', connected);
+        if (connected) {
+          connectionStatus.textContent = 'Connected';
+          connectionStatus.classList.add('connected');
+        } else {
+          connectionStatus.textContent = 'Connecting...';
+          connectionStatus.classList.remove('connected');
+        }
+      }
+    });
+  } else {
+    console.error('[Main View] YjsTextSync not available');
+    connectionStatus.textContent = 'Error: YJS not loaded';
+  }
+}
+
+function updateTextDisplay(text) {
+  if (!textContent) return;
+
+  // Convert text to HTML with paragraph support
+  const paragraphs = text.split('\n').filter(p => p.trim());
+  textContent.innerHTML = paragraphs
+    .map(p => `<p class="subtitle-paragraph">${escapeHtml(p)}</p>`)
+    .join('');
+
+  // Auto-scroll to bottom
+  if (textDisplay) {
+    textDisplay.scrollTop = textDisplay.scrollHeight;
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 function leaveSession() {
   console.log('[Main View] Leaving session');
-  
-  // Clear iframe
-  viewerFrame.src = 'about:blank';
-  
+
+  // Disconnect YJS
+  if (yjsSync) {
+    yjsSync.disconnect();
+    yjsSync = null;
+  }
+
+  // Clear text display
+  if (textContent) {
+    textContent.innerHTML = '';
+  }
+
   // Switch back to join mode
   viewerSection.style.display = 'none';
   joinSection.style.display = 'flex';
-  
+
   // Clear code input
   sessionCodeInput.value = '';
   sessionCodeInput.focus();
-  
+
   // Reset connection status
   connectionStatus.textContent = 'Connecting...';
   connectionStatus.classList.remove('connected');

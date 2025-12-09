@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Jutukuva Viewer</title>
   <link rel="stylesheet" href="styles.css">
+  <!-- YJS dependencies bundled locally -->
+  <script src="vendor/yjs-bundle.js"></script>
 </head>
 <body>
   <div class="app-container">
@@ -93,7 +95,9 @@
           </div>
         </div>
         
-        <iframe id="viewerFrame" class="viewer-frame" src="about:blank"></iframe>
+        <div id="textDisplay" class="text-display">
+          <div id="textContent" class="text-content"></div>
+        </div>
       </section>
     </main>
 
@@ -239,6 +243,7 @@
     </div>
   </div>
 
+  <script src="yjs-client.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
