@@ -37,7 +37,31 @@ bun start              # Start Electrobun app
 bun run build:prod
 ```
 
-This creates distribution packages in the `artifacts/` directory.
+This creates distribution packages in the `build/` directory.
+
+### Linux Build Notes
+
+On Linux with a monorepo setup, you may need to create a symlink for electrobun to find its dependencies:
+
+```bash
+mkdir -p node_modules
+ln -sf ../../../node_modules/electrobun node_modules/electrobun
+```
+
+### Running the Built App
+
+**macOS:**
+```bash
+open build/dev-darwin-*/JutukuvaViewer-dev.app
+```
+
+**Linux:**
+```bash
+cd build/dev-linux-x64/JutukuvaViewer-dev/bin
+LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH ./bun ../Resources/main.js
+```
+
+Note: On Linux, you must run from the `bin/` directory so paths resolve correctly, and `LD_LIBRARY_PATH` must include the current directory for `libasar.so`.
 
 ## Features
 
