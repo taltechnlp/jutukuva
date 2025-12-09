@@ -9,6 +9,9 @@ dist/
 # Electron build outputs
 out/
 
+# Tauri build outputs
+src-tauri/target/
+
 # Database files
 *.sqlite
 *.sqlite-shm
