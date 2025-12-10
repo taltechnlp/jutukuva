@@ -1,5 +1,7 @@
-import { setupLibraryPath, getRecognizerConfig, getModelPath, MODEL_INFO } from './sherpa-config.js';
+import { setupLibraryPath, getRecognizerConfig, getModelPath, MODEL_INFO, getLibraryPath } from './sherpa-config.js';
 import { downloadModel, isModelDownloaded } from './model-downloader.js';
+import { createRequire } from 'module';
+import path from 'path';
 
 // Sherpa-onnx module (loaded dynamically after library path setup)
 let sherpa = null;
@@ -46,7 +48,35 @@ export async function initializeASR(onProgress) {
     // Step 3: Load sherpa-onnx-node module
     console.log('[ASR] Loading sherpa-onnx-node...');
     try {
-      // Dynamic import since we need library path set first
+      const libPath = getLibraryPath();
+      const nativeAddonPath = path.join(libPath, 'sherpa-onnx.node');
+      console.log('[ASR] Native addon path:', nativeAddonPath);
+
+      // Use createRequire to load native modules in ESM context
+      const require = createRequire(import.meta.url);
+
+      // Pre-load the native addon and inject it into require cache
+      // This allows sherpa-onnx-node to find it regardless of its relative path resolution
+      try {
+        const addon = require(nativeAddonPath);
+        console.log('[ASR] Native addon loaded from:', nativeAddonPath);
+
+        // Get the path where sherpa-onnx-node's addon.js expects to find the module
+        // and inject our loaded addon into the cache
+        const addonJsPath = require.resolve('sherpa-onnx-node/addon.js');
+        require.cache[addonJsPath] = {
+          id: addonJsPath,
+          filename: addonJsPath,
+          loaded: true,
+          exports: addon
+        };
+        console.log('[ASR] Injected addon into require cache for:', addonJsPath);
+      } catch (addonError) {
+        console.log('[ASR] Could not pre-load addon:', addonError.message);
+        // Continue anyway - maybe standard import will work
+      }
+
+      // Now import sherpa-onnx-node
       sherpa = await import('sherpa-onnx-node');
       console.log('[ASR] sherpa-onnx-node loaded successfully');
     } catch (loadError) {
