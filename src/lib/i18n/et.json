@@ -36,7 +36,8 @@
     "manageSpeakers": "Halda kõnelejaid",
     "noSpeakers": "Kõnelejaid pole määratud",
     "speakerName": "Kõneleja nimi",
-    "addSpeaker": "Lisa kõneleja"
+    "addSpeaker": "Lisa kõneleja",
+    "noMatches": "Vasteid ei leitud. Vajuta Enter lisamiseks."
   },
   "error": {
     "404": {
