@@ -20,7 +20,7 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron . --no-sandbox\"",
     "electron:build": "npm run build && electron-builder",
-    "rebuild": "@electron/rebuild --force --module-dir . --which-module better-sqlite3"
+    "rebuild": "npx @electron/rebuild --force --module-dir . --which-module better-sqlite3"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.1",
