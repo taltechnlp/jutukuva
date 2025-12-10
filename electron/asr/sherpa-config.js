@@ -33,7 +33,22 @@ export function getLibraryPath() {
     return path.join(process.resourcesPath, 'sherpa-libs');
   } else {
     // In development, libraries are in node_modules
-    return path.join(process.cwd(), 'node_modules', libPackage);
+    // Try app.getAppPath() first (more reliable in Electron), fall back to cwd
+    const appPath = app.getAppPath();
+    const cwdPath = process.cwd();
+
+    // Check both paths and use whichever exists
+    const appLibPath = path.join(appPath, 'node_modules', libPackage);
+    const cwdLibPath = path.join(cwdPath, 'node_modules', libPackage);
+
+    if (fs.existsSync(appLibPath)) {
+      return appLibPath;
+    } else if (fs.existsSync(cwdLibPath)) {
+      return cwdLibPath;
+    }
+
+    // Default to appPath-based location
+    return appLibPath;
   }
 }
 
@@ -48,6 +63,8 @@ export function setupLibraryPath() {
   console.log('[ASR] Setting up library path:', libPath);
   console.log('[ASR] Platform:', platform, 'Arch:', process.arch);
   console.log('[ASR] Is packaged:', app.isPackaged);
+  console.log('[ASR] Process cwd:', process.cwd());
+  console.log('[ASR] App path:', app.getAppPath());
 
   // Verify library path exists
   if (!fs.existsSync(libPath)) {
@@ -55,9 +72,29 @@ export function setupLibraryPath() {
     throw new Error(`Sherpa-onnx libraries not found at ${libPath}`);
   }
 
+  // Check if the .node file exists
+  const nodeFile = path.join(libPath, 'sherpa-onnx.node');
+  if (fs.existsSync(nodeFile)) {
+    console.log('[ASR] Found native module:', nodeFile);
+  } else {
+    console.error('[ASR] Native module NOT found:', nodeFile);
+    // List contents of libPath for debugging
+    try {
+      const files = fs.readdirSync(libPath);
+      console.log('[ASR] Contents of libPath:', files);
+    } catch (e) {
+      console.error('[ASR] Could not list libPath contents:', e.message);
+    }
+  }
+
   // Set platform-specific environment variables
   if (platform === 'darwin') {
     process.env.DYLD_LIBRARY_PATH = `${libPath}:${process.env.DYLD_LIBRARY_PATH || ''}`;
+    // Also set PWD to help sherpa-onnx-node find the module
+    // The addon.js uses process.env.PWD to construct paths
+    if (!app.isPackaged) {
+      process.env.PWD = process.cwd();
+    }
   } else if (platform === 'linux') {
     process.env.LD_LIBRARY_PATH = `${libPath}:${process.env.LD_LIBRARY_PATH || ''}`;
   } else if (platform === 'win32') {
