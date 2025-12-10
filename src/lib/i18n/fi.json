@@ -26,6 +26,16 @@
     "reject": "Hylkää",
     "error": "Virhe"
   },
+  "speakers": {
+    "selectSpeaker": "Valitse puhuja",
+    "changeSpeaker": "Vaihda puhuja",
+    "addNew": "Lisää uusi puhuja...",
+    "manageSpeakers": "Hallitse puhujia",
+    "noSpeakers": "Puhujia ei ole määritelty",
+    "speakerName": "Puhujan nimi",
+    "addSpeaker": "Lisää puhuja",
+    "noMatches": "Ei osumia. Paina Enter lisätäksesi."
+  },
   "error": {
     "404": {
       "title": "Sivua ei löydy",

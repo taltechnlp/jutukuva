@@ -38,7 +38,8 @@
     "manageSpeakers": "Manage Speakers",
     "noSpeakers": "No speakers defined",
     "speakerName": "Speaker name",
-    "addSpeaker": "Add Speaker"
+    "addSpeaker": "Add Speaker",
+    "noMatches": "No matches. Press Enter to add."
   },
   "error": {
     "404": {
