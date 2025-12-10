@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { nanoid } from 'nanoid';
 	import { _ } from 'svelte-i18n';
+	import { generateSessionCode, isValidSessionCode, normalizeSessionCode } from '$lib/collaboration/sessionCode';
 
 	interface Props {
 		onClose: () => void;
@@ -13,8 +13,13 @@
 	let scheduledDate = $state('');
 	let scheduledTime = $state('');
 	let description = $state('');
+	let sessionCode = $state('');
+	let useCustomCode = $state(false);
 	let creating = $state(false);
 	let error = $state<string | null>(null);
+
+	// Generate initial code
+	let generatedCode = $state(generateSessionCode());
 
 	// Set default date/time to current time + 1 hour
 	$effect(() => {
@@ -29,6 +34,16 @@
 		scheduledTime = timeStr;
 	});
 
+	function regenerateCode() {
+		generatedCode = generateSessionCode();
+	}
+
+	function handleCodeInput(e: Event) {
+		const input = e.target as HTMLInputElement;
+		// Normalize input: uppercase, remove invalid chars
+		sessionCode = normalizeSessionCode(input.value).slice(0, 6);
+	}
+
 	async function handleSubmit() {
 		if (!name.trim()) {
 			error = $_('sessions.create.nameRequired', { default: 'Session name is required' });
@@ -40,15 +55,21 @@
 			return;
 		}
 
+		// Determine session ID (custom or generated)
+		const sessionId = useCustomCode ? sessionCode : generatedCode;
+
+		// Validate session code
+		if (!isValidSessionCode(sessionId)) {
+			error = $_('sessions.create.invalidCode', { default: 'Session code must be 6 characters (A-Z, 2-9, no O/0/I/1/L)' });
+			return;
+		}
+
 		try {
 			creating = true;
 			error = null;
 
 			// Combine date and time into ISO format
 			const dateTimeString = `${scheduledDate}T${scheduledTime}:00`;
-
-			// Generate session ID
-			const sessionId = nanoid(6).toUpperCase();
 
 			// Create session in database
 			await window.db.createSession(sessionId, name.trim(), dateTimeString, description.trim() || null);
@@ -57,7 +78,7 @@
 			onSessionCreated();
 		} catch (err) {
 			console.error('Failed to create session:', err);
-			error = 'Failed to create session';
+			error = $_('sessions.create.failedToCreate', { default: 'Failed to create session' });
 			creating = false;
 		}
 	}
@@ -93,6 +114,73 @@
 					disabled={creating}
 					required
 				/>
+			</div>
+
+			<!-- Session Code -->
+			<div class="form-control mb-4">
+				<label class="label" for="session-code">
+					<span class="label-text">{$_('sessions.create.sessionCode', { default: 'Session Code' })}</span>
+				</label>
+
+				<div class="flex items-center gap-2 mb-2">
+					<label class="label cursor-pointer gap-2">
+						<input
+							type="radio"
+							name="code-type"
+							class="radio radio-sm"
+							checked={!useCustomCode}
+							onchange={() => useCustomCode = false}
+							disabled={creating}
+						/>
+						<span class="label-text">{$_('sessions.create.autoGenerate', { default: 'Auto-generate' })}</span>
+					</label>
+					<label class="label cursor-pointer gap-2">
+						<input
+							type="radio"
+							name="code-type"
+							class="radio radio-sm"
+							checked={useCustomCode}
+							onchange={() => useCustomCode = true}
+							disabled={creating}
+						/>
+						<span class="label-text">{$_('sessions.create.customCode', { default: 'Custom code' })}</span>
+					</label>
+				</div>
+
+				{#if useCustomCode}
+					<input
+						id="session-code"
+						type="text"
+						placeholder={$_('sessions.create.codePlaceholder', { default: 'e.g. ABC123' })}
+						class="input input-bordered w-full font-mono text-lg tracking-widest session-code-input"
+						value={sessionCode}
+						oninput={handleCodeInput}
+						disabled={creating}
+						maxlength="6"
+					/>
+					<label class="label">
+						<span class="label-text-alt text-base-content/60">
+							{$_('sessions.create.codeHint', { default: 'Use letters A-Z (except O, I, L) and numbers 2-9' })}
+						</span>
+					</label>
+				{:else}
+					<div class="flex items-center gap-2">
+						<div class="input input-bordered flex-1 flex items-center font-mono text-lg tracking-widest bg-base-200">
+							{generatedCode}
+						</div>
+						<button
+							type="button"
+							class="btn btn-square btn-ghost"
+							onclick={regenerateCode}
+							disabled={creating}
+							title={$_('sessions.create.regenerate', { default: 'Generate new code' })}
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+							</svg>
+						</button>
+					</div>
+				{/if}
 			</div>
 
 			<!-- Date -->
@@ -175,3 +263,12 @@
 		</form>
 	</div>
 </div>
+
+<style>
+	.session-code-input {
+		text-transform: uppercase;
+	}
+	.session-code-input::placeholder {
+		text-transform: none;
+	}
+</style>
