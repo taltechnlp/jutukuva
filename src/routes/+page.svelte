@@ -1288,15 +1288,6 @@
 					<p>
 						{$_('dictate.downloadingFile', { default: 'Downloading' })}: {modelDownloadProgress.currentFile}
 					</p>
-					<p class="text-xs mt-1">
-						{$_('dictate.fileProgress', {
-							default: 'File {completed} of {total}',
-							values: {
-								completed: modelDownloadProgress.completedFiles + 1,
-								total: modelDownloadProgress.totalFiles
-							}
-						})}
-					</p>
 				</div>
 			</div>
 			<p class="text-xs text-base-content/50 text-center mt-4">
