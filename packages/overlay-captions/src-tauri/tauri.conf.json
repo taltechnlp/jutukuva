@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Jutukuva Captions",
+  "productName": "Jutukuva Subtiitrid",
   "version": "0.4.0",
-  "identifier": "ee.jutukuva.overlay-captions",
+  "identifier": "ee.jutukuva.subtiitrid",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -15,7 +15,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Jutukuva Captions",
+        "title": "Jutukuva Subtiitrid",
         "width": 600,
         "height": 550,
         "minWidth": 400,

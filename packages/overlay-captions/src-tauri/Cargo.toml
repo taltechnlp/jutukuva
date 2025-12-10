@@ -1,12 +1,12 @@
 [package]
-name = "overlay-captions"
+name = "jutukuva-subtiitrid"
 version = "0.4.0"
-description = "Jutukuva Captions - Live subtitle overlay"
+description = "Jutukuva Subtiitrid - Live subtitle overlay"
 authors = ["Jutukuva"]
 edition = "2021"
 
 [lib]
-name = "overlay_captions_lib"
+name = "jutukuva_subtiitrid_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
