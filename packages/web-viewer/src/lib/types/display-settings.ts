@@ -16,7 +16,7 @@ export const defaultSettings: DisplaySettings = {
   fontWeight: 600,
   textColor: "#000000",
   backgroundColor: "#FFFFFF",
-  horizontalAlignment: "full",
+  horizontalAlignment: "middle",
   viewMode: "text",
   letterSpacing: 0.02,
 };
