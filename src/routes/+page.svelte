@@ -1345,6 +1345,17 @@
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
 						</svg>
 						{sessionInfo.code}
+						<button
+							class="hover:text-white transition-colors cursor-pointer"
+							onclick={() => {
+								navigator.clipboard.writeText(sessionInfo.code);
+							}}
+							title={$_('share_session.copy')}
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+							</svg>
+						</button>
 					</div>
 				{/if}
 			</div>
@@ -1464,7 +1475,18 @@
 							<li>
 								<div class="flex flex-col items-start gap-1 cursor-default hover:bg-transparent p-3">
 									<span class="text-xs opacity-70">{$_('share_session.code_label')}</span>
-									<span class="font-mono text-lg font-bold select-all">{sessionInfo.code}</span>
+									<div class="flex items-center gap-2">
+										<span class="font-mono text-lg font-bold select-all">{sessionInfo.code}</span>
+										<button
+											class="btn btn-ghost btn-xs btn-circle cursor-pointer"
+											onclick={() => navigator.clipboard.writeText(sessionInfo.code)}
+											title={$_('share_session.copy')}
+										>
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+											</svg>
+										</button>
+									</div>
 								</div>
 							</li>
 							<li>
