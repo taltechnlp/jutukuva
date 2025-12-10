@@ -55,30 +55,34 @@ export async function initializeASR(onProgress) {
       // Use createRequire to load native modules in ESM context
       const require = createRequire(import.meta.url);
 
-      // Pre-load the native addon and inject it into require cache
-      // This allows sherpa-onnx-node to find it regardless of its relative path resolution
-      try {
-        const addon = require(nativeAddonPath);
-        console.log('[ASR] Native addon loaded from:', nativeAddonPath);
+      // Load the native addon directly from our known path
+      const addon = require(nativeAddonPath);
+      console.log('[ASR] Native addon loaded from:', nativeAddonPath);
 
-        // Get the path where sherpa-onnx-node's addon.js expects to find the module
-        // and inject our loaded addon into the cache
-        const addonJsPath = require.resolve('sherpa-onnx-node/addon.js');
-        require.cache[addonJsPath] = {
-          id: addonJsPath,
-          filename: addonJsPath,
-          loaded: true,
-          exports: addon
-        };
-        console.log('[ASR] Injected addon into require cache for:', addonJsPath);
-      } catch (addonError) {
-        console.log('[ASR] Could not pre-load addon:', addonError.message);
-        // Continue anyway - maybe standard import will work
-      }
+      // Inject the loaded addon into require.cache so that when streaming-asr.js
+      // does require('./addon.js'), it gets our pre-loaded addon
+      const addonJsPath = require.resolve('sherpa-onnx-node/addon.js');
+      console.log('[ASR] Injecting addon into cache at:', addonJsPath);
 
-      // Now import sherpa-onnx-node
-      sherpa = await import('sherpa-onnx-node');
-      console.log('[ASR] sherpa-onnx-node loaded successfully');
+      // Create a proper module cache entry
+      const Module = require('module');
+      const cachedModule = new Module(addonJsPath);
+      cachedModule.filename = addonJsPath;
+      cachedModule.paths = Module._nodeModulePaths(path.dirname(addonJsPath));
+      cachedModule.loaded = true;
+      cachedModule.exports = addon;
+      require.cache[addonJsPath] = cachedModule;
+
+      // Now load streaming-asr.js which will use our cached addon
+      const streamingAsr = require('sherpa-onnx-node/streaming-asr.js');
+
+      // Create a sherpa-like module with what we need
+      sherpa = {
+        OnlineRecognizer: streamingAsr.OnlineRecognizer,
+        readWave: addon.readWave,
+        writeWave: addon.writeWave,
+      };
+      console.log('[ASR] sherpa-onnx-node components loaded successfully');
     } catch (loadError) {
       console.error('[ASR] Failed to load sherpa-onnx-node:', loadError);
       return {
