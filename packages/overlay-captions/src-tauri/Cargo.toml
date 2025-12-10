@@ -1,6 +1,6 @@
 [package]
 name = "jutukuva-subtiitrid"
-version = "0.4.0"
+version = "0.4.1"
 description = "Jutukuva Subtiitrid - Reaalajas subtiitrite ülekate"
 authors = ["Jutukuva"]
 edition = "2021"
