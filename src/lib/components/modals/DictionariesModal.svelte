@@ -124,12 +124,32 @@
 			const text = await file.text();
 			const data = JSON.parse(text);
 
-			// Validate structure
-			if (!data.name || !data.entries || typeof data.entries !== 'object') {
+			let name: string;
+			let entries: Record<string, string>;
+
+			// Support TextOnTop format: { "shortform": { "<default>": { "shortforms": { ... } } } }
+			if (data.shortform && typeof data.shortform === 'object') {
+				// TextOnTop format - extract shortforms from the first profile (usually "<default>")
+				const profiles = Object.keys(data.shortform);
+				if (profiles.length === 0) {
+					throw new Error('No shortform profiles found in TextOnTop format');
+				}
+				const firstProfile = data.shortform[profiles[0]];
+				if (!firstProfile?.shortforms || typeof firstProfile.shortforms !== 'object') {
+					throw new Error('Invalid TextOnTop shortform structure');
+				}
+				entries = firstProfile.shortforms;
+				// Use filename without extension as dictionary name
+				name = file.name.replace(/\.[^/.]+$/, '');
+			} else if (data.name && data.entries && typeof data.entries === 'object') {
+				// Native format: { "name": "...", "entries": { ... } }
+				name = data.name;
+				entries = data.entries;
+			} else {
 				throw new Error('Invalid dictionary format');
 			}
 
-			await window.db.importDictionary(data.name, data.entries);
+			await window.db.importDictionary(name, entries);
 			await loadDictionaries();
 			error = null;
 		} catch (err) {
