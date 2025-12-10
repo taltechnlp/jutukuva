@@ -1,0 +1,54 @@
+{
+  "app": {
+    "title": "Jutukuva Subtiitrid",
+    "shortcut_hint": "Ctrl+Shift+O ülekatte lülitamiseks"
+  },
+  "session": {
+    "title": "Sessioon",
+    "code_placeholder": "SESSIOONI KOOD",
+    "connect": "Ühenda",
+    "disconnect": "Katkesta",
+    "connected": "Ühendatud",
+    "rejoin": "Taasühenda",
+    "error_invalid_code": "Sisesta kehtiv 6-kohaline kood"
+  },
+  "preview": {
+    "title": "Eelvaade",
+    "show_overlay": "Näita ülekatet",
+    "hide_overlay": "Peida ülekate",
+    "waiting": "Ootan subtiitreid..."
+  },
+  "settings": {
+    "title": "Seaded",
+    "overlay": {
+      "title": "Ülekate",
+      "position": "Asukoht",
+      "position_top": "Üleval",
+      "position_center": "Keskel",
+      "position_bottom": "All",
+      "position_custom": "Kohandatud",
+      "width": "Laius",
+      "height": "Kõrgus",
+      "click_through": "Läbiklõpsamise režiim",
+      "display_mode": "Kuvarežiim",
+      "last_line": "Viimane rida",
+      "multi_line": "Mitu rida"
+    },
+    "font": {
+      "title": "Font",
+      "family": "Kirjatüüp",
+      "size": "Suurus",
+      "weight": "Paksus",
+      "text_color": "Teksti värv",
+      "background_color": "Tausta värv",
+      "background_opacity": "Tausta läbipaistvus"
+    },
+    "preview_text": "Eelvaate tekst"
+  },
+  "overlay": {
+    "waiting": "Ootan subtiitreid...",
+    "settings_loaded": "Seaded laaditud, ootan subtiitreid...",
+    "error_loading": "Viga seadete laadimisel",
+    "close": "Sulge ülekate"
+  }
+}
