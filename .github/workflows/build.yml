@@ -5,8 +5,14 @@ on:
     branches: [master]
     tags:
       - 'v*'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   pull_request:
     branches: [master]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   workflow_dispatch:
 
 permissions:
@@ -311,14 +317,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish to streaming-caption-editing repo
+      - name: Publish to jutukuva public repo
         uses: softprops/action-gh-release@v1
         with:
-          repository: ${{ github.repository_owner }}/streaming-caption-editing
+          repository: aivo0/jutukuva
           tag_name: ${{ steps.get_version.outputs.VERSION }}
-          name: Streaming Caption Editor ${{ steps.get_version.outputs.VERSION }}
+          name: Jutukuva ${{ steps.get_version.outputs.VERSION }}
           body: |
-            ## Streaming Caption Editor
+            ## Jutukuva
 
             Real-time caption editing application for live streaming and transcription.
 
