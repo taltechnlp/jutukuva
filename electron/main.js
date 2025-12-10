@@ -1,7 +1,48 @@
 import { app, BrowserWindow, ipcMain, desktopCapturer, protocol, net, systemPreferences, nativeTheme } from 'electron';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import fs from 'fs';
 import { readFile } from 'fs/promises';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Setup library path for sherpa-onnx native modules on macOS
+// Must be done before any native modules are loaded
+if (process.platform === 'darwin') {
+	const libPackage = process.arch === 'arm64' ? 'sherpa-onnx-darwin-arm64' : 'sherpa-onnx-darwin-x64';
+	let libPath;
+
+	if (app.isPackaged) {
+		libPath = path.join(process.resourcesPath, 'sherpa-libs');
+	} else {
+		libPath = path.join(app.getAppPath(), 'node_modules', libPackage);
+	}
+
+	// Check if DYLD_LIBRARY_PATH is already set correctly
+	const currentDyld = process.env.DYLD_LIBRARY_PATH || '';
+	if (!currentDyld.includes(libPath) && fs.existsSync(libPath)) {
+		console.log('[Main] Setting DYLD_LIBRARY_PATH for sherpa-onnx:', libPath);
+		process.env.DYLD_LIBRARY_PATH = `${libPath}:${currentDyld}`;
+
+		// On macOS, DYLD_LIBRARY_PATH changes after process start don't affect dlopen
+		// We need to pre-load the dylibs manually using process.dlopen
+		// Order matters: load dependencies first (onnxruntime), then sherpa libs
+		const dylibs = ['libonnxruntime.1.17.1.dylib', 'libsherpa-onnx-c-api.dylib', 'libsherpa-onnx-cxx-api.dylib'];
+		for (const dylib of dylibs) {
+			const dylibPath = path.join(libPath, dylib);
+			if (fs.existsSync(dylibPath)) {
+				try {
+					// Use process.dlopen to pre-load the dynamic library
+					process.dlopen({ exports: {} }, dylibPath, 0);
+					console.log('[Main] Pre-loaded:', dylib);
+				} catch (e) {
+					console.log('[Main] Could not pre-load', dylib, ':', e.message);
+				}
+			}
+		}
+	}
+}
+
 import { initDatabase, closeDatabase, dbOperations } from './database.js';
 import {
 	initBroadcastServer,
@@ -20,8 +61,6 @@ import {
 	getStatus as getASRStatus,
 	cleanup as cleanupASR
 } from './asr/asr-manager.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let mainWindow;
 let pendingDeepLinkUrl = null;
