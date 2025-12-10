@@ -980,11 +980,30 @@
 
 			console.log('[START] Starting recording...');
 
-			// Check if ASR is initialized
-			if (!asrInitialized || !window.asr) {
-				console.log('[START] ASR not initialized');
-				connectionError = $_('dictate.asrNotInitialized', { default: 'Speech recognition not available' });
-				return;
+			// Check if ASR is initialized, and try to initialize if not
+			if (!asrInitialized) {
+				if (!window.asr) {
+					console.error('[START] ASR API not available - are you running in Electron?');
+					connectionError = $_('dictate.asrNotInitialized', { default: 'Speech recognition not available. Please ensure you are running the Electron app.' });
+					return;
+				}
+
+				console.log('[START] ASR not initialized, attempting to initialize now...');
+				connectionError = $_('dictate.initializingASR', { default: 'Initializing speech recognition...' });
+				
+				// Try to initialize ASR
+				const asrResult = await window.asr.initialize();
+				
+				if (!asrResult.success) {
+					const errorMsg = asrResult.error || $_('dictate.failedToInitializeASR', { default: 'Failed to initialize speech recognition' });
+					console.error('[START] ASR initialization failed:', errorMsg);
+					connectionError = errorMsg;
+					return;
+				}
+
+				asrInitialized = true;
+				isConnected = true;
+				console.log('[START] ✓ ASR initialized successfully');
 			}
 
 			// Reinitialize VAD if it was destroyed
