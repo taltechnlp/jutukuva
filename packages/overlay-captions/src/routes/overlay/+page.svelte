@@ -3,6 +3,7 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { listen } from '@tauri-apps/api/event';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
+	import { _ } from 'svelte-i18n';
 	import CaptionDisplay from '$lib/components/CaptionDisplay.svelte';
 	import type { AppSettings } from '$lib/types/settings';
 	import { defaultSettings } from '$lib/types/settings';
@@ -11,11 +12,14 @@
 	let captionText = $state('');
 	let hovering = $state(false);
 	let resizing = $state(false);
-	let debugInfo = $state('Waiting for captions...');
+	let debugInfo = $state('');
 
 	let cleanup: (() => void) | null = null;
 
 	onMount(() => {
+		// Initialize debug info with translation
+		debugInfo = $_('overlay.waiting');
+
 		// Initialize async operations
 		(async () => {
 			// Set always on top from frontend (more reliable on Linux)
@@ -31,10 +35,10 @@
 			try {
 				settings = await invoke<AppSettings>('get_settings');
 				console.log('[Overlay] Settings loaded:', settings);
-				debugInfo = 'Settings loaded, waiting for captions...';
+				debugInfo = $_('overlay.settings_loaded');
 			} catch (e) {
 				console.error('[Overlay] Failed to load settings:', e);
-				debugInfo = 'Error loading settings: ' + e;
+				debugInfo = $_('overlay.error_loading') + ': ' + e;
 			}
 
 			// Listen for settings changes
@@ -140,7 +144,7 @@
 	</div>
 
 	<!-- Close Button -->
-	<button class="close-btn" onclick={closeOverlay} title="Close overlay">
+	<button class="close-btn" onclick={closeOverlay} title={$_('overlay.close')}>
 		<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
 		</svg>

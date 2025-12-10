@@ -1,23 +1,17 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
+	import { _ } from 'svelte-i18n';
 	import { settingsStore } from '$lib/stores/settings.svelte';
 	import { captionStore } from '$lib/stores/caption.svelte';
 
 	const fontFamilies = [
-		{ value: 'Inter, system-ui, sans-serif', label: 'Inter (Default)' },
+		{ value: 'Inter, system-ui, sans-serif', label: 'Inter (Vaikimisi)' },
 		{ value: 'Arial, sans-serif', label: 'Arial' },
 		{ value: 'Helvetica, sans-serif', label: 'Helvetica' },
 		{ value: 'Georgia, serif', label: 'Georgia' },
 		{ value: 'Verdana, sans-serif', label: 'Verdana' },
 		{ value: 'Roboto, sans-serif', label: 'Roboto' },
 		{ value: 'monospace', label: 'Monospace' }
-	];
-
-	const positionPresets = [
-		{ value: 'top', label: 'Top' },
-		{ value: 'center', label: 'Center' },
-		{ value: 'bottom', label: 'Bottom' },
-		{ value: 'custom', label: 'Custom' }
 	];
 
 	async function updateFontFamily(e: Event) {
@@ -113,34 +107,35 @@
 
 <div class="card bg-base-200 shadow-lg">
 	<div class="card-body p-4">
-		<h2 class="card-title text-sm">Settings</h2>
+		<h2 class="card-title text-sm">{$_('settings.title')}</h2>
 
 		<!-- Overlay Settings -->
 		<div class="collapse collapse-arrow bg-base-100">
 			<input type="checkbox" checked />
-			<div class="collapse-title font-medium text-sm">Overlay</div>
+			<div class="collapse-title font-medium text-sm">{$_('settings.overlay.title')}</div>
 			<div class="collapse-content">
 				<div class="space-y-3">
 					<!-- Position Preset -->
 					<div class="form-control">
 						<label class="label py-1">
-							<span class="label-text text-xs">Position</span>
+							<span class="label-text text-xs">{$_('settings.overlay.position')}</span>
 						</label>
 						<select
 							class="select select-bordered select-sm w-full"
 							value={settingsStore.settings.overlay.positionPreset}
 							onchange={updatePositionPreset}
 						>
-							{#each positionPresets as preset}
-								<option value={preset.value}>{preset.label}</option>
-							{/each}
+							<option value="top">{$_('settings.overlay.position_top')}</option>
+							<option value="center">{$_('settings.overlay.position_center')}</option>
+							<option value="bottom">{$_('settings.overlay.position_bottom')}</option>
+							<option value="custom">{$_('settings.overlay.position_custom')}</option>
 						</select>
 					</div>
 
 					<!-- Width -->
 					<div class="form-control">
 						<label class="label py-1">
-							<span class="label-text text-xs">Width: {settingsStore.settings.overlay.size.width}px</span>
+							<span class="label-text text-xs">{$_('settings.overlay.width')}: {settingsStore.settings.overlay.size.width}px</span>
 						</label>
 						<input
 							type="range"
@@ -156,7 +151,7 @@
 					<!-- Height -->
 					<div class="form-control">
 						<label class="label py-1">
-							<span class="label-text text-xs">Height: {settingsStore.settings.overlay.size.height}px</span>
+							<span class="label-text text-xs">{$_('settings.overlay.height')}: {settingsStore.settings.overlay.size.height}px</span>
 						</label>
 						<input
 							type="range"
@@ -172,7 +167,7 @@
 					<!-- Click Through -->
 					<div class="form-control">
 						<label class="label cursor-pointer py-1">
-							<span class="label-text text-xs">Click-through mode</span>
+							<span class="label-text text-xs">{$_('settings.overlay.click_through')}</span>
 							<input
 								type="checkbox"
 								checked={settingsStore.settings.overlay.clickThrough}
@@ -185,7 +180,7 @@
 					<!-- Display Mode -->
 					<div class="form-control">
 						<label class="label py-1">
-							<span class="label-text text-xs">Display Mode</span>
+							<span class="label-text text-xs">{$_('settings.overlay.display_mode')}</span>
 						</label>
 						<div class="btn-group">
 							<button
@@ -193,14 +188,14 @@
 								class:btn-active={captionStore.displayMode === 'lastOnly'}
 								onclick={() => updateDisplayMode('lastOnly')}
 							>
-								Last Line
+								{$_('settings.overlay.last_line')}
 							</button>
 							<button
 								class="btn btn-xs"
 								class:btn-active={captionStore.displayMode === 'multiLine'}
 								onclick={() => updateDisplayMode('multiLine')}
 							>
-								Multi-line
+								{$_('settings.overlay.multi_line')}
 							</button>
 						</div>
 					</div>
@@ -211,13 +206,13 @@
 		<!-- Font Settings -->
 		<div class="collapse collapse-arrow bg-base-100">
 			<input type="checkbox" />
-			<div class="collapse-title font-medium text-sm">Font</div>
+			<div class="collapse-title font-medium text-sm">{$_('settings.font.title')}</div>
 			<div class="collapse-content">
 				<div class="space-y-3">
 					<!-- Font Family -->
 					<div class="form-control">
 						<label class="label py-1">
-							<span class="label-text text-xs">Family</span>
+							<span class="label-text text-xs">{$_('settings.font.family')}</span>
 						</label>
 						<select
 							class="select select-bordered select-sm w-full"
@@ -233,7 +228,7 @@
 					<!-- Font Size -->
 					<div class="form-control">
 						<label class="label py-1">
-							<span class="label-text text-xs">Size: {settingsStore.settings.font.size}px</span>
+							<span class="label-text text-xs">{$_('settings.font.size')}: {settingsStore.settings.font.size}px</span>
 						</label>
 						<input
 							type="range"
@@ -249,7 +244,7 @@
 					<!-- Font Weight -->
 					<div class="form-control">
 						<label class="label py-1">
-							<span class="label-text text-xs">Weight: {settingsStore.settings.font.weight}</span>
+							<span class="label-text text-xs">{$_('settings.font.weight')}: {settingsStore.settings.font.weight}</span>
 						</label>
 						<input
 							type="range"
@@ -265,7 +260,7 @@
 					<!-- Text Color -->
 					<div class="form-control">
 						<label class="label py-1">
-							<span class="label-text text-xs">Text Color</span>
+							<span class="label-text text-xs">{$_('settings.font.text_color')}</span>
 						</label>
 						<input
 							type="color"
@@ -278,7 +273,7 @@
 					<!-- Background Color -->
 					<div class="form-control">
 						<label class="label py-1">
-							<span class="label-text text-xs">Background Color</span>
+							<span class="label-text text-xs">{$_('settings.font.background_color')}</span>
 						</label>
 						<input
 							type="color"
@@ -291,7 +286,7 @@
 					<!-- Background Opacity -->
 					<div class="form-control">
 						<label class="label py-1">
-							<span class="label-text text-xs">Background Opacity: {Math.round(settingsStore.settings.font.backgroundOpacity * 100)}%</span>
+							<span class="label-text text-xs">{$_('settings.font.background_opacity')}: {Math.round(settingsStore.settings.font.backgroundOpacity * 100)}%</span>
 						</label>
 						<input
 							type="range"
@@ -317,7 +312,7 @@
 					color: {settingsStore.settings.font.color};
 				"
 			>
-				Preview text
+				{$_('settings.preview_text')}
 			</p>
 		</div>
 	</div>

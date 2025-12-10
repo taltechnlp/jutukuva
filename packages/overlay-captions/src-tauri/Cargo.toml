@@ -1,7 +1,7 @@
 [package]
 name = "jutukuva-subtiitrid"
 version = "0.4.0"
-description = "Jutukuva Subtiitrid - Live subtitle overlay"
+description = "Jutukuva Subtiitrid - Reaalajas subtiitrite ülekate"
 authors = ["Jutukuva"]
 edition = "2021"
 

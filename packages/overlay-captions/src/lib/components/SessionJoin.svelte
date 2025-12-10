@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { _ } from 'svelte-i18n';
 	import { yjsStore } from '$lib/stores/yjs.svelte';
 	import { captionStore } from '$lib/stores/caption.svelte';
 	import { settingsStore } from '$lib/stores/settings.svelte';
@@ -18,7 +19,7 @@
 
 	async function connect() {
 		if (!validateCode(sessionCode)) {
-			inputError = 'Enter a valid 6-character code';
+			inputError = $_('session.error_invalid_code');
 			return;
 		}
 
@@ -43,15 +44,15 @@
 
 <div class="card bg-base-200 shadow-lg">
 	<div class="card-body p-4">
-		<h2 class="card-title text-sm">Session</h2>
+		<h2 class="card-title text-sm">{$_('session.title')}</h2>
 
 		{#if yjsStore.connected}
 			<div class="flex items-center gap-2">
 				<div class="badge badge-success gap-1">
 					<span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
-					Connected: {yjsStore.sessionCode}
+					{$_('session.connected')}: {yjsStore.sessionCode}
 				</div>
-				<button onclick={disconnect} class="btn btn-sm btn-ghost text-error"> Disconnect </button>
+				<button onclick={disconnect} class="btn btn-sm btn-ghost text-error">{$_('session.disconnect')}</button>
 			</div>
 		{:else}
 			<div class="flex flex-col gap-2">
@@ -60,7 +61,7 @@
 						type="text"
 						value={sessionCode}
 						oninput={handleInput}
-						placeholder="SESSION CODE"
+						placeholder={$_('session.code_placeholder')}
 						class="input input-bordered join-item flex-1 font-mono text-center tracking-widest uppercase"
 						class:input-error={inputError}
 						maxlength="6"
@@ -73,7 +74,7 @@
 						{#if yjsStore.connecting}
 							<span class="loading loading-spinner loading-sm"></span>
 						{:else}
-							Connect
+							{$_('session.connect')}
 						{/if}
 					</button>
 				</div>
@@ -88,7 +89,7 @@
 
 				{#if settingsStore.settings.lastSessionCode && sessionCode !== settingsStore.settings.lastSessionCode}
 					<button onclick={quickJoin} class="btn btn-sm btn-ghost">
-						Rejoin: {settingsStore.settings.lastSessionCode}
+						{$_('session.rejoin')}: {settingsStore.settings.lastSessionCode}
 					</button>
 				{/if}
 			</div>
