@@ -18,25 +18,31 @@ if (process.platform === 'darwin') {
 		libPath = path.join(app.getAppPath(), 'node_modules', libPackage);
 	}
 
-	// Check if DYLD_LIBRARY_PATH is already set correctly
-	const currentDyld = process.env.DYLD_LIBRARY_PATH || '';
-	if (!currentDyld.includes(libPath) && fs.existsSync(libPath)) {
-		console.log('[Main] Setting DYLD_LIBRARY_PATH for sherpa-onnx:', libPath);
-		process.env.DYLD_LIBRARY_PATH = `${libPath}:${currentDyld}`;
+	console.log('[Main] macOS sherpa-onnx setup, libPath:', libPath);
 
-		// On macOS, DYLD_LIBRARY_PATH changes after process start don't affect dlopen
-		// We need to pre-load the dylibs manually using process.dlopen
-		// Order matters: load dependencies first (onnxruntime), then sherpa libs
-		const dylibs = ['libonnxruntime.1.17.1.dylib', 'libsherpa-onnx-c-api.dylib', 'libsherpa-onnx-cxx-api.dylib'];
+	if (fs.existsSync(libPath)) {
+		// The .node file has @rpath set to the build machine path
+		// We need to symlink dylibs to Electron's Frameworks directory where dlopen looks
+		const electronFrameworksDir = path.join(
+			app.getAppPath(),
+			'node_modules/electron/dist/Electron.app/Contents/Frameworks'
+		);
+
+		console.log('[Main] Electron frameworks dir:', electronFrameworksDir);
+
+		const dylibs = ['libonnxruntime.1.17.1.dylib', 'libonnxruntime.dylib', 'libsherpa-onnx-c-api.dylib', 'libsherpa-onnx-cxx-api.dylib'];
+
 		for (const dylib of dylibs) {
-			const dylibPath = path.join(libPath, dylib);
-			if (fs.existsSync(dylibPath)) {
+			const srcPath = path.join(libPath, dylib);
+			const dstPath = path.join(electronFrameworksDir, dylib);
+
+			if (fs.existsSync(srcPath) && !fs.existsSync(dstPath)) {
 				try {
-					// Use process.dlopen to pre-load the dynamic library
-					process.dlopen({ exports: {} }, dylibPath, 0);
-					console.log('[Main] Pre-loaded:', dylib);
+					// Create symlink to the dylib in Electron's Frameworks directory
+					fs.symlinkSync(srcPath, dstPath);
+					console.log('[Main] Symlinked:', dylib);
 				} catch (e) {
-					console.log('[Main] Could not pre-load', dylib, ':', e.message);
+					console.log('[Main] Could not symlink', dylib, ':', e.message);
 				}
 			}
 		}
