@@ -21,6 +21,8 @@
 
 	let newSpeakerName = $state('');
 	let inputElement: HTMLInputElement | null = $state(null);
+	let dropdownElement: HTMLDivElement | null = $state(null);
+	let openUpward = $state(false);
 
 	function handleSelect(speaker: Speaker) {
 		onSelect(speaker);
@@ -50,17 +52,40 @@
 		onClose();
 	}
 
-	// Focus input when dropdown opens
+	// Calculate position and focus input when dropdown opens
 	$effect(() => {
-		if (isOpen && inputElement) {
-			// Small delay to ensure element is visible
+		if (isOpen && dropdownElement) {
+			// Check if there's enough space below
+			const rect = dropdownElement.getBoundingClientRect();
+			const parentRect = dropdownElement.parentElement?.getBoundingClientRect();
+			const viewportHeight = window.innerHeight;
+			const dropdownHeight = rect.height;
+			const spaceBelow = viewportHeight - (parentRect?.bottom ?? 0);
+			const spaceAbove = parentRect?.top ?? 0;
+
+			// Open upward if not enough space below and more space above
+			openUpward = spaceBelow < dropdownHeight + 20 && spaceAbove > spaceBelow;
+
+			// Focus input after position is calculated
 			setTimeout(() => inputElement?.focus(), 10);
+		}
+	});
+
+	// Reset direction when closing
+	$effect(() => {
+		if (!isOpen) {
+			openUpward = false;
 		}
 	});
 </script>
 
 {#if isOpen}
-	<div class="speaker-dropdown" use:clickOutside={handleOutclick}>
+	<div
+		bind:this={dropdownElement}
+		class="speaker-dropdown"
+		class:open-upward={openUpward}
+		use:clickOutside={handleOutclick}
+	>
 		<!-- New speaker input -->
 		<div class="dropdown-input">
 			<input
@@ -113,6 +138,13 @@
 		left: 0;
 		top: 100%;
 		margin-top: 4px;
+	}
+
+	.speaker-dropdown.open-upward {
+		top: auto;
+		bottom: 100%;
+		margin-top: 0;
+		margin-bottom: 4px;
 	}
 
 	/* Use :global to ensure Tailwind classes work with Svelte scoping */

@@ -280,12 +280,21 @@ export class CollaborationManager {
 	}
 
 	/**
-	 * Add a new speaker to the session
+	 * Add a new speaker to the session (returns existing speaker if name already exists)
 	 */
 	addSpeaker(name: string): Speaker {
+		const trimmedName = name.trim();
+		const existingSpeakers = this.getSpeakers();
+		const existing = existingSpeakers.find(
+			(s) => s.name.toLowerCase() === trimmedName.toLowerCase()
+		);
+		if (existing) {
+			return existing;
+		}
+
 		const speaker: Speaker = {
 			id: uuidv4(),
-			name,
+			name: trimmedName,
 			color: this.getRandomColor(),
 			createdBy: this.provider?.awareness.clientID,
 			createdAt: Date.now()
