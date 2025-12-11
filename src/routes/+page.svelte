@@ -208,13 +208,39 @@
 			}
 		}
 
-		// Capture existing editor content BEFORE creating collaboration manager
-		// This ensures existing content is preserved when starting a session
-		const existingContent = speechEditor?.getDocJSON?.() || null;
-		console.log('[COLLAB] speechEditor:', speechEditor);
-		console.log('[COLLAB] existingContent:', existingContent);
-		if (existingContent) {
-			console.log('[COLLAB] Capturing existing editor content for Yjs initialization, paragraphs:', (existingContent as any)?.content?.length);
+		// Determine initial content - prefer saved state from DB, then current editor content
+		let existingContent: object | null = null;
+
+		// First, try to load saved editor state from the database session
+		if (currentDbSession?.id && window.db) {
+			try {
+				const savedState = await window.db.getEditorState(currentDbSession.id);
+				if (savedState) {
+					existingContent = JSON.parse(savedState);
+					console.log('[COLLAB] Restored editor state from database, paragraphs:', (existingContent as any)?.content?.length);
+				}
+			} catch (err) {
+				console.error('[COLLAB] Failed to parse saved editor state:', err);
+			}
+		}
+
+		// Fallback to current editor content if no saved state
+		if (!existingContent) {
+			existingContent = speechEditor?.getDocJSON?.() || null;
+			console.log('[COLLAB] speechEditor:', speechEditor);
+			console.log('[COLLAB] existingContent from editor:', existingContent);
+			if (existingContent) {
+				console.log('[COLLAB] Capturing existing editor content for Yjs initialization, paragraphs:', (existingContent as any)?.content?.length);
+				// Also save this to the database immediately so it's not lost on quick leave
+				if (currentDbSession?.id && window.db) {
+					try {
+						await window.db.saveEditorState(currentDbSession.id, JSON.stringify(existingContent));
+						console.log('[COLLAB] Saved initial content to database');
+					} catch (err) {
+						console.error('[COLLAB] Failed to save initial content:', err);
+					}
+				}
+			}
 		}
 
 		// Create and initialize CollaborationManager BEFORE setting sessionInfo
@@ -290,15 +316,34 @@
 	/**
 	 * Disconnect from collaborative session
 	 */
-	function disconnectCollaboration() {
+	async function disconnectCollaboration(skipRefresh = false) {
+		// Save editor state before disconnecting
+		if (speechEditor && currentDbSession?.id && window.db) {
+			try {
+				const docJson = speechEditor.getDocJSON?.();
+				if (docJson) {
+					await window.db.saveEditorState(currentDbSession.id, JSON.stringify(docJson));
+					console.log('[SESSION] Saved editor state before leaving session:', currentDbSession.id);
+				}
+			} catch (error) {
+				console.error('[SESSION] Failed to save editor state on leave:', error);
+			}
+		}
+
 		if (collaborationManager) {
 			collaborationManager.disconnect();
 			collaborationManager = null;
 		}
 		sessionInfo = null;
+		currentDbSession = null;
 		participants = [];
 		collaborationConnected = false;
 		showShareModal = false;
+
+		// Refresh the sessions list (unless called from handleEndSession which does its own refresh)
+		if (!skipRefresh) {
+			await loadCollaborationSessions();
+		}
 	}
 
 	/**
@@ -327,11 +372,12 @@
 			}
 		}
 
-		// Disconnect collaboration
-		disconnectCollaboration();
+		// Disconnect collaboration (this also clears currentDbSession)
+		// Skip refresh here since we'll do it after
+		await disconnectCollaboration(true);
 
-		// Reset current db session
-		currentDbSession = null;
+		// Refresh the sessions list
+		await loadCollaborationSessions();
 	}
 
 	// Handle subtitle segment emitted
@@ -1171,6 +1217,9 @@
 	onMount(async () => {
 		await initializeSystem();
 
+		// Add beforeunload listener to save state on page refresh/close
+		window.addEventListener('beforeunload', handleBeforeUnload);
+
 		// Restore saved audio preferences
 		if (window.electronAPI) {
 			const savedType = await window.electronAPI.getSetting('audio_source_type');
@@ -1237,8 +1286,29 @@
 		}
 	});
 
+	// Save state on page unload (refresh, close, navigate away)
+	function handleBeforeUnload() {
+		// Synchronously save editor state - best effort on unload
+		if (speechEditor && currentDbSession && window.db) {
+			try {
+				const docJson = speechEditor.getDocJSON?.();
+				if (docJson) {
+					window.db.saveEditorState(currentDbSession.id, JSON.stringify(docJson));
+					console.log('[SESSION] Saved editor state on beforeunload');
+				}
+			} catch (error) {
+				console.error('[SESSION] Failed to save on beforeunload:', error);
+			}
+		}
+	}
+
 	// Cleanup on component destroy
 	onDestroy(() => {
+		// Remove beforeunload listener
+		if (browser) {
+			window.removeEventListener('beforeunload', handleBeforeUnload);
+		}
+
 		stopRecording();
 
 		// Destroy VAD on unmount
@@ -1378,7 +1448,7 @@
 			<div class="flex justify-end items-center gap-2">
 				<!-- Collaboration Menu -->
 				<div class="dropdown dropdown-end">
-					<div tabindex="0" role="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('collaboration.collaborative_session')} onfocus={() => loadCollaborationSessions()}>
+					<div tabindex="0" role="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('collaboration.collaborative_session')} onclick={() => loadCollaborationSessions()} onfocus={() => loadCollaborationSessions()}>
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
 						</svg>
@@ -1427,7 +1497,7 @@
 										</div>
 									</li>
 								{:else}
-									{#each plannedAndActiveSessions.slice(0, 5) as session (session.id)}
+									{#each plannedAndActiveSessions as session (session.id)}
 										<li>
 											<button class="flex flex-col items-start gap-0.5 py-2 cursor-pointer" onclick={() => startCollaborativeSession(session.id)}>
 												<div class="flex items-center gap-2 w-full">
@@ -1489,9 +1559,17 @@
 								</button>
 							</li>
 							<li>
-								<button class="text-error gap-3 cursor-pointer" onclick={() => (showEndSessionModal = true)}>
+								<button class="gap-3 cursor-pointer" onclick={() => disconnectCollaboration()}>
 									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+									</svg>
+									{$_('collaboration.leave_session')}
+								</button>
+							</li>
+							<li>
+								<button class="text-error gap-3 cursor-pointer" onclick={() => (showEndSessionModal = true)}>
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
 									</svg>
 									{$_('collaboration.end_session')}
 								</button>
@@ -1607,6 +1685,7 @@
 					<SpeechEditor
 						bind:this={speechEditor}
 						collaborationManager={collaborationManager}
+						sessionId={currentDbSession?.id || ''}
 						config={{
 							fontSize: 16,
 							onSubtitleEmit: handleSubtitleEmit

@@ -594,6 +594,7 @@
     "start_session": "Aloita uusi istunto",
     "guest_cannot_record": "Vain isäntä voi nauhoittaa",
     "share_session": "Jaa istunto",
+    "leave_session": "Poistu istunnosta",
     "end_session": "Lopeta istunto"
   },
   "sessions": {
