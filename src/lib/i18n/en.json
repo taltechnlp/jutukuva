@@ -636,6 +636,7 @@
     "start_session": "Start New Session",
     "guest_cannot_record": "Only the host can record",
     "share_session": "Share Session",
+    "leave_session": "Leave Session",
     "end_session": "End Session",
     "your_sessions": "Your Sessions"
   },
