@@ -20,6 +20,9 @@ export default defineConfig({
 			: undefined,
 		watch: {
 			ignored: ['**/src-tauri/**']
+		},
+		fs: {
+			allow: ['..']
 		}
 	}
 });
