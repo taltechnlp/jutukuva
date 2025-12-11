@@ -1,6 +1,6 @@
 {
   "name": "jutukuva",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Real-time caption editing application for live streaming and transcription",
   "author": {
     "name": "Jutukuva",
@@ -132,7 +132,7 @@
         }
       ],
       "icon": "assets/icon.png",
-      "publisherName": "Eesti Keele Instituut",
+      "legalTrademarks": "Eesti Keele Instituut",
       "extraResources": [
         {
           "from": "node_modules/sherpa-onnx-win-x64",
