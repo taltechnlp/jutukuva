@@ -98,12 +98,3 @@ pub fn set_overlay_size(app: &AppHandle, width: u32, height: u32) -> Result<(), 
     }
     Ok(())
 }
-
-pub fn set_overlay_always_on_top(app: &AppHandle, always_on_top: bool) -> Result<(), String> {
-    if let Some(window) = app.get_webview_window("overlay") {
-        window
-            .set_always_on_top(always_on_top)
-            .map_err(|e| e.to_string())?;
-    }
-    Ok(())
-}
