@@ -18,20 +18,33 @@ pub fn create_overlay_window(app: &AppHandle, settings: &OverlaySettings) -> Res
         .position(settings.position.x as f64, settings.position.y as f64)
         .decorations(false)
         .transparent(true)
-        .always_on_top(true) // Force always on top
+        .always_on_top(true)
         .skip_taskbar(true)
         .resizable(true)
         .visible(true)
         .visible_on_all_workspaces(true);
 
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "windows")]
     let builder = WebviewWindowBuilder::new(app, "overlay", overlay_url)
         .title("Captions")
         .inner_size(settings.size.width as f64, settings.size.height as f64)
         .position(settings.position.x as f64, settings.position.y as f64)
         .decorations(false)
         .transparent(true)
-        .always_on_top(true) // Force always on top
+        .shadow(false) // Required for transparency on Windows
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .resizable(true)
+        .visible(true);
+
+    #[cfg(target_os = "linux")]
+    let builder = WebviewWindowBuilder::new(app, "overlay", overlay_url)
+        .title("Captions")
+        .inner_size(settings.size.width as f64, settings.size.height as f64)
+        .position(settings.position.x as f64, settings.position.y as f64)
+        .decorations(false)
+        .transparent(true)
+        .always_on_top(true)
         .skip_taskbar(true)
         .resizable(true)
         .visible(true);
