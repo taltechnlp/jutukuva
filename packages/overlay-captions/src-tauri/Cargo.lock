@@ -1588,6 +1588,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "jutukuva-subtiitrid"
+version = "0.4.1"
+dependencies = [
+ "directories",
+ "log",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-fs",
+ "tauri-plugin-global-shortcut",
+]
+
+[[package]]
 name = "keyboard-types"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2147,20 +2161,6 @@ name = "option-ext"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
-
-[[package]]
-name = "overlay-captions"
-version = "0.4.0"
-dependencies = [
- "directories",
- "log",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-fs",
- "tauri-plugin-global-shortcut",
-]
 
 [[package]]
 name = "pango"
