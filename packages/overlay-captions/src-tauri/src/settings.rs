@@ -25,6 +25,8 @@ pub struct OverlaySettings {
     pub opacity: f32,
     pub click_through: bool,
     pub always_on_top: bool,
+    pub display_mode: String,
+    pub background_color: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -34,8 +36,7 @@ pub struct FontSettings {
     pub size: u32,
     pub weight: u32,
     pub color: String,
-    pub background_color: String,
-    pub background_opacity: f32,
+    pub align: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -60,23 +61,24 @@ impl Default for AppSettings {
         Self {
             overlay: OverlaySettings {
                 enabled: false,
-                position: Position { x: 100, y: 100 },
+                position: Position { x: 500, y: 600 },
                 size: Size {
-                    width: 800,
+                    width: 600,
                     height: 160,
                 },
                 position_preset: "bottom".to_string(),
                 opacity: 0.95,
                 click_through: false,
                 always_on_top: true,
+                display_mode: "lastOnly".to_string(),
+                background_color: "#000000".to_string(),
             },
             font: FontSettings {
                 family: "Inter, system-ui, sans-serif".to_string(),
                 size: 32,
                 weight: 500,
                 color: "#ffffff".to_string(),
-                background_color: "#1a1a1a".to_string(),
-                background_opacity: 0.85,
+                align: "justify".to_string(),
             },
             connection: ConnectionSettings {
                 yjs_server_url: "wss://tekstiks.ee/kk".to_string(),
