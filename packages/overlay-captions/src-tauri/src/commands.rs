@@ -136,3 +136,16 @@ pub fn broadcast_caption(app: AppHandle, text: String) -> Result<(), String> {
             e.to_string()
         })
 }
+
+// Show main window and open settings
+#[tauri::command]
+pub fn show_main_with_settings(app: AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("main") {
+        window.show().map_err(|e| e.to_string())?;
+        window.set_focus().map_err(|e| e.to_string())?;
+        // Emit event to open settings drawer
+        app.emit_to("main", "open-settings", ())
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}

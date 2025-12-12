@@ -7,49 +7,47 @@
 	}
 
 	let { text, fontSettings }: Props = $props();
-
-	function hexToRgba(hex: string, alpha: number): string {
-		const r = parseInt(hex.slice(1, 3), 16);
-		const g = parseInt(hex.slice(3, 5), 16);
-		const b = parseInt(hex.slice(5, 7), 16);
-		return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-	}
 </script>
 
-{#if text}
-	<div
-		class="caption-container"
-		style="
-			font-family: {fontSettings.family};
-			font-size: {fontSettings.size}px;
-			font-weight: {fontSettings.weight};
-			color: {fontSettings.color};
-			background-color: {hexToRgba(fontSettings.backgroundColor, fontSettings.backgroundOpacity)};
-		"
-	>
-		{#each text.split('\n') as line}
-			<p class="caption-line">{line}</p>
-		{/each}
-	</div>
-{/if}
+{#key `${text}-${fontSettings.family}-${fontSettings.size}-${fontSettings.weight}-${fontSettings.color}-${fontSettings.align}`}
+	{#if text}
+		<div
+			class="caption-container"
+			style:font-family={fontSettings.family}
+			style:font-size="{fontSettings.size}px"
+			style:font-weight={fontSettings.weight}
+			style:color={fontSettings.color}
+			style:text-align={fontSettings.align}
+			style:align-items={fontSettings.align === 'left' ? 'flex-start' : fontSettings.align === 'right' ? 'flex-end' : fontSettings.align === 'justify' ? 'stretch' : 'center'}
+		>
+			{#each text.split('\n') as line, i (i)}
+				<p class="caption-line">{line}</p>
+			{/each}
+		</div>
+	{/if}
+{/key}
 
 <style>
 	.caption-container {
 		display: flex;
 		flex-direction: column;
-		align-items: center;
 		justify-content: center;
 		padding: 12px 24px;
 		border-radius: 8px;
 		max-width: 100%;
+		position: relative;
+		contain: layout style paint;
 	}
 
 	.caption-line {
-		text-align: center;
 		margin: 0;
 		padding: 2px 0;
 		line-height: 1.3;
 		word-wrap: break-word;
 		max-width: 100%;
+		position: relative;
+		text-rendering: optimizeLegibility;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
 	}
 </style>

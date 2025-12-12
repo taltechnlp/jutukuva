@@ -38,6 +38,7 @@ pub fn run() {
             set_last_session_code,
             get_last_session_code,
             broadcast_caption,
+            show_main_with_settings,
         ])
         .setup(|app| {
             // Register global shortcut for overlay toggle (Ctrl+Shift+O)

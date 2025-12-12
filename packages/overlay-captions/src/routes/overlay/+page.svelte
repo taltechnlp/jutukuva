@@ -78,6 +78,27 @@
 		}
 	}
 
+	async function openSettings() {
+		try {
+			await invoke('show_main_with_settings');
+		} catch (e) {
+			console.error('Failed to open settings:', e);
+		}
+	}
+
+	function hexToRgba(hex: string, alpha: number): string {
+		if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) {
+			console.warn('Invalid hex color:', hex);
+			return `rgba(0, 0, 0, ${alpha ?? 1})`;
+		}
+		const r = parseInt(hex.slice(1, 3), 16);
+		const g = parseInt(hex.slice(3, 5), 16);
+		const b = parseInt(hex.slice(5, 7), 16);
+		return `rgba(${r}, ${g}, ${b}, ${alpha ?? 1})`;
+	}
+
+	let backgroundColor = $derived(hexToRgba(settings.overlay.backgroundColor, settings.overlay.opacity));
+
 	let startX = 0;
 	let startY = 0;
 	let startWidth = 0;
@@ -136,12 +157,22 @@
 	class:hovering
 	onmouseenter={() => (hovering = true)}
 	onmouseleave={() => (hovering = false)}
->
+	style:background={backgroundColor}
+	>
+
 	<!-- Drag Handle (top bar) -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="drag-handle" onmousedown={startDragging}>
 		<div class="drag-indicator"></div>
 	</div>
+
+	<!-- Settings Button -->
+	<button class="settings-btn" onclick={openSettings} title={$_('settings.title')}>
+		<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+		</svg>
+	</button>
 
 	<!-- Close Button -->
 	<button class="close-btn" onclick={closeOverlay} title={$_('overlay.close')}>
@@ -155,7 +186,7 @@
 		{#if captionText}
 			<CaptionDisplay text={captionText} fontSettings={settings.font} />
 		{:else}
-			<div class="debug-text">{debugInfo}</div>
+			<CaptionDisplay text={debugInfo} fontSettings={settings.font} />
 		{/if}
 	</div>
 
@@ -177,14 +208,8 @@
 		align-items: center;
 		justify-content: center;
 		/* Semi-transparent background since true transparency doesn't work on Linux GTK */
-		background: rgba(26, 26, 26, 0.85);
+		/* background: rgba(26, 26, 26, 0.85); */
 		-webkit-app-region: no-drag;
-	}
-
-	.debug-text {
-		color: rgba(255, 255, 255, 0.5);
-		font-size: 14px;
-		font-family: system-ui, sans-serif;
 	}
 
 	.drag-handle {
@@ -214,6 +239,32 @@
 		height: 4px;
 		background: rgba(255, 255, 255, 0.5);
 		border-radius: 2px;
+	}
+
+	.settings-btn {
+		position: absolute;
+		top: 4px;
+		right: 32px;
+		width: 24px;
+		height: 24px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(100, 100, 100, 0.6);
+		border: none;
+		border-radius: 50%;
+		cursor: pointer;
+		opacity: 0;
+		transition: opacity 0.2s ease, background 0.2s ease;
+		color: white;
+	}
+
+	.hovering .settings-btn {
+		opacity: 1;
+	}
+
+	.settings-btn:hover {
+		background: rgba(100, 100, 100, 0.9);
 	}
 
 	.close-btn {
