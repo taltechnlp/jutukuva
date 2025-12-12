@@ -42,57 +42,96 @@
 	}
 </script>
 
-<div class="card bg-base-200 shadow-lg">
-	<div class="card-body p-4">
-		<h2 class="card-title text-sm">{$_('session.title')}</h2>
-
-		{#if yjsStore.connected}
-			<div class="flex items-center gap-2">
-				<div class="badge badge-success gap-1">
-					<span class="w-2 h-2 rounded-full bg-success animate-pulse"></span>
-					{$_('session.connected')}: {yjsStore.sessionCode}
+<div class="flex flex-col items-center gap-6 w-full transition-all duration-300">
+	{#if yjsStore.connected}
+		<div class="flex items-center justify-between w-full p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
+			<div class="flex flex-col gap-1">
+				<span class="text-xs font-medium text-white/50 uppercase tracking-wider">{$_('session.title')}</span>
+				<div class="flex items-center gap-2">
+					<span class="relative flex h-2.5 w-2.5">
+						<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+						<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-success"></span>
+					</span>
+					<span class="font-mono text-lg font-bold tracking-widest text-white">{yjsStore.sessionCode}</span>
 				</div>
-				<button onclick={disconnect} class="btn btn-sm btn-ghost text-error">{$_('session.disconnect')}</button>
 			</div>
-		{:else}
-			<div class="flex flex-col gap-2">
-				<div class="join w-full">
-					<input
-						type="text"
-						value={sessionCode}
-						oninput={handleInput}
-						placeholder={$_('session.code_placeholder')}
-						class="input input-bordered join-item flex-1 font-mono text-center tracking-widest uppercase"
-						class:input-error={inputError}
-						maxlength="6"
-					/>
-					<button
-						onclick={connect}
-						disabled={yjsStore.connecting || sessionCode.length !== 6}
-						class="btn btn-primary join-item"
-					>
-						{#if yjsStore.connecting}
-							<span class="loading loading-spinner loading-sm"></span>
-						{:else}
-							{$_('session.connect')}
-						{/if}
-					</button>
-				</div>
+			<button 
+				onclick={disconnect} 
+				class="btn btn-ghost btn-sm text-white/60 hover:text-white hover:bg-white/10"
+				aria-label={$_('session.disconnect')}
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+					<path fill-rule="evenodd" d="M3 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zm7.707 3.293a1 1 0 010 1.414L9.414 9H17a1 1 0 110 2H9.414l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0z" clip-rule="evenodd" />
+				</svg>
+			</button>
+		</div>
+	{:else}
+		<div class="w-full space-y-4">
+			<div class="text-center space-y-1 mb-6">
+				<h2 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+					{$_('session.title')}
+				</h2>
+				<p class="text-sm text-white/40">{$_('session.code_placeholder')}</p>
+			</div>
 
+			<div class="relative group">
+				<input
+					type="text"
+					value={sessionCode}
+					oninput={handleInput}
+					placeholder="000000"
+					class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-center font-mono text-3xl font-bold tracking-[0.5em] text-white placeholder-white/10 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all uppercase"
+					class:border-error={inputError}
+					maxlength="6"
+				/>
 				{#if inputError}
-					<p class="text-error text-xs">{inputError}</p>
-				{/if}
-
-				{#if yjsStore.error}
-					<p class="text-error text-xs">{yjsStore.error}</p>
-				{/if}
-
-				{#if settingsStore.settings.lastSessionCode && sessionCode !== settingsStore.settings.lastSessionCode}
-					<button onclick={quickJoin} class="btn btn-sm btn-ghost">
-						{$_('session.rejoin')}: {settingsStore.settings.lastSessionCode}
-					</button>
+					<p class="absolute -bottom-6 left-0 w-full text-center text-error text-xs font-medium animate-shake">
+						{inputError}
+					</p>
 				{/if}
 			</div>
-		{/if}
-	</div>
+
+			<button
+				onclick={connect}
+				disabled={yjsStore.connecting || sessionCode.length !== 6}
+				class="btn btn-primary btn-lg w-full rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 disabled:bg-white/5 disabled:text-white/20 font-bold"
+			>
+				{#if yjsStore.connecting}
+					<span class="loading loading-spinner loading-md"></span>
+				{:else}
+					{$_('session.connect')}
+				{/if}
+			</button>
+
+			{#if settingsStore.settings.lastSessionCode && sessionCode !== settingsStore.settings.lastSessionCode}
+				<button 
+					onclick={quickJoin} 
+					class="btn btn-ghost btn-sm w-full text-white/40 hover:text-white/80 normal-case font-normal"
+				>
+					{$_('session.rejoin')} <span class="font-mono ml-1">{settingsStore.settings.lastSessionCode}</span>
+				</button>
+			{/if}
+			
+			{#if yjsStore.error}
+				<div class="alert alert-error text-xs py-2 mt-4 rounded-lg bg-error/10 text-error border-error/20">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+					</svg>
+					<span>{yjsStore.error}</span>
+				</div>
+			{/if}
+		</div>
+	{/if}
 </div>
+
+<style>
+	/* Add a subtle animation for validation errors */
+	@keyframes shake {
+		0%, 100% { transform: translateX(0); }
+		25% { transform: translateX(-4px); }
+		75% { transform: translateX(4px); }
+	}
+	.animate-shake {
+		animation: shake 0.3s ease-in-out;
+	}
+</style>
