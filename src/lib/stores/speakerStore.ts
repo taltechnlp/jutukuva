@@ -29,12 +29,21 @@ function createSpeakerStore() {
 		subscribe,
 
 		/**
-		 * Add a new speaker
+		 * Add a new speaker (returns existing speaker if name already exists)
 		 */
 		addSpeaker: (name: string): Speaker => {
+			const trimmedName = name.trim();
+			const speakers = get({ subscribe });
+			const existing = speakers.find(
+				(s) => s.name.toLowerCase() === trimmedName.toLowerCase()
+			);
+			if (existing) {
+				return existing;
+			}
+
 			const speaker: Speaker = {
 				id: uuidv4(),
-				name,
+				name: trimmedName,
 				color: getRandomColor(),
 				createdAt: Date.now()
 			};

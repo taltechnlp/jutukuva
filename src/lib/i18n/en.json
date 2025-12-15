@@ -38,7 +38,8 @@
     "manageSpeakers": "Manage Speakers",
     "noSpeakers": "No speakers defined",
     "speakerName": "Speaker name",
-    "addSpeaker": "Add Speaker"
+    "addSpeaker": "Add Speaker",
+    "noMatches": "No matches. Press Enter to add."
   },
   "error": {
     "404": {
@@ -635,6 +636,7 @@
     "start_session": "Start New Session",
     "guest_cannot_record": "Only the host can record",
     "share_session": "Share Session",
+    "leave_session": "Leave Session",
     "end_session": "End Session",
     "your_sessions": "Your Sessions"
   },
