@@ -1,6 +1,6 @@
 {
   "name": "jutukuva",
-  "version": "0.4.1",
+  "version": "0.5.2",
   "description": "Real-time caption editing application for live streaming and transcription",
   "author": {
     "name": "Jutukuva",
@@ -132,6 +132,7 @@
         }
       ],
       "icon": "assets/icon.png",
+      "legalTrademarks": "Eesti Keele Instituut",
       "extraResources": [
         {
           "from": "node_modules/sherpa-onnx-win-x64",
@@ -167,7 +168,8 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": true
     }
   }
 }

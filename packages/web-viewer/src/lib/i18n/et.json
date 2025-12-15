@@ -43,7 +43,13 @@
 		"view_mode_text": "Tekst",
 		"view_mode_text_desc": "Pidev keritav tekst",
 		"view_mode_captions": "Subtiitrid",
-		"view_mode_captions_desc": "Subtiitristiilis kuva"
+		"view_mode_captions_desc": "Subtiitristiilis kuva",
+		"overlay_download": "Laadi alla ülekatterakendus",
+		"overlay_download_desc": "Ekraanipealne subtiitrite kuvaja",
+		"download_windows": "Windows",
+		"download_macos": "macOS",
+		"download_linux": "Linux",
+		"download_error": "Allalaadimine ebaõnnestus"
 	},
 	"connection": {
 		"connected": "Ühendatud",

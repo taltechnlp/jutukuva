@@ -1,7 +1,6 @@
 import Database from 'better-sqlite3';
 import { app } from 'electron';
 import path from 'path';
-import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 
 // Get the directory of this module
@@ -174,72 +173,7 @@ export function initDatabase() {
 
 	console.log('Database initialized at:', dbPath);
 
-	// Seed default dictionary if not already done
-	seedDefaultDictionary();
-
 	return db;
-}
-
-function seedDefaultDictionary() {
-	// Check if default dictionary has already been seeded
-	const seededSetting = db.prepare('SELECT value FROM settings WHERE key = ?').get('default_dictionary_seeded');
-	if (seededSetting) {
-		return; // Already seeded
-	}
-
-	console.log('Seeding default dictionary...');
-
-	try {
-		// Load the default dictionary JSON
-		// In production, this file will be in resources/app.asar or similar
-		// During development, it's in src/lib/data/
-		let defaultDictPath = path.join(__dirname, '..', 'src', 'lib', 'data', 'defaultDictionary.json');
-
-		// Check if running from asar
-		if (__dirname.includes('app.asar')) {
-			defaultDictPath = path.join(__dirname, '..', 'src', 'lib', 'data', 'defaultDictionary.json');
-		}
-
-		const defaultDictData = JSON.parse(readFileSync(defaultDictPath, 'utf-8'));
-		const { name, entries } = defaultDictData;
-
-		// Create the default dictionary with is_builtin = 1
-		const dictionaryId = 'default-estonian-shortforms';
-		const createDict = db.prepare(`
-			INSERT INTO autocomplete_dictionaries (id, name, is_active, is_builtin)
-			VALUES (?, ?, 1, 1)
-		`);
-		createDict.run(dictionaryId, name);
-
-		// Bulk insert entries using a transaction
-		const insertEntry = db.prepare(`
-			INSERT INTO autocomplete_entries (id, dictionary_id, trigger, replacement)
-			VALUES (?, ?, ?, ?)
-		`);
-
-		const insertMany = db.transaction((entries) => {
-			let count = 0;
-			for (const [trigger, replacement] of Object.entries(entries)) {
-				const entryId = `default-${count++}`;
-				insertEntry.run(entryId, dictionaryId, trigger, replacement);
-			}
-			return count;
-		});
-
-		const insertedCount = insertMany(entries);
-		console.log(`Seeded ${insertedCount} entries into default dictionary`);
-
-		// Mark as seeded
-		db.prepare(`
-			INSERT INTO settings (key, value)
-			VALUES (?, ?)
-			ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = CURRENT_TIMESTAMP
-		`).run('default_dictionary_seeded', 'true', 'true');
-
-	} catch (error) {
-		console.error('Failed to seed default dictionary:', error);
-		// Don't throw - app should still work without default dictionary
-	}
 }
 
 export function getDatabase() {

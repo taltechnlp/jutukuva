@@ -51,6 +51,7 @@
 	let containerElement: HTMLDivElement;
 	let editorElement: HTMLDivElement;
 	let editorView: EditorView | null = $state(null);
+	let isDestroyed = false; // Flag to prevent updates after destroy
 	let segments = $state<SubtitleSegment[]>([]);
 	let recordingStartTime = $state<number | null>(null);
 	let autoScroll = $state(true);
@@ -392,7 +393,7 @@
 					createParagraphNodeView(node, view, getPos, nodeViewContext)
 			},
 			dispatchTransaction(transaction) {
-				if (!editorView) return;
+				if (!editorView || isDestroyed) return;
 
 				// Detect paragraph creation (Enter key) and commit words BEFORE applying
 				// This ensures deduplication state is updated synchronously
@@ -401,6 +402,10 @@
 				}
 
 				const newState = editorView.state.apply(transaction);
+
+				// Double-check editorView is still valid before updating
+				if (!editorView || isDestroyed) return;
+
 				editorView.updateState(newState);
 
 				// Update reactive state
@@ -448,6 +453,9 @@
 	});
 
 	onDestroy(() => {
+		// Set destroyed flag first to prevent any pending callbacks from updating
+		isDestroyed = true;
+
 		// Unsubscribe from speaker store
 		if (unsubscribeSpeakers) {
 			unsubscribeSpeakers();
@@ -466,8 +474,11 @@
 			resizeObserver = null;
 		}
 
+		// Destroy editor view and null out reference
 		if (editorView) {
-			editorView.destroy();
+			const view = editorView;
+			editorView = null;
+			view.destroy();
 		}
 	});
 
