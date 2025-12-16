@@ -619,6 +619,9 @@
 			},
 
 			onSpeechStart: () => {
+				// TEMPORARILY DISABLED VAD - always speaking
+				return;
+
 				// Ignore if recording was stopped
 				if (!isRecording || !isVadActive) {
 					return;
@@ -649,6 +652,9 @@
 			},
 
 			onSpeechEnd: (audio: Float32Array) => {
+				// TEMPORARILY DISABLED VAD - always speaking
+				return;
+
 				if (DEBUG_VAD) console.log('🔇 [VAD] Speech ended, audio length:', audio.length);
 
 				// Don't stop sending audio immediately - continue for POST_SPEECH_BUFFER_MS
@@ -1102,6 +1108,7 @@
 
 			isVadActive = true;
 			isRecording = true;
+			isSpeaking = true; // TEMPORARILY DISABLED VAD - always speaking
 
 			// Start timing tracking for word timestamps
 			speechEditor?.startTiming();

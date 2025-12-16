@@ -86,6 +86,9 @@ function insertStreamingText(
 		return tr;
 	}
 
+	// Check if first word starts with punctuation (no space needed before it)
+	const punctuationRegex = /^[.,!?;:\-–—""''„"«»]/;
+
 	// Append all incoming words to the last paragraph
 	let insertPos = lastParaPos + 1 + (lastPara?.content.size || 0);
 	let needsSpaceBefore = lastPara?.content.size > 0;
@@ -99,8 +102,11 @@ function insertStreamingText(
 	for (let i = 0; i < incomingWords.length; i++) {
 		const word = incomingWords[i];
 
-		// Add space before word if needed
-		if (needsSpaceBefore) {
+		// Don't add space before punctuation
+		const startsWithPunctuation = punctuationRegex.test(word);
+
+		// Add space before word if needed (but not before punctuation)
+		if (needsSpaceBefore && !startsWithPunctuation) {
 			const spaceNode = schema.text(' ');
 			tr.insert(insertPos, spaceNode);
 			insertPos += 1;
