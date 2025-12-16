@@ -93,8 +93,10 @@
 <div
 	class="modal modal-open"
 	onclick={handleBackdropClick}
+	onkeydown={(e) => e.key === 'Escape' && onClose()}
 	role="dialog"
 	aria-modal="true"
+	tabindex="-1"
 >
 	<div class="modal-box max-w-md">
 		<h3 class="font-bold text-lg mb-4">{$_('sessions.create.title', { default: 'Create New Session' })}</h3>
@@ -158,11 +160,9 @@
 						disabled={creating}
 						maxlength="6"
 					/>
-					<label class="label">
-						<span class="label-text-alt text-base-content/60">
-							{$_('sessions.create.codeHint', { default: 'Use letters A-Z (except O, I, L) and numbers 2-9' })}
-						</span>
-					</label>
+					<p class="label-text-alt text-base-content/60 px-1 mt-1">
+						{$_('sessions.create.codeHint', { default: 'Use letters A-Z (except O, I, L) and numbers 2-9' })}
+					</p>
 				{:else}
 					<div class="flex items-center gap-2">
 						<div class="input input-bordered flex-1 flex items-center font-mono text-lg tracking-widest bg-base-200">

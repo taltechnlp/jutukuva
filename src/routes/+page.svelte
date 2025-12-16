@@ -1435,8 +1435,8 @@
 						</svg>
 					</button>
 				{:else}
-					<button class="btn btn-circle btn-error btn-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200" onclick={stopRecording}>
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<button class="btn btn-circle btn-error btn-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200" onclick={stopRecording} title={$_('dictate.stopRecording')} aria-label={$_('dictate.stopRecording')}>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
 						</svg>
@@ -1448,12 +1448,12 @@
 			<div class="flex justify-end items-center gap-2">
 				<!-- Collaboration Menu -->
 				<div class="dropdown dropdown-end">
-					<div tabindex="0" role="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('collaboration.collaborative_session')} onclick={() => loadCollaborationSessions()} onfocus={() => loadCollaborationSessions()}>
+					<button type="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('collaboration.collaborative_session')} onclick={() => loadCollaborationSessions()} onfocus={() => loadCollaborationSessions()}>
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
 						</svg>
-					</div>
-					<ul tabindex="0" class="dropdown-content z-[1] menu p-3 shadow-xl bg-base-100 rounded-box w-80 border border-base-300 mt-2 max-h-[70vh] overflow-y-auto">
+					</button>
+					<ul class="dropdown-content z-[1] menu p-3 shadow-xl bg-base-100 rounded-box w-80 border border-base-300 mt-2 max-h-[70vh] overflow-y-auto">
 						{#if !sessionInfo}
 							<li><h3 class="menu-title text-sm font-semibold">{$_('collaboration.collaborative_session')}</h3></li>
 							<li>
@@ -1580,13 +1580,13 @@
 
 				<!-- Settings Menu -->
 				<div class="dropdown dropdown-end">
-					<div tabindex="0" role="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('dictate.audioSource')}>
+					<button type="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('dictate.audioSource')}>
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
 						</svg>
-					</div>
-					<ul tabindex="0" class="dropdown-content z-[1] menu p-3 shadow-xl bg-base-100 rounded-box w-72 border border-base-300 mt-2">
+					</button>
+					<ul class="dropdown-content z-[1] menu p-3 shadow-xl bg-base-100 rounded-box w-72 border border-base-300 mt-2">
 						<li><h3 class="menu-title text-sm font-semibold">{$_('dictate.audioSource')}</h3></li>
 						
 						<!-- Source Type -->

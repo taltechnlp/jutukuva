@@ -309,9 +309,9 @@
 				<button class="btn" onclick={closeShortcutsModal}>{$_('dictate.shortcuts.close')}</button>
 			</div>
 		</div>
-		<form method="dialog" class="modal-backdrop" onclick={closeShortcutsModal}>
-			<button type="button">close</button>
-		</form>
+		<div class="modal-backdrop" role="presentation" onclick={closeShortcutsModal} onkeydown={(e) => e.key === 'Escape' && closeShortcutsModal()}>
+			<button type="button" class="sr-only">close</button>
+		</div>
 	</dialog>
 {/if}
 

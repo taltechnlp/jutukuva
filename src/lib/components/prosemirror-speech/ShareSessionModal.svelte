@@ -24,9 +24,9 @@
 
 	// Get URLs
 	const webViewerUrl = import.meta.env.VITE_WEB_VIEWER_URL || 'https://tekstiks.ee/kk';
-	const webJoinUrl = `${webViewerUrl}/${sessionInfo.code}`;
-	const electronJoinUrl = `jutukuva://join/${sessionInfo.code}`;
-	const desktopJoinUrl = electronJoinUrl;
+	let webJoinUrl = $derived(`${webViewerUrl}/${sessionInfo.code}`);
+	let electronJoinUrl = $derived(`jutukuva://join/${sessionInfo.code}`);
+	let desktopJoinUrl = $derived(electronJoinUrl);
 
 	// Generate QR code on mount (always use web viewer URL for mobile compatibility)
 	onMount(async () => {
@@ -62,13 +62,14 @@
 
 		<!-- Session Code -->
 		<div class="mb-6">
-			<label class="label">
+			<label class="label" for="active-session-code">
 				<span class="label-text font-semibold">
 					{$_('share_session.code_label', { default: 'Session Code' })}
 				</span>
 			</label>
 			<div class="flex gap-2">
 				<input
+					id="active-session-code"
 					type="text"
 					readonly
 					value={sessionInfo.code}
@@ -92,22 +93,21 @@
 					{/if}
 				</button>
 			</div>
-			<label class="label">
-				<span class="label-text-alt">
-					{$_('share_session.code_help', { default: 'Share this code with others to join your session' })}
-				</span>
-			</label>
+			<p class="label-text-alt px-1 mt-1">
+				{$_('share_session.code_help', { default: 'Share this code with others to join your session' })}
+			</p>
 		</div>
 
 		<!-- Web Viewer URL (for mobile/QR) -->
 		<div class="mb-6">
-			<label class="label">
+			<label class="label" for="active-web-url">
 				<span class="label-text font-semibold">
 					{$_('share_session.web_url_label', { default: 'Web Viewer URL' })}
 				</span>
 			</label>
 			<div class="flex gap-2">
 				<input
+					id="active-web-url"
 					type="text"
 					readonly
 					value={webJoinUrl}
@@ -131,23 +131,22 @@
 					{/if}
 				</button>
 			</div>
-			<label class="label">
-				<span class="label-text-alt">
-					{$_('share_session.web_url_help', { default: 'Works on any device with a web browser' })}
-				</span>
-			</label>
+			<p class="label-text-alt px-1 mt-1">
+				{$_('share_session.web_url_help', { default: 'Works on any device with a web browser' })}
+			</p>
 		</div>
 
 		<!-- Desktop App URL (optional) -->
 		{#if isElectron}
 		<div class="mb-6">
-			<label class="label">
+			<label class="label" for="active-desktop-url">
 				<span class="label-text font-semibold">
 					{$_('share_session.desktop_url_label', { default: 'Desktop App URL' })}
 				</span>
 			</label>
 			<div class="flex gap-2">
 				<input
+					id="active-desktop-url"
 					type="text"
 					readonly
 					value={desktopJoinUrl}
@@ -171,41 +170,33 @@
 					{/if}
 				</button>
 			</div>
-			<label class="label">
-				<span class="label-text-alt">
-					{$_('share_session.desktop_url_help', { default: 'For users with desktop app installed' })}
-				</span>
-			</label>
+			<p class="label-text-alt px-1 mt-1">
+				{$_('share_session.desktop_url_help', { default: 'For users with desktop app installed' })}
+			</p>
 		</div>
 		{/if}
 
 		<!-- QR Code -->
 		{#if qrCodeDataUrl}
 			<div class="mb-6 flex flex-col items-center">
-				<label class="label">
-					<span class="label-text font-semibold">
-						{$_('share_session.qr_label', { default: 'QR Code' })}
-					</span>
-				</label>
+				<p class="label-text font-semibold mb-2">
+					{$_('share_session.qr_label', { default: 'QR Code' })}
+				</p>
 				<div class="bg-white p-4 rounded-lg">
 					<img src={qrCodeDataUrl} alt="QR Code" class="w-64 h-64" />
 				</div>
-				<label class="label">
-					<span class="label-text-alt">
-						{$_('share_session.qr_help', { default: 'Scan with mobile device to join' })}
-					</span>
-				</label>
+				<p class="label-text-alt mt-2">
+					{$_('share_session.qr_help', { default: 'Scan with mobile device to join' })}
+				</p>
 			</div>
 		{/if}
 
 		<!-- Connected Participants -->
 		<div class="mb-4">
-			<label class="label">
-				<span class="label-text font-semibold">
-					{$_('share_session.participants', { default: 'Connected Participants' })}
-					<span class="badge badge-primary ml-2">{participants.length}</span>
-				</span>
-			</label>
+			<p class="label-text font-semibold mb-2">
+				{$_('share_session.participants', { default: 'Connected Participants' })}
+				<span class="badge badge-primary ml-2">{participants.length}</span>
+			</p>
 			<div class="space-y-2">
 				{#each participants as participant}
 					<div class="flex items-center gap-2 p-2 bg-base-200 rounded">

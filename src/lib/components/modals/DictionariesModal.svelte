@@ -17,7 +17,7 @@
 	let newDictionaryName = $state('');
 	let loading = $state(true);
 	let error = $state<string | null>(null);
-	let fileInput: HTMLInputElement;
+	let fileInput = $state<HTMLInputElement | null>(null);
 
 	// Load dictionaries when modal opens
 	$effect(() => {
@@ -271,7 +271,7 @@
 									>
 										<div class="card-body p-4">
 											<div class="flex items-center justify-between">
-												<div class="flex-1" onclick={() => selectDictionary(dictionary)}>
+												<button type="button" class="flex-1 text-left" onclick={() => selectDictionary(dictionary)}>
 													<div class="flex items-center gap-2">
 														<h3 class="font-semibold text-lg">{dictionary.name}</h3>
 														{#if dictionary.is_builtin === 1}
@@ -282,7 +282,7 @@
 														{$_('settings.dictionaries.createdAt', { default: 'Created' })}:
 														{new Date(dictionary.created_at).toLocaleDateString()}
 													</p>
-												</div>
+												</button>
 												<div class="flex items-center gap-2">
 													<input
 														type="checkbox"
@@ -372,9 +372,9 @@
 				</div>
 			</div>
 		</div>
-		<form method="dialog" class="modal-backdrop bg-black/50" onclick={closeModal}>
-			<button type="button">close</button>
-		</form>
+		<div class="modal-backdrop bg-black/50" role="presentation" onclick={closeModal} onkeydown={(e) => e.key === 'Escape' && closeModal()}>
+			<button type="button" class="sr-only">close</button>
+		</div>
 	</dialog>
 {/if}
 
@@ -405,8 +405,8 @@
 				</button>
 			</div>
 		</div>
-		<form method="dialog" class="modal-backdrop" onclick={() => (showNewDictionaryModal = false)}>
-			<button type="button">close</button>
-		</form>
+		<div class="modal-backdrop" role="presentation" onclick={() => (showNewDictionaryModal = false)} onkeydown={(e) => e.key === 'Escape' && (showNewDictionaryModal = false)}>
+			<button type="button" class="sr-only">close</button>
+		</div>
 	</dialog>
 {/if}

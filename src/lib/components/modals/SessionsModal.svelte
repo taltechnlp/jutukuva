@@ -306,9 +306,9 @@
 				{/if}
 			</div>
 		</div>
-		<form method="dialog" class="modal-backdrop bg-black/50" onclick={closeModal}>
-			<button type="button">close</button>
-		</form>
+		<div class="modal-backdrop bg-black/50" role="presentation" onclick={closeModal} onkeydown={(e) => e.key === 'Escape' && closeModal()}>
+			<button type="button" class="sr-only">close</button>
+		</div>
 	</dialog>
 {/if}
 

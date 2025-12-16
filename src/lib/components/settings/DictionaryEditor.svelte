@@ -174,16 +174,16 @@
 							<div class="card-body p-4">
 								<div class="grid grid-cols-1 gap-2">
 									<div class="form-control">
-										<label class="label">
+										<label class="label" for="edit-trigger-{entry.id}">
 											<span class="label-text text-xs">{$_('settings.dictionaries.trigger', { default: 'Trigger' })}</span>
 										</label>
-										<input type="text" class="input input-bordered input-sm" bind:value={editingEntry.trigger} />
+										<input id="edit-trigger-{entry.id}" type="text" class="input input-bordered input-sm" bind:value={editingEntry.trigger} />
 									</div>
 									<div class="form-control">
-										<label class="label">
+										<label class="label" for="edit-replacement-{entry.id}">
 											<span class="label-text text-xs">{$_('settings.dictionaries.replacement', { default: 'Replacement' })}</span>
 										</label>
-										<input type="text" class="input input-bordered input-sm" bind:value={editingEntry.replacement} />
+										<input id="edit-replacement-{entry.id}" type="text" class="input input-bordered input-sm" bind:value={editingEntry.replacement} />
 									</div>
 								</div>
 								<div class="flex justify-end gap-2 mt-2">
@@ -274,9 +274,7 @@
 						class="input input-bordered w-full"
 						bind:value={newTrigger}
 					/>
-					<label class="label">
-						<span class="label-text-alt">{$_('settings.dictionaries.triggerHelp', { default: 'The text you type to trigger the replacement' })}</span>
-					</label>
+					<p class="label-text-alt px-1">{$_('settings.dictionaries.triggerHelp', { default: 'The text you type to trigger the replacement' })}</p>
 				</div>
 				<div class="form-control">
 					<label class="label" for="new-replacement">
@@ -290,9 +288,7 @@
 						bind:value={newReplacement}
 						onkeydown={(e) => e.key === 'Enter' && addEntry()}
 					/>
-					<label class="label">
-						<span class="label-text-alt">{$_('settings.dictionaries.replacementHelp', { default: 'The text that will replace the trigger' })}</span>
-					</label>
+					<p class="label-text-alt px-1 mt-1">{$_('settings.dictionaries.replacementHelp', { default: 'The text that will replace the trigger' })}</p>
 				</div>
 			</div>
 
@@ -311,15 +307,21 @@
 				</button>
 			</div>
 		</div>
-		<form
-			method="dialog"
+		<div
 			class="modal-backdrop"
+			role="presentation"
 			onclick={() => {
 				showAddModal = false;
 				error = null;
 			}}
+			onkeydown={(e) => {
+				if (e.key === 'Escape') {
+					showAddModal = false;
+					error = null;
+				}
+			}}
 		>
-			<button type="button">close</button>
-		</form>
+			<button type="button" class="sr-only">close</button>
+		</div>
 	</dialog>
 {/if}
