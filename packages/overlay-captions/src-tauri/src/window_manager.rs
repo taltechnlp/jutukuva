@@ -35,7 +35,7 @@ pub fn create_overlay_window(app: &AppHandle, settings: &OverlaySettings) -> Res
         .always_on_top(true)
         .skip_taskbar(true)
         .resizable(true)
-        .visible(true);
+        .visible(false); // Start hidden, then show explicitly for Windows
 
     #[cfg(target_os = "linux")]
     let builder = WebviewWindowBuilder::new(app, "overlay", overlay_url)
@@ -55,6 +55,16 @@ pub fn create_overlay_window(app: &AppHandle, settings: &OverlaySettings) -> Res
     window
         .set_always_on_top(true)
         .map_err(|e| e.to_string())?;
+
+    // Windows-specific: Explicitly show and focus the window after creation
+    // This is required because transparent frameless windows on Windows with WebView2
+    // may not appear correctly if only .visible(true) is set at build time
+    #[cfg(target_os = "windows")]
+    {
+        log::info!("Windows: Explicitly showing overlay window");
+        window.show().map_err(|e| e.to_string())?;
+        window.set_focus().map_err(|e| e.to_string())?;
+    }
 
     // Apply click-through if enabled
     if settings.click_through {

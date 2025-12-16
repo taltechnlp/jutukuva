@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getCurrentWindow } from '@tauri-apps/api/window';
+	import { invoke } from '@tauri-apps/api/core';
 
 	function stopPropagation(e: MouseEvent) {
 		e.stopPropagation();
@@ -27,8 +28,15 @@
 	async function close(e: MouseEvent) {
 		e.stopPropagation();
 		e.preventDefault();
-		const window = await getCurrentWindow();
-		await window.close();
+		try {
+			// Use backend command to properly close app and clean up overlay
+			await invoke('close_app');
+		} catch (err) {
+			console.error('Failed to close app:', err);
+			// Fallback to direct close if command fails
+			const window = await getCurrentWindow();
+			await window.close();
+		}
 	}
 </script>
 

@@ -149,3 +149,30 @@ pub fn show_main_with_settings(app: AppHandle) -> Result<(), String> {
     }
     Ok(())
 }
+
+// Close the entire application properly
+#[tauri::command]
+pub fn close_app(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    log::info!("close_app command called");
+
+    // Close overlay window if it exists
+    if let Some(overlay) = app.get_webview_window("overlay") {
+        let _ = overlay.close();
+    }
+
+    // Update state
+    {
+        let mut overlay_visible = state.overlay_visible.lock().map_err(|e| e.to_string())?;
+        *overlay_visible = false;
+    }
+
+    // Close main window
+    if let Some(main_window) = app.get_webview_window("main") {
+        main_window.close().map_err(|e| e.to_string())?;
+    }
+
+    // Exit the app
+    app.exit(0);
+
+    Ok(())
+}
