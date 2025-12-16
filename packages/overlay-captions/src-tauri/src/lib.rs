@@ -5,7 +5,7 @@ mod window_manager;
 use commands::*;
 use settings::{load_settings, AppSettings};
 use std::sync::Mutex;
-use tauri::Emitter;
+use tauri::{Emitter, Manager, WindowEvent};
 
 pub struct AppState {
     pub settings: Mutex<AppSettings>,
@@ -39,7 +39,52 @@ pub fn run() {
             get_last_session_code,
             broadcast_caption,
             show_main_with_settings,
+            close_app,
         ])
+        .on_window_event(|window, event| {
+            match event {
+                WindowEvent::CloseRequested { .. } => {
+                    let label = window.label();
+                    log::info!("CloseRequested event for window: {}", label);
+
+                    if label == "main" {
+                        // When main window closes, also close the overlay
+                        let app = window.app_handle();
+
+                        // Close overlay window if it exists
+                        if let Some(overlay) = app.get_webview_window("overlay") {
+                            let _ = overlay.close();
+                        }
+
+                        // Update state
+                        if let Some(state) = app.try_state::<AppState>() {
+                            if let Ok(mut visible) = state.overlay_visible.lock() {
+                                *visible = false;
+                            }
+                        }
+                    } else if label == "overlay" {
+                        // When overlay is closed directly, update state
+                        let app = window.app_handle();
+                        if let Some(state) = app.try_state::<AppState>() {
+                            if let Ok(mut visible) = state.overlay_visible.lock() {
+                                *visible = false;
+                            }
+                        }
+                    }
+                }
+                WindowEvent::Destroyed => {
+                    let label = window.label();
+                    log::info!("Window destroyed: {}", label);
+
+                    if label == "main" {
+                        // Ensure app exits when main window is destroyed
+                        let app = window.app_handle();
+                        app.exit(0);
+                    }
+                }
+                _ => {}
+            }
+        })
         .setup(|app| {
             // Register global shortcut for overlay toggle (Ctrl+Shift+O)
             use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
