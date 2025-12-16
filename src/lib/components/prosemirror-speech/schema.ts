@@ -64,38 +64,5 @@ export const speechSchema = new Schema({
 			group: 'inline'
 		}
 	},
-	marks: {
-		word: {
-			attrs: {
-				id: {},
-				start: { default: 0 },
-				end: { default: 0 }
-			},
-			toDOM(mark) {
-				return [
-					'span',
-					{
-						class: 'word',
-						'data-word-id': mark.attrs.id,
-						'data-start': mark.attrs.start,
-						'data-end': mark.attrs.end
-					},
-					0
-				];
-			},
-			parseDOM: [
-				{
-					tag: 'span[data-word-id]',
-					getAttrs(dom) {
-						const el = dom as HTMLElement;
-						return {
-							id: el.getAttribute('data-word-id'),
-							start: parseFloat(el.getAttribute('data-start') || '0'),
-							end: parseFloat(el.getAttribute('data-end') || '0')
-						};
-					}
-				}
-			]
-		}
-	}
+	marks: {}
 });
