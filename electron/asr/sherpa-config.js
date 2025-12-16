@@ -139,7 +139,7 @@ export function getRecognizerConfig(modelDir) {
       provider: 'cpu',
       debug: 0,
     },
-    enableEndpoint: false,
+    enableEndpoint: true,
   };
 }
 

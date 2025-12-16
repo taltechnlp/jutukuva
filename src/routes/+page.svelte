@@ -610,10 +610,12 @@
 					audioBuffer.shift();
 				}
 
+				// TEMPORARILY DISABLED VAD FILTERING - always send audio to ASR
 				// Stream frame in real-time if speech is active
-				if (isSpeaking) {
-					sendAudioToASR(frame);
-				}
+				// if (isSpeaking) {
+				// 	sendAudioToASR(frame);
+				// }
+				sendAudioToASR(frame);
 			},
 
 			onSpeechStart: () => {
