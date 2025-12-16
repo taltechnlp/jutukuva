@@ -18,9 +18,9 @@
 
 	// Get URLs
 	const webViewerUrl = import.meta.env.VITE_WEB_VIEWER_URL || 'https://tekstiks.ee/kk';
-	const webJoinUrl = `${webViewerUrl}/${session.session_code}`;
-	const electronJoinUrl = `jutukuva://join/${session.session_code}`;
-	const desktopJoinUrl = isElectron ? electronJoinUrl : '';
+	let webJoinUrl = $derived(`${webViewerUrl}/${session.session_code}`);
+	let electronJoinUrl = $derived(`jutukuva://join/${session.session_code}`);
+	let desktopJoinUrl = $derived(isElectron ? electronJoinUrl : '');
 
 	// Generate QR code on mount
 	onMount(async () => {
@@ -71,8 +71,10 @@
 <div
 	class="modal modal-open"
 	onclick={handleBackdropClick}
+	onkeydown={(e) => e.key === 'Escape' && onClose()}
 	role="dialog"
 	aria-modal="true"
+	tabindex="-1"
 >
 	<div class="modal-box max-w-2xl">
 		<h3 class="font-bold text-xl mb-4">{$_('share_session.title', { default: 'Share Session' })}</h3>
@@ -89,13 +91,14 @@
 
 		<!-- Session Code -->
 		<div class="mb-6">
-			<label class="label">
+			<label class="label" for="share-session-code">
 				<span class="label-text font-semibold">
 					{$_('share_session.code_label', { default: 'Session Code' })}
 				</span>
 			</label>
 			<div class="flex gap-2">
 				<input
+					id="share-session-code"
 					type="text"
 					readonly
 					value={session.session_code}
@@ -119,22 +122,21 @@
 					{/if}
 				</button>
 			</div>
-			<label class="label">
-				<span class="label-text-alt">
-					{$_('share_session.code_help', { default: 'Share this code with others to join your session' })}
-				</span>
-			</label>
+			<p class="label-text-alt px-1 mt-1">
+				{$_('share_session.code_help', { default: 'Share this code with others to join your session' })}
+			</p>
 		</div>
 
 		<!-- Web Viewer URL -->
 		<div class="mb-6">
-			<label class="label">
+			<label class="label" for="share-web-url">
 				<span class="label-text font-semibold">
 					{$_('share_session.web_url_label', { default: 'Web Viewer URL' })}
 				</span>
 			</label>
 			<div class="flex gap-2">
 				<input
+					id="share-web-url"
 					type="text"
 					readonly
 					value={webJoinUrl}
@@ -158,23 +160,22 @@
 					{/if}
 				</button>
 			</div>
-			<label class="label">
-				<span class="label-text-alt">
-					{$_('share_session.web_url_help', { default: 'Works on any device with a web browser' })}
-				</span>
-			</label>
+			<p class="label-text-alt px-1 mt-1">
+				{$_('share_session.web_url_help', { default: 'Works on any device with a web browser' })}
+			</p>
 		</div>
 
 		<!-- Desktop App URL (optional) -->
 		{#if isElectron && desktopJoinUrl}
 		<div class="mb-6">
-			<label class="label">
+			<label class="label" for="share-desktop-url">
 				<span class="label-text font-semibold">
 					{$_('share_session.desktop_url_label', { default: 'Desktop App URL' })}
 				</span>
 			</label>
 			<div class="flex gap-2">
 				<input
+					id="share-desktop-url"
 					type="text"
 					readonly
 					value={desktopJoinUrl}
@@ -198,30 +199,24 @@
 					{/if}
 				</button>
 			</div>
-			<label class="label">
-				<span class="label-text-alt">
-					{$_('share_session.desktop_url_help', { default: 'For users with desktop app installed' })}
-				</span>
-			</label>
+			<p class="label-text-alt px-1 mt-1">
+				{$_('share_session.desktop_url_help', { default: 'For users with desktop app installed' })}
+			</p>
 		</div>
 		{/if}
 
 		<!-- QR Code -->
 		{#if qrCodeDataUrl}
 			<div class="mb-6 flex flex-col items-center">
-				<label class="label">
-					<span class="label-text font-semibold">
-						{$_('share_session.qr_label', { default: 'QR Code' })}
-					</span>
-				</label>
+				<p class="label-text font-semibold mb-2">
+					{$_('share_session.qr_label', { default: 'QR Code' })}
+				</p>
 				<div class="bg-white p-4 rounded-lg">
 					<img src={qrCodeDataUrl} alt="QR Code" class="w-64 h-64" />
 				</div>
-				<label class="label">
-					<span class="label-text-alt">
-						{$_('share_session.qr_help', { default: 'Scan with mobile device to join' })}
-					</span>
-				</label>
+				<p class="label-text-alt mt-2">
+					{$_('share_session.qr_help', { default: 'Scan with mobile device to join' })}
+				</p>
 			</div>
 		{/if}
 

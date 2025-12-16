@@ -49,7 +49,6 @@
 		<span class="hidden sm:inline ml-1">{$_(`theme.${currentTheme}`, { default: capitalizeTheme(currentTheme) })}</span>
 	</button>
 	<ul
-		tabindex="0"
 		class="dropdown-content menu bg-base-100 rounded-box z-[1] w-40 p-2 shadow"
 	>
 		{#each availableThemes as themeName}

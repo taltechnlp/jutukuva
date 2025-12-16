@@ -25,8 +25,10 @@
 <div
 	class="modal modal-open"
 	onclick={handleBackdropClick}
+	onkeydown={(e) => e.key === 'Escape' && onCancel()}
 	role="dialog"
 	aria-modal="true"
+	tabindex="-1"
 >
 	<div class="modal-box max-w-md">
 		<h3 class="font-bold text-lg mb-4">

@@ -43,7 +43,6 @@
 		<span class="hidden sm:inline ml-1">{languageNames[currentLocale]}</span>
 	</button>
 	<ul
-		tabindex="0"
 		class="dropdown-content menu bg-base-100 rounded-box z-[1] w-32 p-2 shadow"
 	>
 		{#each uiLanguages as lang}

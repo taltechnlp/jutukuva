@@ -8,7 +8,14 @@
 
 	let { onClose, hasVirtualDevice = false }: Props = $props();
 
-	let currentStep = $state(hasVirtualDevice ? 2 : 0); // Skip to step 2 if already has device
+	let currentStep = $state(0);
+
+	// Initialize step based on hasVirtualDevice prop
+	$effect(() => {
+		if (hasVirtualDevice) {
+			currentStep = 2;
+		}
+	});
 	let isDownloading = $state(false);
 	let downloadProgress = $state(0);
 	let downloadError = $state<string | null>(null);
@@ -238,7 +245,7 @@
 			</button>
 		</div>
 	</div>
-	<form method="dialog" class="modal-backdrop" onclick={onClose}>
-		<button type="button">close</button>
-	</form>
+	<div class="modal-backdrop" role="presentation" onclick={onClose} onkeydown={(e) => e.key === 'Escape' && onClose()}>
+		<button type="button" class="sr-only">close</button>
+	</div>
 </div>
