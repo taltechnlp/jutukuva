@@ -2,6 +2,30 @@ import { setupLibraryPath, getRecognizerConfig, getModelPath, MODEL_INFO, getLib
 import { downloadModel, isModelDownloaded } from './model-downloader.js';
 import { createRequire } from 'module';
 import path from 'path';
+import fs from 'fs';
+import { app } from 'electron';
+
+// Debug logging for ASR hypotheses
+let debugLogStream = null;
+let debugLogPath = null;
+
+function initDebugLog() {
+  if (!debugLogStream) {
+    debugLogPath = path.join(app.getPath('userData'), 'asr-debug.log');
+    debugLogStream = fs.createWriteStream(debugLogPath, { flags: 'w' });
+    debugLogStream.write(`ASR Debug Log - Started at ${new Date().toISOString()}\n`);
+    debugLogStream.write('='.repeat(80) + '\n\n');
+    console.log('[ASR] Debug log file:', debugLogPath);
+  }
+}
+
+function logHypothesis(text, isFinal) {
+  if (debugLogStream && text) {
+    const timestamp = new Date().toISOString();
+    const marker = isFinal ? '[FINAL]' : '[PARTIAL]';
+    debugLogStream.write(`${timestamp} ${marker} ${text}\n`);
+  }
+}
 
 // Sherpa-onnx module (loaded dynamically after library path setup)
 let sherpa = null;
@@ -141,6 +165,9 @@ export function startSession() {
     stream = recognizer.createStream();
     sessionId = `asr-${Date.now()}`;
 
+    // Initialize debug logging
+    initDebugLog();
+
     console.log('[ASR] Started new session:', sessionId);
     return {
       success: true,
@@ -191,6 +218,9 @@ export function processAudio(samples) {
       isFinal = true;
       recognizer.reset(stream);
     }
+
+    // Log hypothesis for debugging
+    logHypothesis(text.trim(), isFinal);
 
     return {
       text: text.trim(),

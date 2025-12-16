@@ -69,95 +69,105 @@
 	let unsubscribeSpeakers: (() => void) | null = null;
 
 	// ASR deduplication state - pure diff-based, no editor knowledge
-	// Tracks the normalized characters we've already sent to the editor
-	let sentNormalized = '';
+	// Tracks words we've already sent to the editor
+	let sentWords: string[] = [];
 
 	/**
-	 * Normalize text for comparison (lowercase, remove punctuation and whitespace)
+	 * Normalize word for comparison (lowercase, remove punctuation)
 	 */
-	function normalizeForComparison(text: string): string {
-		return text.replace(/[.,!?;:\-–—""''„"«»\s]/g, '').toLowerCase();
+	function normalizeWord(word: string): string {
+		return word.replace(/[.,!?;:\-–—""''„"«»]/g, '').toLowerCase();
 	}
 
 	/**
-	 * Extract only NEW content from incoming ASR text
-	 * Pure diff against what we've already sent - no editor knowledge
+	 * Extract only NEW complete words from incoming ASR text
 	 *
-	 * Handles model quirks:
-	 * - Capitalization changes: "Üks" vs "üks"
-	 * - Punctuation changes: "kuus" vs "kuus,"
-	 * - Compound words: "kuus teist" → "kuusteist"
+	 * Key insight: The last word in a partial result may still be growing
+	 * (e.g., "Ra" → "Raivo"). We hold back the last word until:
+	 * - It's followed by another word (confirmed complete)
+	 * - Or it's a final result (stream will reset)
+	 *
+	 * @param text - The incoming ASR text
+	 * @param isFinal - If true, the model will reset its stream after this
 	 */
-	function extractNewWords(text: string): string {
+	function extractNewWords(text: string, isFinal: boolean = false): string {
 		const incomingText = text.trim();
 		if (!incomingText) {
+			if (isFinal) {
+				sentWords = [];
+			}
 			return '';
 		}
 
-		const incomingNormalized = normalizeForComparison(incomingText);
+		// Split into words (preserving punctuation attached to words)
+		const incomingWords = incomingText.split(/\s+/).filter(w => w.length > 0);
 
-		// Find where the new content starts by checking character by character
-		// The incoming normalized text should start with what we've already sent
-		let matchLen = 0;
-		const minLen = Math.min(sentNormalized.length, incomingNormalized.length);
+		if (incomingWords.length === 0) {
+			if (isFinal) {
+				sentWords = [];
+			}
+			return '';
+		}
 
-		for (let i = 0; i < minLen; i++) {
-			if (sentNormalized[i] === incomingNormalized[i]) {
-				matchLen++;
+		// Find how many words from the start match what we've sent
+		let matchCount = 0;
+		for (let i = 0; i < Math.min(sentWords.length, incomingWords.length); i++) {
+			// Check if the incoming word starts with what we sent (handles word growth)
+			const sentNorm = normalizeWord(sentWords[i]);
+			const incomingNorm = normalizeWord(incomingWords[i]);
+
+			if (incomingNorm.startsWith(sentNorm)) {
+				matchCount++;
 			} else {
 				break;
 			}
 		}
 
-		// If incoming doesn't start with what we sent, something is wrong
-		// (model's sliding window dropped content) - reset and take all
-		if (matchLen < sentNormalized.length && incomingNormalized.length >= sentNormalized.length) {
-			// Sliding window moved - reset context
-			sentNormalized = incomingNormalized;
-			return incomingText;
-		}
+		// Determine which words to send
+		let wordsToSend: string[];
 
-		// Find the position in the original text where new content starts
-		// We need to map from normalized position back to original text
-		if (incomingNormalized.length > sentNormalized.length) {
-			// There's new content after what we've sent
-			const newNormalizedContent = incomingNormalized.slice(sentNormalized.length);
-
-			// Find where this new content starts in the original text
-			let normalizedPos = 0;
-			let originalPos = 0;
-
-			for (let i = 0; i < incomingText.length; i++) {
-				const char = incomingText[i];
-				const normalizedChar = normalizeForComparison(char);
-
-				if (normalizedChar) {
-					if (normalizedPos >= sentNormalized.length) {
-						// We've passed the already-sent content
-						originalPos = i;
-						break;
-					}
-					normalizedPos++;
+		if (matchCount < sentWords.length) {
+			// Mismatch - model's context shifted. Reset and take all confirmed words.
+			if (isFinal) {
+				// Final: send all words
+				wordsToSend = incomingWords;
+				sentWords = [];
+			} else {
+				// Partial: send all but last (last may be incomplete)
+				wordsToSend = incomingWords.slice(0, -1);
+				sentWords = wordsToSend.slice();
+			}
+		} else {
+			// Normal case: send new confirmed words
+			if (isFinal) {
+				// Final: send all words after what we've sent
+				wordsToSend = incomingWords.slice(sentWords.length);
+				sentWords = [];
+			} else {
+				// Partial: send all new words except the last one (may be incomplete)
+				// Example: sent=["hello"], incoming=["hello", "world", "foo"]
+				// Send "world" (confirmed), hold "foo" (may grow)
+				const newWords = incomingWords.slice(sentWords.length);
+				if (newWords.length > 1) {
+					// Multiple new words - send all but the last
+					wordsToSend = newWords.slice(0, -1);
+					// Update sent to include everything except the last incoming word
+					sentWords = incomingWords.slice(0, -1);
+				} else {
+					// Only one new word (or none) - hold it back
+					wordsToSend = [];
 				}
 			}
-
-			// Extract new content from original text (preserving punctuation/formatting)
-			const newContent = incomingText.slice(originalPos).trim();
-
-			if (newContent) {
-				sentNormalized = incomingNormalized;
-				return newContent;
-			}
 		}
 
-		return '';
+		return wordsToSend.join(' ');
 	}
 
 	/**
 	 * Reset ASR context (call on session start/stop)
 	 */
 	function resetAsrContext() {
-		sentNormalized = '';
+		sentWords = [];
 	}
 
 	// Load text snippet entries from database
@@ -531,7 +541,8 @@
 		}
 
 		// Extract only new words (diff against last ASR text)
-		const newText = extractNewWords(event.text);
+		// Pass isFinal so we reset state when model resets its stream
+		const newText = extractNewWords(event.text, event.isFinal);
 
 		// Skip if no new words
 		if (!newText) {
