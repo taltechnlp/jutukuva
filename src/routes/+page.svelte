@@ -6,7 +6,6 @@
 	import { MicVAD } from '@ricky0123/vad-web';
 	import * as ort from 'onnxruntime-web';
 	import { SpeechEditor, ShareSessionModal, EndSessionModal } from '$lib/components/prosemirror-speech';
-	import type { SubtitleSegment } from '$lib/components/prosemirror-speech/utils/types';
 	import { AudioSourceManager, type AudioSourceType, type AudioDevice } from '$lib/audioSourceManager';
 	import MacOSAudioSetup from '$lib/components/MacOSAudioSetup.svelte';
 	import { CollaborationManager } from '$lib/collaboration/CollaborationManager';
@@ -92,7 +91,6 @@
 
 	// Speech Editor
 	let speechEditor: any = $state(null);
-	let subtitleSegments = $state<SubtitleSegment[]>([]);
 
 	// Collaboration
 	let collaborationManager = $state<CollaborationManager | null>(null);
@@ -378,13 +376,6 @@
 
 		// Refresh the sessions list
 		await loadCollaborationSessions();
-	}
-
-	// Handle subtitle segment emitted
-	function handleSubtitleEmit(srt: string, segment: SubtitleSegment) {
-		console.log('[SUBTITLE] Emitted:', srt);
-		subtitleSegments = [...subtitleSegments, segment];
-		// TODO: Send subtitle to streaming endpoint or WebSocket
 	}
 
 	// Audio source management functions
@@ -1696,8 +1687,7 @@
 						collaborationManager={collaborationManager}
 						sessionId={currentDbSession?.id || ''}
 						config={{
-							fontSize: 16,
-							onSubtitleEmit: handleSubtitleEmit
+							fontSize: 16
 						}}
 					/>
 				{/key}

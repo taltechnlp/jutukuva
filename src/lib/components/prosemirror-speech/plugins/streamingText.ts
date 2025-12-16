@@ -11,7 +11,6 @@
 
 import { Plugin, PluginKey } from 'prosemirror-state';
 import type { EditorState, Transaction } from 'prosemirror-state';
-import { v4 as uuidv4 } from 'uuid';
 import type { StreamingTextEvent } from '../utils/types';
 
 export interface StreamingTextState {
@@ -28,9 +27,7 @@ function insertStreamingText(
 	tr: Transaction,
 	state: EditorState,
 	pluginState: StreamingTextState | undefined,
-	text: string,
-	startTime?: number,
-	endTime?: number
+	text: string
 ): Transaction {
 	const schema = state.schema;
 	let doc = tr.doc;
@@ -93,12 +90,6 @@ function insertStreamingText(
 	let insertPos = lastParaPos + 1 + (lastPara?.content.size || 0);
 	let needsSpaceBefore = lastPara?.content.size > 0;
 
-	// Calculate timing info for words
-	const totalDuration = (endTime || 0) - (startTime || 0);
-	const totalChars = incomingWords.join(' ').length;
-	const timePerChar = totalChars > 0 ? totalDuration / totalChars : 0;
-	let charPosition = 0;
-
 	for (let i = 0; i < incomingWords.length; i++) {
 		const word = incomingWords[i];
 
@@ -113,26 +104,10 @@ function insertStreamingText(
 		}
 		needsSpaceBefore = true;
 
-		// Calculate word timing
-		const wordStartTime = (startTime || 0) + charPosition * timePerChar;
-		const wordEndTime = wordStartTime + word.length * timePerChar;
-
-		// Generate new ID for this word
-		const wordId = uuidv4();
-
-		// Create word mark
-		const wordMark = schema.marks.word.create({
-			id: wordId,
-			start: wordStartTime,
-			end: wordEndTime
-		});
-
-		// Create text node with mark
-		const textNode = schema.text(word, [wordMark]);
+		// Create plain text node (no marks)
+		const textNode = schema.text(word);
 		tr.insert(insertPos, textNode);
 		insertPos += word.length;
-
-		charPosition += word.length + 1; // +1 for space
 	}
 
 	// Mark transaction to not add to history
@@ -192,14 +167,7 @@ export function streamingTextPlugin(collaborationManager?: any) {
 					// Get plugin state from OLD state
 					const pluginState = streamingTextKey.getState(oldState);
 
-					insertStreamingText(
-						tr,
-						oldState,
-						pluginState,
-						streamingEvent.text,
-						streamingEvent.start,
-						streamingEvent.end
-					);
+					insertStreamingText(tr, oldState, pluginState, streamingEvent.text);
 
 					modified = true;
 				}

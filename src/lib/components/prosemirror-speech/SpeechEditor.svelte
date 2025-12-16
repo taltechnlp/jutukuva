@@ -12,9 +12,8 @@
 	import { speechSchema } from './schema';
 	import { keyboardShortcutsPlugin, speakerDropdownPlugin, speakerDropdownKey } from './plugins/keyboardShortcuts';
 	import { streamingTextPlugin, insertStreamingTextCommand, signalVadSpeechEndCommand } from './plugins/streamingText';
-	import { subtitleSegmentationPlugin, subtitleSegmentationKey } from './plugins/subtitleSegmentation';
 	import { textSnippetsPlugin, updateTextSnippetEntries, type TextSnippetEntry } from './plugins/textSnippets';
-	import type { EditorConfig, StreamingTextEvent, SubtitleSegment } from './utils/types';
+	import type { EditorConfig, StreamingTextEvent } from './utils/types';
 	import type { CollaborationManager } from '$lib/collaboration/CollaborationManager';
 	import type { Speaker } from '$lib/collaboration/types';
 	import { speakerStore } from '$lib/stores/speakerStore';
@@ -52,7 +51,6 @@
 	let editorElement: HTMLDivElement;
 	let editorView: EditorView | null = $state(null);
 	let isDestroyed = false; // Flag to prevent updates after destroy
-	let segments = $state<SubtitleSegment[]>([]);
 	let recordingStartTime = $state<number | null>(null);
 	let autoScroll = $state(true);
 	let textSnippetEntries = $state<TextSnippetEntry[]>([]);
@@ -325,7 +323,6 @@
 			keymap(baseKeymap),          // Base keymap for standard editing (joinBackward, etc.)
 			speakerDropdownPlugin(),
 			streamingTextPlugin(collaborationManager),
-			subtitleSegmentationPlugin(handleSegmentComplete),
 			textSnippetsPlugin({ entries: textSnippetEntries })
 		];
 
@@ -494,18 +491,7 @@
 
 	// Update reactive state from editor state
 	function updateEditorState(state: EditorState) {
-		// Update segments
-		const segmentPluginState = subtitleSegmentationKey.getState(state);
-		if (segmentPluginState) {
-			segments = segmentPluginState.segments;
-		}
-	}
-
-	// Handle segment complete
-	function handleSegmentComplete(segment: SubtitleSegment) {
-		if (config.onSubtitleEmit) {
-			config.onSubtitleEmit(segment.srt, segment);
-		}
+		// Currently no state updates needed
 	}
 
 	// Handle auto-scroll toggle
@@ -528,7 +514,6 @@
 		if (editorView) {
 			const tr = editorView.state.tr;
 			tr.setMeta('streamingEnded', true);
-			tr.setMeta('recordingEnded', true); // Signal to create final subtitle segment
 			editorView.dispatch(tr);
 		}
 	}
@@ -590,7 +575,6 @@
 	// Public API: Get current state
 	export function getState() {
 		return {
-			segments,
 			wordCount
 		};
 	}
