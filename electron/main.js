@@ -153,8 +153,7 @@ function createWindow() {
 			preload: path.join(__dirname, 'preload.cjs'),
 			contextIsolation: true,
 			nodeIntegration: false,
-			sandbox: false,
-			webSecurity: false // Disable web security to allow fetch from app:// protocol
+			sandbox: false
 		}
 	});
 
