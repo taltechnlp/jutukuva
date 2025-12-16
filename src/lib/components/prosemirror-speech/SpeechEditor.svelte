@@ -68,86 +68,96 @@
 	// Store unsubscribe function for speaker store
 	let unsubscribeSpeakers: (() => void) | null = null;
 
-	// Deduplication state (kept OUTSIDE editor to avoid race conditions)
-	// This tracks all words that have been "committed" (exist in previous paragraphs)
-	let committedWords = new Set<string>();
+	// ASR deduplication state - pure diff-based, no editor knowledge
+	// Tracks the normalized characters we've already sent to the editor
+	let sentNormalized = '';
 
 	/**
-	 * Normalize a word for deduplication comparison
-	 * Strips punctuation and converts to lowercase
+	 * Normalize text for comparison (lowercase, remove punctuation and whitespace)
 	 */
-	function normalizeForDedup(word: string): string {
-		return word.replace(/[.,!?;:\-–—""''„"«»]/g, '').toLowerCase();
+	function normalizeForComparison(text: string): string {
+		return text.replace(/[.,!?;:\-–—""''„"«»\s]/g, '').toLowerCase();
 	}
 
 	/**
-	 * Commit words BEFORE cursor position to the committed set
-	 * Called when user creates a new paragraph (Enter key)
+	 * Extract only NEW content from incoming ASR text
+	 * Pure diff against what we've already sent - no editor knowledge
 	 *
-	 * IMPORTANT: Only commits words before the cursor, not after.
-	 * When Enter is pressed mid-paragraph, words after cursor move to new paragraph
-	 * and should NOT be committed (they're still "active" ASR text).
+	 * Handles model quirks:
+	 * - Capitalization changes: "Üks" vs "üks"
+	 * - Punctuation changes: "kuus" vs "kuus,"
+	 * - Compound words: "kuus teist" → "kuusteist"
 	 */
-	function commitCurrentParagraphWords() {
-		if (!editorView) return;
+	function extractNewWords(text: string): string {
+		const incomingText = text.trim();
+		if (!incomingText) {
+			return '';
+		}
 
-		// Get cursor position BEFORE the split transaction is applied
-		const cursorPos = editorView.state.selection.from;
+		const incomingNormalized = normalizeForComparison(incomingText);
 
-		// Only commit words that END before the cursor position
-		editorView.state.doc.descendants((node, pos) => {
-			if (node.isText && node.marks.length > 0) {
-				const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-				if (wordMark && node.text && node.text.trim().length > 0) {
-					// Only commit if this word ends before or at cursor position
-					const wordEnd = pos + node.nodeSize;
-					if (wordEnd <= cursorPos) {
-						committedWords.add(normalizeForDedup(node.text.trim()));
+		// Find where the new content starts by checking character by character
+		// The incoming normalized text should start with what we've already sent
+		let matchLen = 0;
+		const minLen = Math.min(sentNormalized.length, incomingNormalized.length);
+
+		for (let i = 0; i < minLen; i++) {
+			if (sentNormalized[i] === incomingNormalized[i]) {
+				matchLen++;
+			} else {
+				break;
+			}
+		}
+
+		// If incoming doesn't start with what we sent, something is wrong
+		// (model's sliding window dropped content) - reset and take all
+		if (matchLen < sentNormalized.length && incomingNormalized.length >= sentNormalized.length) {
+			// Sliding window moved - reset context
+			sentNormalized = incomingNormalized;
+			return incomingText;
+		}
+
+		// Find the position in the original text where new content starts
+		// We need to map from normalized position back to original text
+		if (incomingNormalized.length > sentNormalized.length) {
+			// There's new content after what we've sent
+			const newNormalizedContent = incomingNormalized.slice(sentNormalized.length);
+
+			// Find where this new content starts in the original text
+			let normalizedPos = 0;
+			let originalPos = 0;
+
+			for (let i = 0; i < incomingText.length; i++) {
+				const char = incomingText[i];
+				const normalizedChar = normalizeForComparison(char);
+
+				if (normalizedChar) {
+					if (normalizedPos >= sentNormalized.length) {
+						// We've passed the already-sent content
+						originalPos = i;
+						break;
 					}
+					normalizedPos++;
 				}
 			}
-		});
-	}
 
-	/**
-	 * Initialize committedWords from existing document content
-	 * Called when editor mounts with existing content (e.g., after session switch)
-	 *
-	 * IMPORTANT: Only commits words from paragraphs BEFORE the last one.
-	 * The last paragraph is "active" and ASR should be able to update it.
-	 */
-	function initializeCommittedWordsFromDoc() {
-		if (!editorView) return;
+			// Extract new content from original text (preserving punctuation/formatting)
+			const newContent = incomingText.slice(originalPos).trim();
 
-		committedWords.clear();
-		const doc = editorView.state.doc;
-		const lastParaIndex = doc.childCount - 1;
-
-		// Only commit words from paragraphs BEFORE the last one
-		doc.forEach((paragraph, offset, index) => {
-			if (index < lastParaIndex) {
-				paragraph.descendants((node) => {
-					if (node.isText && node.marks.length > 0) {
-						const wordMark = node.marks.find((mark) => mark.type.name === 'word');
-						if (wordMark && node.text && node.text.trim().length > 0) {
-							committedWords.add(normalizeForDedup(node.text.trim()));
-						}
-					}
-				});
+			if (newContent) {
+				sentNormalized = incomingNormalized;
+				return newContent;
 			}
-		});
+		}
 
-		console.log('[EDITOR] Initialized committedWords with', committedWords.size, 'words from', lastParaIndex, 'previous paragraphs (excluding active last paragraph)');
+		return '';
 	}
 
 	/**
-	 * Filter incoming ASR text to remove duplicates
-	 * Returns only the new words that haven't been committed yet
+	 * Reset ASR context (call on session start/stop)
 	 */
-	function filterDuplicates(text: string): string {
-		const words = text.trim().split(/\s+/).filter(w => w.length > 0);
-		const newWords = words.filter(word => !committedWords.has(normalizeForDedup(word)));
-		return newWords.join(' ');
+	function resetAsrContext() {
+		sentNormalized = '';
 	}
 
 	// Load text snippet entries from database
@@ -395,12 +405,6 @@
 			dispatchTransaction(transaction) {
 				if (!editorView || isDestroyed) return;
 
-				// Detect paragraph creation (Enter key) and commit words BEFORE applying
-				// This ensures deduplication state is updated synchronously
-				if (transaction.getMeta('manualParagraphCreated')) {
-					commitCurrentParagraphWords();
-				}
-
 				const newState = editorView.state.apply(transaction);
 
 				// Double-check editorView is still valid before updating
@@ -415,10 +419,6 @@
 
 		// Initial state update
 		updateEditorState(state);
-
-		// Initialize deduplication set from existing content
-		// This is crucial when remounting with preserved content (e.g., session switch)
-		initializeCommittedWordsFromDoc();
 
 		// Debug: Log initial editor document
 		console.log('[SpeechEditor] Initial doc after mount:', editorView?.state.doc.toJSON());
@@ -506,11 +506,13 @@
 	// Public API: Start timing for recording session
 	export function startTiming() {
 		recordingStartTime = Date.now();
+		resetAsrContext();
 	}
 
 	// Public API: Stop timing for recording session
 	export function stopTiming() {
 		recordingStartTime = null;
+		resetAsrContext();
 
 		// Send a final transaction to signal end of streaming
 		if (editorView) {
@@ -528,19 +530,18 @@
 			return;
 		}
 
-		// CRITICAL: Filter duplicates BEFORE sending to editor
-		// This prevents ASR buffer from adding words from previous paragraphs
-		const filteredText = filterDuplicates(event.text);
+		// Extract only new words (diff against last ASR text)
+		const newText = extractNewWords(event.text);
 
-		// Skip if all words were filtered out
-		if (!filteredText) {
+		// Skip if no new words
+		if (!newText) {
 			return;
 		}
 
 		// Calculate timing based on recording start time if timestamps are 0
 		let enhancedEvent: StreamingTextEvent = {
 			...event,
-			text: filteredText // Use filtered text
+			text: newText
 		};
 
 		if (recordingStartTime && (event.start === 0 || event.start === undefined)) {
