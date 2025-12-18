@@ -5,10 +5,12 @@
 	// Props
 	let {
 		dictionary,
-		onClose = () => {}
+		onClose = () => {},
+		onEntriesChanged
 	}: {
 		dictionary: AutocompleteDictionary;
 		onClose?: () => void;
+		onEntriesChanged?: () => void;
 	} = $props();
 
 	// State
@@ -61,6 +63,7 @@
 			newReplacement = '';
 			showAddModal = false;
 			error = null;
+			onEntriesChanged?.();
 		} catch (err) {
 			console.error('Failed to add entry:', err);
 			error = 'Failed to add entry';
@@ -75,6 +78,7 @@
 			});
 			await loadEntries();
 			editingEntry = null;
+			onEntriesChanged?.();
 		} catch (err) {
 			console.error('Failed to update entry:', err);
 			error = 'Failed to update entry';
@@ -89,6 +93,7 @@
 		try {
 			await window.db.deleteEntry(entry.id);
 			await loadEntries();
+			onEntriesChanged?.();
 		} catch (err) {
 			console.error('Failed to delete entry:', err);
 			error = 'Failed to delete entry';
