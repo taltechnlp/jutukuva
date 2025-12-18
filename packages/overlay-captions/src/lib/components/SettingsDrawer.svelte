@@ -116,19 +116,18 @@
 		tabindex="-1"
 		aria-hidden="true"
 	></div>
-{/if}
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div
-	class="settings-drawer {open ? 'open' : ''}"
-	role="dialog"
-	aria-modal="true"
-	aria-label={$_('settings.title')}
-	tabindex="-1"
-	onclick={(e) => e.stopPropagation()}
-	onkeydown={(e) => e.stopPropagation()}
->
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+	<div
+		class="settings-drawer open"
+		role="dialog"
+		aria-modal="true"
+		aria-label={$_('settings.title')}
+		tabindex="-1"
+		onclick={(e) => e.stopPropagation()}
+		onkeydown={(e) => e.stopPropagation()}
+	>
 	<div class="drawer-header">
 		<div class="header-content">
 			<span class="drawer-title">{$_('settings.title')}</span>
@@ -359,6 +358,7 @@
 		{/if}
 	</div>
 </div>
+{/if}
 
 <style>
 	/* Drawer Container */

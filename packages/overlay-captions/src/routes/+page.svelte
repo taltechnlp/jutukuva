@@ -64,7 +64,12 @@
 		}
 	}
 
-	async function startDragging() {
+	async function startDragging(e: MouseEvent) {
+		// Don't drag if clicking on interactive elements
+		const target = e.target as HTMLElement;
+		if (target.closest('button') || target.closest('input') || target.closest('a')) {
+			return;
+		}
 		const window = await getCurrentWindow();
 		await window.startDragging();
 	}
@@ -87,21 +92,30 @@
 	}
 </script>
 
+<!-- Settings Drawer must be outside overflow-hidden container for Linux WebKitGTK -->
+<SettingsDrawer
+	open={settingsDrawerOpen}
+	settings={settingsStore.settings}
+	onClose={() => (settingsDrawerOpen = false)}
+	onChange={handleSettingsChange}
+	onReset={() => settingsStore.reset()}
+/>
+
 <div class="h-screen flex flex-col bg-[#0F0F0F] text-white overflow-hidden font-sans selection:bg-primary/30">
 	<!-- Title Bar -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="flex items-center justify-between px-4 py-3 bg-[#0F0F0F] cursor-move select-none border-b border-white/5"
-		onmousedown={startDragging}
+		onmousedown={(e) => startDragging(e)}
 	>
 		<div class="flex items-center gap-2 transition-opacity duration-300" class:opacity-0={yjsStore.connected}>
 			<div class="w-2 h-2 rounded-full bg-primary/80"></div>
 			<span class="font-bold text-sm tracking-wide text-white/90">{$_('app.title')}</span>
 		</div>
 		<div class="flex items-center gap-1">
-			<button 
-				class="btn btn-ghost btn-xs btn-square text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-all" 
-				onclick={() => (settingsDrawerOpen = true)} 
+			<button
+				class="btn btn-ghost btn-xs btn-square text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+				onclick={() => (settingsDrawerOpen = true)}
 				aria-label={$_('settings.title')}
 				title={$_('settings.title')}
 			>
@@ -140,7 +154,7 @@
 						<div class="absolute top-3 left-4 text-xs font-semibold text-white/30 tracking-wider uppercase z-20 pointer-events-none">
 							{$_('preview.title')}
 						</div>
-						
+
 						<!-- Preview Content -->
 						<div class="flex-1 overflow-hidden flex items-center justify-center p-4 relative">
 							{#if captionStore.text}
@@ -175,14 +189,6 @@
 			{/if}
 		</div>
 	</div>
-	
-	<SettingsDrawer 
-		open={settingsDrawerOpen} 
-		settings={settingsStore.settings}
-		onClose={() => (settingsDrawerOpen = false)}
-		onChange={handleSettingsChange}
-		onReset={() => settingsStore.reset()}
-	/>
 
 	<!-- Minimal Footer -->
 	<div class="px-6 py-3 text-[10px] text-white/20 flex justify-between items-center bg-transparent relative z-10 w-full">
