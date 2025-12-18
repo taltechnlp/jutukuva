@@ -24,7 +24,7 @@
 	});
 </script>
 
-<div class="dropdown dropdown-end">
+<div class="dropdown">
 	<button tabindex="0" class="btn btn-ghost btn-sm cursor-pointer hover:rounded-r-lg" aria-label="Select language">
 		<svg
 			xmlns="http://www.w3.org/2000/svg"

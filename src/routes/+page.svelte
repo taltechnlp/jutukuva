@@ -1016,24 +1016,20 @@
 					{/if}
 
 					{#if sessionInfo}
-					<button
-								class="cursor-pointer rounded p-0.5 transition-colors"
-								onclick={() => sessionInfo && navigator.clipboard.writeText(sessionInfo.code)}
-								title={$_('share_session.copy')}
-								aria-label={$_('share_session.copy')}
-							>
-						<div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/10 text-secondary text-sm font-medium">
-							<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<button
+							class="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/20 text-secondary text-sm font-medium hover:bg-secondary/70 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+							onclick={() => sessionInfo && navigator.clipboard.writeText(sessionInfo.code)}
+							title={$_('share_session.copy')}
+							aria-label={$_('share_session.copy')}
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
 							</svg>
 							<span class="font-mono">{sessionInfo.code}</span>
-							
-								<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-								</svg>
-							
-						</div>
-					</button>
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+							</svg>
+						</button>
 					{/if}
 				</div>
 
@@ -1220,7 +1216,7 @@
 						</button>
 
 						{#if showSettingsPanel}
-							<div class="settings-panel absolute right-0 top-full mt-2 w-72 bg-base-100 rounded-xl shadow-2xl border border-base-200 overflow-hidden z-50">
+							<div class="settings-panel absolute right-0 top-full mt-2 w-72 bg-base-100 rounded-xl shadow-2xl border border-base-200 z-50">
 								<div class="p-4 border-b border-base-200 bg-base-50">
 									<h3 class="font-semibold text-base">{$_('settings.title', { default: 'Settings' })}</h3>
 								</div>

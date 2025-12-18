@@ -183,7 +183,7 @@
 
 {#if open}
 	<dialog class="modal modal-open">
-		<div class="modal-box max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+		<div class="modal-box max-w-4xl w-full max-h-[90vh] overflow-y-auto">
 			<!-- Close button -->
 			<button
 				class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 z-10"
