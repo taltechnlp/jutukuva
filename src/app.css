@@ -1,297 +1,277 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 @plugin "daisyui" {
-	themes: light --default, dark, cupcake, bumblebee, emerald, corporate, synthwave, retro, cyberpunk, valentine, halloween, garden, forest, aqua, lofi, pastel, fantasy, wireframe, black, luxury, dracula, cmyk, autumn, business, acid, lemonade, night, coffee, winter, dim, nord, sunset;
+  themes:
+    light --default,
+    dark,
+    cupcake,
+    bumblebee,
+    emerald,
+    corporate,
+    synthwave,
+    retro,
+    cyberpunk,
+    valentine,
+    halloween,
+    garden,
+    forest,
+    aqua,
+    lofi,
+    pastel,
+    fantasy,
+    wireframe,
+    black,
+    luxury,
+    dracula,
+    cmyk,
+    autumn,
+    business,
+    acid,
+    lemonade,
+    night,
+    coffee,
+    winter,
+    dim,
+    nord,
+    sunset;
 }
 
 @layer base {
-	:root {
-		--background: 0 0% 100%;
-		--foreground: 222.2 84% 4.9%;
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-		--muted: 210 40% 96.1%;
-		--muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-		--popover: 0 0% 100%;
-		--popover-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-		--card: 0 0% 100%;
-		--card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-		--border: 214.3 31.8% 91.4%;
-		--input: 214.3 31.8% 91.4%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
 
-		--primary: 222.2 47.4% 11.2%;
-		--primary-foreground: 210 40% 98%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
 
-		--secondary: 210 40% 96.1%;
-		--secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-		--accent: 210 40% 96.1%;
-		--accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
-		--destructive: 0 72.2% 50.6%;
-		--destructive-foreground: 210 40% 98%;
+    --destructive: 0 72.2% 50.6%;
+    --destructive-foreground: 210 40% 98%;
 
-		--ring: 222.2 84% 4.9%;
+    --ring: 222.2 84% 4.9%;
 
-		--radius: 0.5rem;
-	}
+    --radius: 0.5rem;
+  }
 
-	.dark {
-		--background: 222.2 84% 4.9%;
-		--foreground: 210 40% 98%;
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
 
-		--muted: 217.2 32.6% 17.5%;
-		--muted-foreground: 215 20.2% 65.1%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-		--popover: 222.2 84% 4.9%;
-		--popover-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
 
-		--card: 222.2 84% 4.9%;
-		--card-foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
 
-		--border: 217.2 32.6% 17.5%;
-		--input: 217.2 32.6% 17.5%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
 
-		--primary: 210 40% 98%;
-		--primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
 
-		--secondary: 217.2 32.6% 17.5%;
-		--secondary-foreground: 210 40% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
-		--accent: 217.2 32.6% 17.5%;
-		--accent-foreground: 210 40% 98%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
 
-		--destructive: 0 62.8% 30.6%;
-		--destructive-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
 
-		--ring: hsl(212.7, 26.8%, 83.9);
-	}
+    --ring: hsl(212.7, 26.8%, 83.9);
+  }
 }
 
 /* Custom styles for ProseMirror editor */
 .ProseMirror {
-	outline: none;
-	padding: 0;
-	font-size: 1.125rem;
-	line-height: 2;
-	min-height: 100%;
+  outline: none;
+  padding: 0;
+  font-size: 1.125rem;
+  line-height: 2;
+  min-height: 100%;
 }
 
 .ProseMirror p {
-	margin: 0.75rem 0;
+  margin: 0.75rem 0;
 }
 
 .ProseMirror:focus {
-	outline: none;
+  outline: none;
 }
 
 /* Smooth transitions */
 * {
-	transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
-	transition-duration: 150ms;
-	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-property:
+    background-color, border-color, color, fill, stroke, opacity, box-shadow,
+    transform;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Collaborative cursor styles (y-prosemirror) */
 .yRemoteSelection {
-	background-color: var(--user-color, rgba(59, 130, 246, 0.3));
+  background-color: var(--user-color, rgba(59, 130, 246, 0.3));
 }
 
 /* Custom collaboration cursor */
 .collaboration-cursor {
-	position: relative;
-	margin-left: -1px;
-	margin-right: -1px;
-	pointer-events: none;
-	user-select: none;
+  position: relative;
+  margin-left: -1px;
+  margin-right: -1px;
+  pointer-events: none;
+  user-select: none;
 }
 
 .collaboration-cursor-caret {
-	position: absolute;
-	left: 0;
-	top: 0;
-	bottom: 0;
-	width: 2px;
-	background-color: var(--cursor-color, #3b82f6);
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--cursor-color, #3b82f6);
 }
 
 .collaboration-cursor-label {
-	position: absolute;
-	left: -1px;
-	top: -1.4em;
-	font-size: 0.65rem;
-	font-weight: 600;
-	line-height: 1;
-	padding: 2px 4px;
-	border-radius: 3px 3px 3px 0;
-	background-color: var(--cursor-color, #3b82f6);
-	color: white;
-	white-space: nowrap;
-	z-index: 10;
+  position: absolute;
+  left: -1px;
+  top: -1.4em;
+  font-size: 0.65rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 3px 3px 3px 0;
+  background-color: var(--cursor-color, #3b82f6);
+  color: white;
+  white-space: nowrap;
 }
 
 /* Word styling */
 .word-pending {
-	background-color: transparent;
-	border-radius: 0.125rem;
+  background-color: transparent;
+  border-radius: 0.125rem;
 }
 
 .word-active {
-	background-color: transparent;
-	border-radius: 0.125rem;
+  background-color: transparent;
+  border-radius: 0.125rem;
 }
 
 .word-approved {
-	background-color: transparent;
+  background-color: transparent;
 }
 
 /* Text snippet trigger strikethrough */
 .snippet-trigger-strikethrough {
-	text-decoration: line-through;
-	text-decoration-color: oklch(var(--bc) / 0.5);
+  text-decoration: line-through;
+  text-decoration-color: oklch(var(--bc) / 0.5);
 }
 
 /* Text snippet ghost text styling */
 .snippet-ghost-text {
-	display: inline-block;
-	color: oklch(var(--bc) / 0.5);
-	background-color: rgba(99, 102, 241, 0.15);
-	border-radius: 0.125rem;
-	padding: 0 0.25rem 0 0;
-	margin: 0 0 0 1px;
-	font-style: italic;
-	pointer-events: none;
-	user-select: none;
+  display: inline-block;
+  color: oklch(var(--bc) / 0.5);
+  background-color: rgba(99, 102, 241, 0.15);
+  border-radius: 0.125rem;
+  padding: 0 0.25rem 0 0;
+  margin: 0 0 0 1px;
+  font-style: italic;
+  pointer-events: none;
+  user-select: none;
 }
 
 /* Subtitle preview styles */
 .playing {
-	color: oklch(var(--p));
+  color: oklch(var(--p));
 }
 
 .played {
-	color: oklch(var(--bc) / 0.5);
+  color: oklch(var(--bc) / 0.5);
 }
 
 /* Speaker prefix and paragraph styles */
 .paragraph-with-speaker {
-	display: flex;
-	align-items: flex-start;
-	gap: 0;
-	margin: 0.5rem 0;
+  display: flex;
+  /* Align speaker prefix with first line of text */
+  align-items: baseline;
+  gap: 0;
+  margin: 0.5rem 0;
 }
 
 .speaker-prefix-mount {
-	flex-shrink: 0;
-	user-select: none;
+  display: flex;
+  align-items: baseline;
+  flex-shrink: 0;
+  user-select: none;
 }
 
 .paragraph-content {
-	flex: 1;
-	min-width: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 /* Speaker prefix component */
 .speaker-prefix {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	padding-right: 8px;
-	cursor: pointer;
-	border-radius: 4px;
-	transition: background-color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.15s;
 }
 
 .speaker-prefix:hover {
-	background-color: var(--fallback-b2, oklch(var(--b2) / 1));
+  background-color: var(--fallback-b2, oklch(var(--b2) / 1));
 }
 
 .speaker-prefix.read-only {
-	cursor: default;
+  cursor: default;
 }
 
 .speaker-prefix.read-only:hover {
-	background-color: transparent;
+  background-color: transparent;
 }
 
 .speaker-prefix-color {
-	width: 8px;
-	height: 8px;
-	border-radius: 50%;
-	flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .speaker-prefix-name {
-	font-weight: 500;
-	white-space: nowrap;
-	color: var(--fallback-bc, oklch(var(--bc) / 0.8));
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--fallback-bc, oklch(var(--bc) / 0.8));
 }
 
 .speaker-prefix-colon {
-	color: var(--fallback-bc, oklch(var(--bc) / 0.5));
+  color: var(--fallback-bc, oklch(var(--bc) / 0.5));
 }
 
 .speaker-prefix-placeholder {
-	color: var(--fallback-bc, oklch(var(--bc) / 0.3));
-	font-style: italic;
-	font-size: 0.875em;
+  color: var(--fallback-bc, oklch(var(--bc) / 0.3));
+  font-style: italic;
+  font-size: 0.875em;
 }
 
-/* Speaker dropdown */
-.speaker-dropdown {
-	position: absolute;
-	top: 100%;
-	left: 0;
-	z-index: 50;
-	min-width: 200px;
-	max-height: 300px;
-	overflow-y: auto;
-	background-color: var(--fallback-b1, oklch(var(--b1) / 1));
-	border: 1px solid var(--fallback-b3, oklch(var(--b3) / 1));
-	border-radius: 0.5rem;
-	box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-	margin-top: 4px;
-}
-
-.speaker-dropdown-item {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 8px 12px;
-	cursor: pointer;
-	transition: background-color 0.15s;
-}
-
-.speaker-dropdown-item:hover {
-	background-color: var(--fallback-b2, oklch(var(--b2) / 1));
-}
-
-.speaker-dropdown-item.selected {
-	background-color: var(--fallback-p, oklch(var(--p) / 0.1));
-}
-
-.speaker-dropdown-color {
-	width: 10px;
-	height: 10px;
-	border-radius: 50%;
-	flex-shrink: 0;
-}
-
-.speaker-dropdown-name {
-	flex: 1;
-	font-size: 0.875rem;
-}
-
-.speaker-dropdown-add {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 8px 12px;
-	border-top: 1px solid var(--fallback-b3, oklch(var(--b3) / 1));
-}
-
-.speaker-dropdown-add input {
-	flex: 1;
-	min-width: 0;
-}
+/* Speaker dropdown styles removed - now handled in SpeakerDropdown.svelte component */

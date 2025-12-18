@@ -374,7 +374,6 @@
 		box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
 		transform: translateX(100%);
 		transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-		z-index: 50;
 		display: flex;
 		flex-direction: column;
 		border-left: 1px solid rgba(255, 255, 255, 0.1);
@@ -392,7 +391,6 @@
 		bottom: 0;
 		background: rgba(0, 0, 0, 0.5);
 		backdrop-filter: blur(2px);
-		z-index: 40;
 		animation: fadeIn 0.3s ease;
 	}
 

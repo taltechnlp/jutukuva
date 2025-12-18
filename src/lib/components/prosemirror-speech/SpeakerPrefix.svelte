@@ -117,10 +117,12 @@
 		align-items: center;
 		gap: 0.25rem;
 		cursor: pointer;
-		padding: 2px 4px;
+		/* Avoid pushing the prefix text below the paragraph's first line */
+		padding: 0 4px;
 		border-radius: 4px;
 		max-width: 100%;
 		box-sizing: border-box;
+		line-height: inherit;
 	}
 
 	.speaker-prefix:hover {

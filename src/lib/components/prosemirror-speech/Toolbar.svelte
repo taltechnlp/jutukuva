@@ -147,19 +147,19 @@
 		</button>
 
 		{#if showSpeakerDropdown}
-			<div class="dropdown-panel" use:clickOutside={closeSpeakerDropdown}>
+			<div class="absolute top-full mt-2 w-72 bg-base-100 rounded-xl shadow-2xl border border-base-200 overflow-hidden z-50" use:clickOutside={closeSpeakerDropdown}>
 				<div class="dropdown-header">
 					<h4>{$_('speakers.manageSpeakers', { default: 'Manage Speakers' })}</h4>
 				</div>
 
 				<!-- Add new speaker -->
-				<div class="dropdown-input-row">
+				<div class="dropdown-input-row flex items-center gap-2">
 					<input
 						type="text"
 						bind:value={newSpeakerName}
 						placeholder={$_('speakers.speakerName', { default: 'Speaker name' })}
 						onkeydown={handleAddSpeakerKeydown}
-						class="input input-sm input-bordered flex-1"
+						class="input input-ghost input-xs flex-1"
 					/>
 					<button
 						type="button"
@@ -185,7 +185,7 @@
 										bind:value={editingSpeakerName}
 										onkeydown={handleEditKeydown}
 										onblur={saveEditingSpeaker}
-										class="input input-xs input-bordered flex-1"
+										class="input input-ghost input-xs flex-1"
 									/>
 								{:else}
 									<span class="speaker-name">{speaker.name}</span>
@@ -234,15 +234,13 @@
 			title={$_('dictate.shortcuts.title', { default: 'Keyboard Shortcuts' })}
 			aria-label={$_('dictate.shortcuts.title', { default: 'Keyboard Shortcuts' })}
 		>
-			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-				<circle cx="12" cy="12" r="10" />
-				<path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-				<line x1="12" y1="17" x2="12.01" y2="17" />
-			</svg>
+		<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+			<path d="M 12 2 C 6.4889971 2 2 6.4889971 2 12 C 2 17.511003 6.4889971 22 12 22 C 17.511003 22 22 17.511003 22 12 C 22 6.4889971 17.511003 2 12 2 z M 12 4 C 16.430123 4 20 7.5698774 20 12 C 20 16.430123 16.430123 20 12 20 C 7.5698774 20 4 16.430123 4 12 C 4 7.5698774 7.5698774 4 12 4 z M 11 7 L 11 9 L 13 9 L 13 7 L 11 7 z M 11 11 L 11 17 L 13 17 L 13 11 L 11 11 z"></path>
+		</svg>
 		</button>
 
 		{#if showHelpDropdown}
-			<div class="dropdown-panel dropdown-panel-wide" use:clickOutside={closeHelpDropdown}>
+			<div class="absolute top-full mt-2 w-72 bg-base-100 rounded-xl shadow-2xl border border-base-200 overflow-hidden z-50" use:clickOutside={closeHelpDropdown}>
 				<div class="dropdown-header">
 					<h4>{$_('dictate.shortcuts.title', { default: 'Keyboard Shortcuts' })}</h4>
 				</div>
@@ -347,25 +345,6 @@
 		right: -2px;
 	}
 
-	/* Dropdown Panel */
-	.dropdown-panel {
-		position: absolute;
-		top: 100%;
-		left: 0;
-		z-index: 1000;
-		min-width: 260px;
-		background-color: var(--fallback-b1, oklch(var(--b1) / 1));
-		border: 1px solid var(--fallback-b3, oklch(var(--b3) / 1));
-		border-radius: 12px;
-		box-shadow: 0 10px 40px -10px rgb(0 0 0 / 0.2), 0 4px 12px -4px rgb(0 0 0 / 0.1);
-		margin-top: 8px;
-		overflow: hidden;
-	}
-
-	.dropdown-panel-wide {
-		min-width: 300px;
-	}
-
 	.dropdown-header {
 		padding: 12px 16px;
 		border-bottom: 1px solid var(--fallback-b3, oklch(var(--b3) / 0.5));
@@ -381,6 +360,7 @@
 
 	.dropdown-input-row {
 		display: flex;
+		align-items: center;
 		gap: 8px;
 		padding: 12px 16px;
 		border-bottom: 1px solid var(--fallback-b3, oklch(var(--b3) / 0.5));

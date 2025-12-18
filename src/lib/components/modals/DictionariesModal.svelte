@@ -383,7 +383,7 @@
 
 		<!-- New Dictionary Modal (nested inside parent modal) -->
 		{#if showNewDictionaryModal}
-			<dialog class="modal modal-open" style="z-index: 60;">
+			<dialog class="modal modal-open">
 				<div class="modal-box">
 					<h3 class="font-bold text-lg mb-4">{$_('settings.dictionaries.newDictionaryTitle', { default: 'Create New Dictionary' })}</h3>
 					<div class="form-control">

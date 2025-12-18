@@ -183,7 +183,7 @@
 				bind:value={newSpeakerName}
 				placeholder={$_('speakers.addNew')}
 				onkeydown={handleKeydown}
-				class="input input-sm input-bordered flex-1"
+				class="input input-xs input-ghost flex-1"
 			/>
 			<button
 				type="button"
@@ -236,7 +236,6 @@
 	/* Use :global since dropdown is portaled to body */
 	:global(.speaker-dropdown) {
 		position: fixed;
-		z-index: 10000;
 		border-radius: 0.5rem;
 		box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.15);
 		min-width: 220px;
@@ -254,6 +253,7 @@
 
 	:global(.speaker-dropdown .dropdown-input) {
 		display: flex;
+		align-items: center;
 		gap: 0.5rem;
 		margin-bottom: 0.5rem;
 	}

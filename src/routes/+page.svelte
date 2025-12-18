@@ -1041,7 +1041,7 @@
 				<div class="flex justify-center">
 					{#if !isRecording}
 						<button
-							class="group relative flex items-center justify-center w-16 h-16 rounded-full bg-primary text-primary-content shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+							class="group relative flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-content shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
 							onclick={startRecording}
 							disabled={!isWasmReady || (sessionInfo?.role === 'guest')}
 							title={sessionInfo?.role === 'guest' ? $_('collaboration.guest_cannot_record') : $_('dictate.startRecording')}
@@ -1052,7 +1052,7 @@
 						</button>
 					{:else}
 						<button
-							class="group relative flex items-center justify-center w-16 h-16 rounded-full bg-error text-error-content shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200"
+							class="group relative flex items-center justify-center w-12 h-12 rounded-full bg-error text-error-content shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200"
 							onclick={stopRecording}
 							title={$_('dictate.stopRecording')}
 							aria-label={$_('dictate.stopRecording')}
@@ -1070,7 +1070,7 @@
 					<!-- Sessions Button -->
 					<div class="relative">
 						<button
-							class="session-trigger flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-base-200/70 transition-colors text-sm font-medium text-base-content/80 hover:text-base-content"
+							class="session-trigger flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-base-200/70 transition-colors text-sm font-medium text-base-content/80 hover:text-base-content cursor-pointer"
 							onclick={() => { showSessionPanel = !showSessionPanel; showSettingsPanel = false; loadCollaborationSessions(); }}
 						>
 							<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1104,11 +1104,11 @@
 										<p class="text-xs font-medium text-base-content/60 uppercase tracking-wide">{$_('collaboration.join_existing', { default: 'Join Session' })}</p>
 									</div>
 									<div class="p-3">
-										<div class="flex gap-2">
+										<div class="flex gap-2 items-center">
 											<input
 												type="text"
 												placeholder={$_('collaboration.enter_code', { default: 'Enter code' })}
-												class="flex-1 input input-sm input-bordered font-mono uppercase text-center tracking-widest"
+												class="flex-1 input input-xs input-ghost font-mono uppercase text-center tracking-widest"
 												maxlength="6"
 												bind:value={joinSessionCode}
 												oninput={(e) => { joinSessionCode = e.currentTarget.value.toUpperCase(); }}
@@ -1194,7 +1194,7 @@
 
 					<!-- Dictionaries Button -->
 					<button
-						class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-base-200/70 transition-colors text-sm font-medium text-base-content/80 hover:text-base-content"
+						class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-base-200/70 transition-colors text-sm font-medium text-base-content/80 hover:text-base-content cursor-pointer"
 						onclick={() => modalStore.openDictionaries()}
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1209,7 +1209,7 @@
 					<!-- Settings Button -->
 					<div class="relative">
 						<button
-							class="settings-trigger flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-base-200/70 transition-colors text-base-content/80 hover:text-base-content"
+							class="settings-trigger flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-base-200/70 transition-colors text-base-content/80 hover:text-base-content cursor-pointer"
 							onclick={() => { showSettingsPanel = !showSettingsPanel; showSessionPanel = false; }}
 							title={$_('settings.title', { default: 'Settings' })}
 						>
@@ -1231,7 +1231,7 @@
 										<label for="audio-source-select" class="text-sm font-medium text-base-content/70 mb-2 block">{$_('dictate.audioSource', { default: 'Audio Source' })}</label>
 										<select
 											id="audio-source-select"
-											class="select select-bordered select-sm w-full"
+											class="select select-xs select-ghost w-full"
 											bind:value={audioSourceType}
 											onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
 											disabled={isAudioSourceSwitching || !isWasmReady}
@@ -1249,7 +1249,7 @@
 											<label for="device-select" class="text-sm font-medium text-base-content/70 mb-2 block">{$_('dictate.device', { default: 'Device' })}</label>
 											<select
 												id="device-select"
-												class="select select-bordered select-sm w-full"
+												class="select select-xs select-ghost w-full"
 												bind:value={selectedDeviceId}
 												onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
 												disabled={isAudioSourceSwitching || !isWasmReady}
@@ -1264,9 +1264,9 @@
 
 									<div class="pt-2 border-t border-base-200">
 										<span class="text-sm font-medium text-base-content/70 mb-2 block">{$_('settings.appearance', { default: 'Appearance' })}</span>
-										<div class="flex items-center gap-3">
-											<ThemeSelector />
+										<div class="flex items-center gap-3 w-full">
 											<LanguageSelector />
+											<ThemeSelector />
 										</div>
 									</div>
 								</div>
