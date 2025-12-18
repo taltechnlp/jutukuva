@@ -18,19 +18,7 @@ pub struct AppState {
 }
 
 fn show_main_window(app: &tauri::AppHandle) {
-    // Hide overlay if exists
-    if let Some(overlay) = app.get_webview_window("overlay") {
-        let _ = overlay.hide();
-    }
-
-    // Update state
-    if let Some(state) = app.try_state::<AppState>() {
-        if let Ok(mut visible) = state.overlay_visible.lock() {
-            *visible = false;
-        }
-    }
-
-    // Show main window
+    // Show main window (keep overlay visible if it exists)
     if let Some(main_window) = app.get_webview_window("main") {
         let _ = main_window.show();
         let _ = main_window.set_focus();
@@ -50,19 +38,10 @@ fn spawn_show_overlay_window(app: tauri::AppHandle) {
             Err(_) => return,
         };
 
-        // Hide main window first
-        if let Some(main_window) = app.get_webview_window("main") {
-            let _ = main_window.hide();
-        }
-
-        // Create or show overlay window
+        // Create or show overlay window (keep main window open)
         if app.get_webview_window("overlay").is_none() {
             if let Err(e) = window_manager::create_overlay_window(&app, &overlay_settings) {
                 log::error!("Failed to create overlay window: {}", e);
-                // Show main window again on failure
-                if let Some(main_window) = app.get_webview_window("main") {
-                    let _ = main_window.show();
-                }
                 return;
             }
         } else {
@@ -129,9 +108,13 @@ pub fn run() {
                             }
                         }
                     } else if label == "overlay" {
-                        // When overlay is closed directly, show main window and update state
+                        // When overlay is closed directly, update state (main window stays open)
                         let app = window.app_handle();
-                        show_main_window(&app);
+                        if let Some(state) = app.try_state::<AppState>() {
+                            if let Ok(mut visible) = state.overlay_visible.lock() {
+                                *visible = false;
+                            }
+                        }
                     }
                 }
                 WindowEvent::Destroyed => {
