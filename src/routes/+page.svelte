@@ -1734,4 +1734,5 @@
 <DictionariesModal
 	bind:open={modalStore.showDictionariesModal}
 	onClose={() => modalStore.closeDictionaries()}
+	onDictionariesChanged={() => speechEditor?.reloadTextSnippetEntries()}
 />

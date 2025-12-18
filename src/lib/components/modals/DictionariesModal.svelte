@@ -6,9 +6,10 @@
 	interface Props {
 		open: boolean;
 		onClose?: () => void;
+		onDictionariesChanged?: () => void;
 	}
 
-	let { open = $bindable(false), onClose }: Props = $props();
+	let { open = $bindable(false), onClose, onDictionariesChanged }: Props = $props();
 
 	// State
 	let dictionaries = $state<AutocompleteDictionary[]>([]);
@@ -50,6 +51,7 @@
 			await loadDictionaries();
 			newDictionaryName = '';
 			showNewDictionaryModal = false;
+			onDictionariesChanged?.();
 		} catch (err) {
 			console.error('Failed to create dictionary:', err);
 			error = 'Failed to create dictionary';
@@ -62,6 +64,7 @@
 				is_active: dictionary.is_active === 1 ? 0 : 1
 			});
 			await loadDictionaries();
+			onDictionariesChanged?.();
 		} catch (err) {
 			console.error('Failed to toggle dictionary:', err);
 			error = 'Failed to update dictionary';
@@ -79,6 +82,7 @@
 			if (selectedDictionary?.id === dictionary.id) {
 				selectedDictionary = null;
 			}
+			onDictionariesChanged?.();
 		} catch (err) {
 			console.error('Failed to delete dictionary:', err);
 			error = 'Failed to delete dictionary';
@@ -152,6 +156,7 @@
 			await window.db.importDictionary(name, entries);
 			await loadDictionaries();
 			error = null;
+			onDictionariesChanged?.();
 		} catch (err) {
 			console.error('Failed to import dictionary:', err);
 			error = $_('settings.dictionaries.importError', { default: 'Failed to import dictionary. Please check the file format.' });
@@ -346,7 +351,7 @@
 				<div class="card bg-base-100 shadow-xl">
 					<div class="card-body">
 						{#if selectedDictionary}
-							<DictionaryEditor dictionary={selectedDictionary} onClose={closeEditor} />
+							<DictionaryEditor dictionary={selectedDictionary} onClose={closeEditor} onEntriesChanged={onDictionariesChanged} />
 						{:else}
 							<div class="text-center py-16 text-base-content/60">
 								<svg
