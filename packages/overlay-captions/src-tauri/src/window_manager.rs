@@ -28,8 +28,9 @@ pub fn create_overlay_window(app: &AppHandle, settings: &OverlaySettings) -> Res
         .visible(true)
         .visible_on_all_workspaces(true);
 
-    // Windows: Don't use transparent(true) as it causes WebView2 rendering issues
-    // and can freeze the main window. Use opaque window with CSS background instead.
+    // Windows: Don't use transparent(true) as WebView2 has issues with it.
+    // Instead, use an opaque window and apply transparency via CSS in the frontend.
+    // Main window is hidden before this is called to avoid WebView2 deadlock.
     #[cfg(target_os = "windows")]
     let builder = WebviewWindowBuilder::new(app, "overlay", overlay_url)
         .title("Captions")
