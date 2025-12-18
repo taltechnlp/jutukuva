@@ -4,12 +4,16 @@ use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 pub fn create_overlay_window(app: &AppHandle, settings: &OverlaySettings) -> Result<(), String> {
     // Check if overlay window already exists
     if app.get_webview_window("overlay").is_some() {
+        log::info!("Overlay window already exists, skipping creation");
         return Ok(());
     }
 
     let overlay_url = WebviewUrl::App("/overlay".into());
 
-    log::info!("Creating overlay window with always_on_top: {}", settings.always_on_top);
+    log::info!("Creating overlay window with settings: position=({}, {}), size=({}, {}), always_on_top={}",
+        settings.position.x, settings.position.y,
+        settings.size.width, settings.size.height,
+        settings.always_on_top);
 
     #[cfg(target_os = "macos")]
     let builder = WebviewWindowBuilder::new(app, "overlay", overlay_url)
@@ -24,18 +28,18 @@ pub fn create_overlay_window(app: &AppHandle, settings: &OverlaySettings) -> Res
         .visible(true)
         .visible_on_all_workspaces(true);
 
+    // Windows: Don't use transparent(true) as it causes WebView2 rendering issues
+    // and can freeze the main window. Use opaque window with CSS background instead.
     #[cfg(target_os = "windows")]
     let builder = WebviewWindowBuilder::new(app, "overlay", overlay_url)
         .title("Captions")
         .inner_size(settings.size.width as f64, settings.size.height as f64)
         .position(settings.position.x as f64, settings.position.y as f64)
         .decorations(false)
-        .transparent(true)
-        .shadow(false) // Required for transparency on Windows
         .always_on_top(true)
         .skip_taskbar(true)
         .resizable(true)
-        .visible(false); // Start hidden, then show explicitly for Windows
+        .visible(true);
 
     #[cfg(target_os = "linux")]
     let builder = WebviewWindowBuilder::new(app, "overlay", overlay_url)
@@ -56,15 +60,7 @@ pub fn create_overlay_window(app: &AppHandle, settings: &OverlaySettings) -> Res
         .set_always_on_top(true)
         .map_err(|e| e.to_string())?;
 
-    // Windows-specific: Explicitly show and focus the window after creation
-    // This is required because transparent frameless windows on Windows with WebView2
-    // may not appear correctly if only .visible(true) is set at build time
-    #[cfg(target_os = "windows")]
-    {
-        log::info!("Windows: Explicitly showing overlay window");
-        window.show().map_err(|e| e.to_string())?;
-        window.set_focus().map_err(|e| e.to_string())?;
-    }
+    log::info!("Overlay window created successfully");
 
     // Apply click-through if enabled
     if settings.click_through {
