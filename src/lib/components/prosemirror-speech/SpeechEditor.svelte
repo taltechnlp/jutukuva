@@ -624,7 +624,7 @@
 	}
 </script>
 
-<div bind:this={containerElement} class="flex flex-col bg-base-100 border border-base-300 rounded-lg overflow-hidden {className}">
+<div bind:this={containerElement} class="editor-container {className}">
 	{#if !readOnly}
 		<!-- Toolbar -->
 		<Toolbar
@@ -640,7 +640,7 @@
 	<!-- Editor -->
 	<div
 		class="speech-editor"
-		style:font-size={config.fontSize ? `${config.fontSize}px` : '16px'}
+		style:font-size={config.fontSize ? `${config.fontSize}px` : '18px'}
 	>
 		<div bind:this={editorElement}></div>
 	</div>
@@ -651,48 +651,57 @@
 			<label class="auto-scroll-toggle">
 				<input
 					type="checkbox"
-					class="checkbox checkbox-sm"
+					class="toggle toggle-sm toggle-primary"
 					checked={autoScroll}
 					onchange={handleAutoScrollChange}
 					aria-label={$_('dictate.autoScroll')}
 				/>
-				<span>{$_('dictate.autoScroll')}</span>
+				<span>{$_('dictate.autoScroll', { default: 'Auto-scroll' })}</span>
 			</label>
 		</div>
 	{/if}
 </div>
 
 <style>
+	.editor-container {
+		display: flex;
+		flex-direction: column;
+		background-color: var(--fallback-b1, oklch(var(--b1) / 1));
+		border: 1px solid var(--fallback-b3, oklch(var(--b3) / 0.5));
+		border-radius: 16px;
+		overflow: hidden;
+		box-shadow: 0 4px 20px -4px rgb(0 0 0 / 0.08), 0 2px 8px -2px rgb(0 0 0 / 0.04);
+	}
 
 	.speech-editor {
-		min-height: 300px;
-		padding: 20px;
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+		flex: 1;
+		min-height: 400px;
+		padding: 24px 32px;
+		font-family: 'Georgia', 'Times New Roman', serif;
 		line-height: 2;
+		overflow-y: auto;
 	}
 
 	.status-bar {
 		display: flex;
-		justify-content: space-between;
+		justify-content: flex-end;
 		align-items: center;
-		padding: 8px 16px;
-		background-color: var(--fallback-b2, oklch(var(--b2) / 1));
-		border-top: 1px solid var(--fallback-b3, oklch(var(--b3) / 1));
-		font-size: 13px;
-		color: var(--fallback-bc, oklch(var(--bc) / 0.6));
+		padding: 10px 20px;
+		background-color: var(--fallback-b2, oklch(var(--b2) / 0.3));
+		border-top: 1px solid var(--fallback-b3, oklch(var(--b3) / 0.3));
 	}
 
 	.auto-scroll-toggle {
 		display: flex;
 		align-items: center;
-		gap: 6px;
+		gap: 8px;
 		font-size: 13px;
 		color: var(--fallback-bc, oklch(var(--bc) / 0.6));
 		cursor: pointer;
 		user-select: none;
 	}
 
-	.auto-scroll-toggle input {
-		cursor: pointer;
+	.auto-scroll-toggle:hover {
+		color: var(--fallback-bc, oklch(var(--bc) / 0.8));
 	}
 </style>

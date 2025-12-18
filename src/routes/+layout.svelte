@@ -2,141 +2,14 @@
 	import { onMount } from 'svelte';
 	import '../app.css';
 	import '$lib/i18n';
-	import { _ } from 'svelte-i18n';
-	import LanguageSelector from '$lib/components/LanguageSelector.svelte';
-	import ThemeSelector from '$lib/components/ThemeSelector.svelte';
 	import { theme } from '$lib/stores/theme';
-	import { modalStore } from '$lib/stores/modalStore.svelte';
 
 	// Initialize theme on mount
 	onMount(() => {
 		theme.init();
 	});
-
-	// Navigation items - now using action handlers instead of hrefs for modals
-	type NavItem = {
-		id: string;
-		labelKey: string;
-		labelDefault: string;
-		action?: () => void;
-	};
-
-	const navItems: NavItem[] = [
-		{
-			id: 'editor',
-			labelKey: 'app.title',
-			labelDefault: 'Speech Recognition'
-		},
-		{
-			id: 'sessions',
-			labelKey: 'nav.sessions',
-			labelDefault: 'Sessions',
-			action: () => modalStore.openSessions()
-		},
-		{
-			id: 'dictionaries',
-			labelKey: 'nav.textSnippets',
-			labelDefault: 'Substitutions',
-			action: () => modalStore.openDictionaries()
-		}
-	];
-
-	// Determine which nav item is "active" based on modal state
-	function isNavActive(id: string): boolean {
-		if (id === 'sessions') return modalStore.showSessionsModal;
-		if (id === 'dictionaries') return modalStore.showDictionariesModal;
-		// Editor is active when no modal is open
-		return id === 'editor' && !modalStore.showSessionsModal && !modalStore.showDictionariesModal;
-	}
-
-	function handleNavClick(item: NavItem) {
-		// Close any open modal first if clicking editor
-		if (item.id === 'editor') {
-			modalStore.closeSessions();
-			modalStore.closeDictionaries();
-		} else if (item.action) {
-			// Close other modals before opening this one
-			if (item.id === 'sessions') {
-				modalStore.closeDictionaries();
-			} else if (item.id === 'dictionaries') {
-				modalStore.closeSessions();
-			}
-			item.action();
-		}
-	}
 </script>
 
 <div class="min-h-screen flex flex-col bg-base-100 font-sans selection:bg-primary/20">
-	<!-- Navbar -->
-	<nav class="sticky top-0 z-50 w-full bg-base-100/80 backdrop-blur-xl border-b border-base-200/50 transition-all duration-300">
-		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-			<div class="flex items-center justify-between h-16">
-				
-				<!-- Left: Logo -->
-				<div class="flex-shrink-0 flex items-center w-[200px]">
-					<a href="/" class="text-xl font-bold tracking-tight hover:opacity-80 transition-opacity">
-						Jutukuva
-					</a>
-				</div>
-
-				<!-- Center: Navigation -->
-				<div class="hidden md:flex flex-1 justify-center">
-					<div class="flex items-center space-x-1 bg-base-200/50 p-1.5 rounded-full backdrop-blur-sm">
-						{#each navItems as item}
-							{@const isActive = isNavActive(item.id)}
-							<button
-								onclick={() => handleNavClick(item)}
-								class="relative px-5 py-2.5 text-sm font-medium rounded-full transition-all duration-200 ease-out
-								{isActive
-									? 'bg-white text-primary shadow-sm ring-1 ring-black/5 dark:bg-base-100 dark:text-primary dark:ring-white/10'
-									: 'text-base-content/60 hover:text-base-content hover:bg-base-200/50'}"
-							>
-								{$_(item.labelKey, { default: item.labelDefault })}
-							</button>
-						{/each}
-					</div>
-				</div>
-
-				<!-- Right: Settings -->
-				<div class="flex items-center justify-end space-x-2">
-					<div class="flex items-center bg-base-200/30 rounded-full px-2 py-1">
-						<ThemeSelector />
-						<div class="w-px h-4 bg-base-content/10 mx-1"></div>
-						<LanguageSelector />
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<!-- Mobile menu (Bottom Bar) -->
-		<div class="md:hidden fixed bottom-0 left-0 right-0 bg-base-100/90 backdrop-blur-xl border-t border-base-200 pb-safe z-50 px-6 py-3">
-			<div class="flex justify-between items-center h-12">
-				{#each navItems as item}
-					{@const isActive = isNavActive(item.id)}
-					<button
-						onclick={() => handleNavClick(item)}
-						class="flex flex-col items-center justify-center w-full h-full space-y-1 rounded-xl transition-colors
-						{isActive ? 'text-primary bg-primary/5' : 'text-base-content/50 hover:text-base-content'}"
-					>
-						<span class="text-xs font-medium">{$_(item.labelKey, { default: item.labelDefault })}</span>
-						{#if isActive}
-							<span class="w-1 h-1 rounded-full bg-primary"></span>
-						{/if}
-					</button>
-				{/each}
-			</div>
-		</div>
-	</nav>
-
-	<!-- Main content -->
-	<main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 mb-6 animate-in fade-in duration-500">
-		<slot />
-	</main>
+	<slot />
 </div>
-
-<style>
-	/* Safe area padding for mobile bottom nav */
-	.pb-safe {
-		padding-bottom: env(safe-area-inset-bottom);
-	}
-</style>
