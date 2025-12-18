@@ -375,38 +375,38 @@
 		<div class="modal-backdrop bg-black/50" role="presentation" onclick={closeModal} onkeydown={(e) => e.key === 'Escape' && closeModal()}>
 			<button type="button" class="sr-only">close</button>
 		</div>
-	</dialog>
-{/if}
 
-<!-- New Dictionary Modal -->
-{#if showNewDictionaryModal}
-	<dialog class="modal modal-open" style="z-index: 60;">
-		<div class="modal-box">
-			<h3 class="font-bold text-lg mb-4">{$_('settings.dictionaries.newDictionaryTitle', { default: 'Create New Dictionary' })}</h3>
-			<div class="form-control">
-				<label class="label" for="dict-name">
-					<span class="label-text">{$_('settings.dictionaries.dictionaryName', { default: 'Dictionary Name' })}</span>
-				</label>
-				<input
-					id="dict-name"
-					type="text"
-					placeholder={$_('settings.dictionaries.namePlaceholder', { default: 'e.g., Medical Terms' })}
-					class="input input-bordered w-full"
-					bind:value={newDictionaryName}
-					onkeydown={(e) => e.key === 'Enter' && createDictionary()}
-				/>
-			</div>
-			<div class="modal-action">
-				<button class="btn" onclick={() => (showNewDictionaryModal = false)}>
-					{$_('common.cancel', { default: 'Cancel' })}
-				</button>
-				<button class="btn btn-primary" onclick={createDictionary} disabled={!newDictionaryName.trim()}>
-					{$_('settings.dictionaries.create', { default: 'Create' })}
-				</button>
-			</div>
-		</div>
-		<div class="modal-backdrop" role="presentation" onclick={() => (showNewDictionaryModal = false)} onkeydown={(e) => e.key === 'Escape' && (showNewDictionaryModal = false)}>
-			<button type="button" class="sr-only">close</button>
-		</div>
+		<!-- New Dictionary Modal (nested inside parent modal) -->
+		{#if showNewDictionaryModal}
+			<dialog class="modal modal-open" style="z-index: 60;">
+				<div class="modal-box">
+					<h3 class="font-bold text-lg mb-4">{$_('settings.dictionaries.newDictionaryTitle', { default: 'Create New Dictionary' })}</h3>
+					<div class="form-control">
+						<label class="label" for="dict-name">
+							<span class="label-text">{$_('settings.dictionaries.dictionaryName', { default: 'Dictionary Name' })}</span>
+						</label>
+						<input
+							id="dict-name"
+							type="text"
+							placeholder={$_('settings.dictionaries.namePlaceholder', { default: 'e.g., Medical Terms' })}
+							class="input input-bordered w-full"
+							bind:value={newDictionaryName}
+							onkeydown={(e) => e.key === 'Enter' && createDictionary()}
+						/>
+					</div>
+					<div class="modal-action">
+						<button class="btn" onclick={() => (showNewDictionaryModal = false)}>
+							{$_('common.cancel', { default: 'Cancel' })}
+						</button>
+						<button class="btn btn-primary" onclick={createDictionary} disabled={!newDictionaryName.trim()}>
+							{$_('settings.dictionaries.create', { default: 'Create' })}
+						</button>
+					</div>
+				</div>
+				<div class="modal-backdrop" role="presentation" onclick={() => (showNewDictionaryModal = false)} onkeydown={(e) => e.key === 'Escape' && (showNewDictionaryModal = false)}>
+					<button type="button" class="sr-only">close</button>
+				</div>
+			</dialog>
+		{/if}
 	</dialog>
 {/if}
