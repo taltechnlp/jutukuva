@@ -5,11 +5,77 @@ mod window_manager;
 use commands::*;
 use settings::{load_settings, AppSettings};
 use std::sync::Mutex;
-use tauri::{Emitter, Manager, WindowEvent};
+use tauri::{
+    image::Image,
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Emitter, Manager, WindowEvent,
+};
 
 pub struct AppState {
     pub settings: Mutex<AppSettings>,
     pub overlay_visible: Mutex<bool>,
+}
+
+fn show_main_window(app: &tauri::AppHandle) {
+    // Hide overlay if exists
+    if let Some(overlay) = app.get_webview_window("overlay") {
+        let _ = overlay.hide();
+    }
+
+    // Update state
+    if let Some(state) = app.try_state::<AppState>() {
+        if let Ok(mut visible) = state.overlay_visible.lock() {
+            *visible = false;
+        }
+    }
+
+    // Show main window
+    if let Some(main_window) = app.get_webview_window("main") {
+        let _ = main_window.show();
+        let _ = main_window.set_focus();
+    }
+}
+
+// Spawn overlay window creation on a separate thread to avoid WebView2 deadlock
+fn spawn_show_overlay_window(app: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        let state = match app.try_state::<AppState>() {
+            Some(s) => s,
+            None => return,
+        };
+
+        let overlay_settings = match state.settings.lock() {
+            Ok(s) => s.overlay.clone(),
+            Err(_) => return,
+        };
+
+        // Hide main window first
+        if let Some(main_window) = app.get_webview_window("main") {
+            let _ = main_window.hide();
+        }
+
+        // Create or show overlay window
+        if app.get_webview_window("overlay").is_none() {
+            if let Err(e) = window_manager::create_overlay_window(&app, &overlay_settings) {
+                log::error!("Failed to create overlay window: {}", e);
+                // Show main window again on failure
+                if let Some(main_window) = app.get_webview_window("main") {
+                    let _ = main_window.show();
+                }
+                return;
+            }
+        } else {
+            let _ = window_manager::show_overlay_window(&app);
+        }
+
+        // Update state
+        {
+            if let Ok(mut visible) = state.overlay_visible.lock() {
+                *visible = true;
+            };
+        }
+    });
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -63,13 +129,9 @@ pub fn run() {
                             }
                         }
                     } else if label == "overlay" {
-                        // When overlay is closed directly, update state
+                        // When overlay is closed directly, show main window and update state
                         let app = window.app_handle();
-                        if let Some(state) = app.try_state::<AppState>() {
-                            if let Ok(mut visible) = state.overlay_visible.lock() {
-                                *visible = false;
-                            }
-                        }
+                        show_main_window(&app);
                     }
                 }
                 WindowEvent::Destroyed => {
@@ -86,6 +148,59 @@ pub fn run() {
             }
         })
         .setup(|app| {
+            // Create system tray menu
+            let show_main_item = MenuItem::with_id(app, "show_main", "Näita peaaken", true, None::<&str>)?;
+            let show_overlay_item = MenuItem::with_id(app, "show_overlay", "Näita ülekatet", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Välju", true, None::<&str>)?;
+
+            let menu = Menu::with_items(app, &[&show_main_item, &show_overlay_item, &quit_item])?;
+
+            // Load tray icon
+            let icon = Image::from_path("icons/32x32.png")
+                .or_else(|_| Image::from_path("icons/icon.ico"))
+                .unwrap_or_else(|_| Image::from_bytes(include_bytes!("../icons/32x32.png")).unwrap());
+
+            // Create system tray
+            let _tray = TrayIconBuilder::new()
+                .icon(icon)
+                .menu(&menu)
+                .tooltip("Jutukuva Subtiitrid")
+                .on_menu_event(|app, event| {
+                    match event.id.as_ref() {
+                        "show_main" => {
+                            show_main_window(app);
+                        }
+                        "show_overlay" => {
+                            // Spawn on separate thread to avoid WebView2 deadlock
+                            spawn_show_overlay_window(app.clone());
+                        }
+                        "quit" => {
+                            // Close all windows and exit
+                            if let Some(overlay) = app.get_webview_window("overlay") {
+                                let _ = overlay.close();
+                            }
+                            if let Some(main_window) = app.get_webview_window("main") {
+                                let _ = main_window.close();
+                            }
+                            app.exit(0);
+                        }
+                        _ => {}
+                    }
+                })
+                .on_tray_icon_event(|tray, event| {
+                    // Click on tray icon shows main window
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        show_main_window(&app);
+                    }
+                })
+                .build(app)?;
+
             // Register global shortcut for overlay toggle (Ctrl+Shift+O)
             use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
 

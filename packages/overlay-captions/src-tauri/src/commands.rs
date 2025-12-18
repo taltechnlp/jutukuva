@@ -1,4 +1,4 @@
-use crate::settings::{self, AppSettings};
+use crate::settings::{self, AppSettings, OverlaySettings};
 use crate::window_manager;
 use crate::AppState;
 use serde::{Deserialize, Serialize};
@@ -34,20 +34,45 @@ pub fn reset_settings(state: State<'_, AppState>) -> Result<AppSettings, String>
     Ok(settings.clone())
 }
 
-// Overlay window commands
+// Helper function to create overlay window on a separate thread (avoids WebView2 deadlock)
+fn spawn_create_overlay(app: AppHandle, overlay_settings: OverlaySettings) {
+    std::thread::spawn(move || {
+        if let Err(e) = window_manager::create_overlay_window(&app, &overlay_settings) {
+            log::error!("Failed to create overlay window: {}", e);
+            // If overlay creation fails, show main window again
+            if let Some(main_window) = app.get_webview_window("main") {
+                let _ = main_window.show();
+            }
+        }
+    });
+}
+
+// Overlay window commands - MUST be async to avoid WebView2 deadlock on Windows
 #[tauri::command]
-pub fn show_overlay(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
-    let settings = state.settings.lock().map_err(|e| e.to_string())?;
+pub async fn show_overlay(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    let overlay_settings = {
+        let settings = state.settings.lock().map_err(|e| e.to_string())?;
+        settings.overlay.clone()
+    };
+
+    // Hide main window first
+    if let Some(main_window) = app.get_webview_window("main") {
+        main_window.hide().map_err(|e| e.to_string())?;
+    }
 
     // Create or show the overlay window
     if app.get_webview_window("overlay").is_none() {
-        window_manager::create_overlay_window(&app, &settings.overlay)?;
+        // Spawn window creation on separate thread to avoid WebView2 deadlock
+        spawn_create_overlay(app.clone(), overlay_settings);
     } else {
         window_manager::show_overlay_window(&app)?;
     }
 
-    let mut overlay_visible = state.overlay_visible.lock().map_err(|e| e.to_string())?;
-    *overlay_visible = true;
+    // Update state
+    {
+        let mut overlay_visible = state.overlay_visible.lock().map_err(|e| e.to_string())?;
+        *overlay_visible = true;
+    }
 
     Ok(())
 }
@@ -55,6 +80,12 @@ pub fn show_overlay(app: AppHandle, state: State<'_, AppState>) -> Result<(), St
 #[tauri::command]
 pub fn hide_overlay(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
     window_manager::hide_overlay_window(&app)?;
+
+    // Show main window again
+    if let Some(main_window) = app.get_webview_window("main") {
+        main_window.show().map_err(|e| e.to_string())?;
+        main_window.set_focus().map_err(|e| e.to_string())?;
+    }
 
     let mut overlay_visible = state.overlay_visible.lock().map_err(|e| e.to_string())?;
     *overlay_visible = false;
@@ -66,6 +97,12 @@ pub fn hide_overlay(app: AppHandle, state: State<'_, AppState>) -> Result<(), St
 pub fn close_overlay(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
     window_manager::close_overlay_window(&app)?;
 
+    // Show main window again
+    if let Some(main_window) = app.get_webview_window("main") {
+        main_window.show().map_err(|e| e.to_string())?;
+        main_window.set_focus().map_err(|e| e.to_string())?;
+    }
+
     let mut overlay_visible = state.overlay_visible.lock().map_err(|e| e.to_string())?;
     *overlay_visible = false;
 
@@ -73,7 +110,7 @@ pub fn close_overlay(app: AppHandle, state: State<'_, AppState>) -> Result<(), S
 }
 
 #[tauri::command]
-pub fn toggle_overlay(app: AppHandle, state: State<'_, AppState>) -> Result<bool, String> {
+pub async fn toggle_overlay(app: AppHandle, state: State<'_, AppState>) -> Result<bool, String> {
     let is_visible = {
         let overlay_visible = state.overlay_visible.lock().map_err(|e| e.to_string())?;
         *overlay_visible
@@ -83,7 +120,7 @@ pub fn toggle_overlay(app: AppHandle, state: State<'_, AppState>) -> Result<bool
         hide_overlay(app, state)?;
         Ok(false)
     } else {
-        show_overlay(app, state)?;
+        show_overlay(app, state).await?;
         Ok(true)
     }
 }
@@ -139,7 +176,17 @@ pub fn broadcast_caption(app: AppHandle, text: String) -> Result<(), String> {
 
 // Show main window and open settings
 #[tauri::command]
-pub fn show_main_with_settings(app: AppHandle) -> Result<(), String> {
+pub fn show_main_with_settings(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    // Hide overlay if visible
+    if let Some(overlay) = app.get_webview_window("overlay") {
+        overlay.hide().map_err(|e| e.to_string())?;
+    }
+
+    // Update state
+    if let Ok(mut overlay_visible) = state.overlay_visible.lock() {
+        *overlay_visible = false;
+    }
+
     if let Some(window) = app.get_webview_window("main") {
         window.show().map_err(|e| e.to_string())?;
         window.set_focus().map_err(|e| e.to_string())?;
