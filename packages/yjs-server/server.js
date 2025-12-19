@@ -276,24 +276,18 @@ const wss = new WebSocketServer({
 			if (role === 'host' && password) {
 				console.log(`[${new Date().toISOString()}] Password set for room: ${roomName}`);
 			}
-			callback(true);
 		} else if (role === 'host' && password && session.password !== password) {
 			// Host reconnecting with a (new) password - update it
 			session.password = password;
 			console.log(`[${new Date().toISOString()}] Password updated for room: ${roomName}`);
-			callback(true);
-		} else if (session.password) {
-			// Existing session with password - verify
-			if (password === session.password) {
-				callback(true);
-			} else {
-				console.log(`[${new Date().toISOString()}] Password verification failed for room: ${roomName}, provided: ${password ? '[redacted]' : 'none'}`);
-				callback(false, 401, 'Invalid password');
-			}
-		} else {
-			// Existing session without password - allow
-			callback(true);
 		}
+
+		// Store password validation result on the request for use in connection handler
+		// We accept all connections here, then close with proper code if password is wrong
+		// This allows browsers to receive our custom close code
+		info.req._passwordValid = !session.password || password === session.password;
+		info.req._roomName = roomName;
+		callback(true);
 	}
 });
 
@@ -302,6 +296,14 @@ wss.on('connection', (ws, req) => {
 	const roomName = parsedUrl.pathname?.slice(1) || 'default';
 	const password = parsedUrl.query.password;
 	const role = parsedUrl.query.role;
+
+	// Check if password validation failed (set in verifyClient)
+	// We close here instead of in verifyClient so browsers receive our custom close code
+	if (req._passwordValid === false) {
+		console.log(`[${new Date().toISOString()}] Password verification failed for room: ${roomName}, closing with code 4001`);
+		ws.close(4001, 'Invalid password');
+		return;
+	}
 
 	console.log(`[${new Date().toISOString()}] New connection to room: ${roomName} from ${req.socket.remoteAddress} (role: ${role || 'guest'})`);
 

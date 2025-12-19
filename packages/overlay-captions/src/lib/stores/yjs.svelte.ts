@@ -57,8 +57,19 @@ class YjsStore {
 
 			// Listen for connection close (for password-protected sessions)
 			this.provider.on('connection-close', (event: any) => {
-				console.log('[YJS] Connection closed:', event);
-				if (event?.code === 4001 || event?.reason?.includes('401') || event?.reason?.includes('password')) {
+				console.log('[YJS] Connection closed:', event?.code, event?.reason);
+				// Check if it's a password error (code 4001 from our server)
+				if (event?.code === 4001 || event?.reason?.includes('password') || event?.reason?.includes('Invalid')) {
+					this.error = 'password_required';
+					this.connected = false;
+					this.connecting = false;
+				}
+			});
+
+			// Also listen directly on WebSocket for close events
+			this.provider.ws?.addEventListener('close', (event: CloseEvent) => {
+				console.log('[YJS] WebSocket close event:', event.code, event.reason);
+				if (event.code === 4001) {
 					this.error = 'password_required';
 					this.connected = false;
 					this.connecting = false;
