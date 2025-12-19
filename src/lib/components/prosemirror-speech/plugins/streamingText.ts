@@ -169,6 +169,9 @@ export function streamingTextPlugin(collaborationManager?: any) {
 
 					insertStreamingText(tr, oldState, pluginState, streamingEvent.text);
 
+					// Propagate metadata so other plugins can detect ASR text
+					tr.setMeta('insertStreamingText', streamingEvent);
+
 					modified = true;
 				}
 			}
