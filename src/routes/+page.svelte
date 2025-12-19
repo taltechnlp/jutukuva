@@ -103,6 +103,10 @@
 	let showCollabMenu = $state(false); // New state for collab menu
 	let showSettings = $state(false);   // New state for settings menu
 	let joinSessionCode = $state('');
+	let showJoinPasswordModal = $state(false);
+	let joinPassword = $state('');
+	let pendingJoinCode = $state('');
+	let joinPasswordError = $state('');
 	let currentDbSession = $state<TranscriptionSession | null>(null);
 	let plannedAndActiveSessions = $state<TranscriptionSession[]>([]);
 	let isLoadingSessions = $state(false);
@@ -276,7 +280,7 @@
 	/**
 	 * Join an existing collaborative session as guest
 	 */
-	function joinCollaborativeSession(code: string) {
+	function joinCollaborativeSession(code: string, password?: string) {
 		const normalizedCode = normalizeSessionCode(code);
 
 		if (!isValidSessionCode(normalizedCode)) {
@@ -287,11 +291,12 @@
 		const serverUrl = import.meta.env.VITE_YJS_SERVER_URL || 'wss://tekstiks.ee/kk';
 
 		// Prepare session info (but don't set it yet to avoid triggering editor remount)
-		const tempSessionInfo = {
+		const tempSessionInfo: SessionInfo = {
 			code: normalizedCode,
 			role: 'guest' as const,
 			roomName: normalizedCode,
-			serverUrl
+			serverUrl,
+			password: password || undefined
 		};
 
 		// Create and initialize CollaborationManager BEFORE setting sessionInfo
@@ -308,6 +313,14 @@
 			onConnectionStatusChange: (connected: any) => {
 				collaborationConnected = connected;
 				console.log('[COLLAB] Connection status changed:', connected);
+			},
+			onPasswordRequired: () => {
+				// Session requires password - show password modal
+				console.log('[COLLAB] Password required for session:', normalizedCode);
+				pendingJoinCode = normalizedCode;
+				joinPassword = '';
+				joinPasswordError = password ? $_('collaboration.incorrect_password', { default: 'Incorrect password' }) : '';
+				showJoinPasswordModal = true;
 			}
 		});
 
@@ -315,6 +328,30 @@
 		sessionInfo = tempSessionInfo;
 
 		console.log('[COLLAB] Joined session as guest:', normalizedCode);
+	}
+
+	/**
+	 * Handle password submit from the join password modal
+	 */
+	function handleJoinPasswordSubmit() {
+		if (!joinPassword.trim()) {
+			joinPasswordError = $_('collaboration.password_required', { default: 'Password is required' });
+			return;
+		}
+		showJoinPasswordModal = false;
+		joinCollaborativeSession(pendingJoinCode, joinPassword.trim());
+		joinPassword = '';
+		joinPasswordError = '';
+	}
+
+	/**
+	 * Cancel password modal
+	 */
+	function handleJoinPasswordCancel() {
+		showJoinPasswordModal = false;
+		joinPassword = '';
+		joinPasswordError = '';
+		pendingJoinCode = '';
 	}
 
 	/**
@@ -1307,12 +1344,13 @@
 
 			// Check for join code (from external link)
 			const joinCode = urlParams.get('join');
+			const joinPw = urlParams.get('password');
 			if (joinCode && !sessionId) {
 				joinSessionCode = joinCode;
 				// Auto-join after a short delay to ensure editor is ready
 				setTimeout(() => {
 					if (joinSessionCode) {
-						joinCollaborativeSession(joinSessionCode);
+						joinCollaborativeSession(joinSessionCode, joinPw || undefined);
 					}
 				}, 500);
 			}
@@ -1320,13 +1358,13 @@
 
 		// Listen for deep link join events from Electron
 		if (typeof window !== 'undefined' && window.electronAPI?.onDeepLinkJoin) {
-			window.electronAPI.onDeepLinkJoin((sessionCode) => {
-				console.log('[Deep Link] Received join request for session:', sessionCode);
-				joinSessionCode = sessionCode;
+			window.electronAPI.onDeepLinkJoin((data) => {
+				console.log('[Deep Link] Received join request for session:', data.code, 'password:', data.password ? '[provided]' : 'none');
+				joinSessionCode = data.code;
 				// Auto-join after a short delay to ensure editor is ready
 				setTimeout(() => {
 					if (joinSessionCode) {
-						joinCollaborativeSession(joinSessionCode);
+						joinCollaborativeSession(joinSessionCode, data.password || undefined);
 					}
 				}, 500);
 			});
@@ -1776,6 +1814,63 @@
 		onConfirm={handleEndSession}
 		onCancel={() => (showEndSessionModal = false)}
 	/>
+{/if}
+
+<!-- Join Password Modal -->
+{#if showJoinPasswordModal}
+	<div
+		class="modal modal-open"
+		onclick={(e) => e.target === e.currentTarget && handleJoinPasswordCancel()}
+		onkeydown={(e) => e.key === 'Escape' && handleJoinPasswordCancel()}
+		role="dialog"
+		aria-modal="true"
+		tabindex="-1"
+	>
+		<div class="modal-box max-w-sm">
+			<h3 class="font-bold text-lg mb-4">{$_('collaboration.password_required_title', { default: 'Password Required' })}</h3>
+			<p class="text-base-content/70 mb-4">
+				{$_('collaboration.password_required_message', { default: 'This session requires a password to join.' })}
+			</p>
+
+			<form onsubmit={(e) => { e.preventDefault(); handleJoinPasswordSubmit(); }}>
+				<div class="form-control mb-4">
+					<label class="label" for="join-password">
+						<span class="label-text">{$_('collaboration.password', { default: 'Password' })}</span>
+					</label>
+					<input
+						id="join-password"
+						type="password"
+						placeholder={$_('collaboration.enter_password', { default: 'Enter password' })}
+						class="input input-bordered w-full"
+						class:input-error={joinPasswordError}
+						bind:value={joinPassword}
+						autofocus
+					/>
+					{#if joinPasswordError}
+						<label class="label">
+							<span class="label-text-alt text-error">{joinPasswordError}</span>
+						</label>
+					{/if}
+				</div>
+
+				<div class="modal-action">
+					<button
+						type="button"
+						class="btn btn-ghost"
+						onclick={handleJoinPasswordCancel}
+					>
+						{$_('common.cancel', { default: 'Cancel' })}
+					</button>
+					<button
+						type="submit"
+						class="btn btn-primary"
+					>
+						{$_('collaboration.join', { default: 'Join' })}
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
 {/if}
 
 <!-- Sessions Modal (SPA overlay) -->

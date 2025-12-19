@@ -131,7 +131,7 @@ declare global {
 			getPlatform: () => Promise<string>;
 			setSetting: (key: string, value: string) => Promise<void>;
 			getSetting: (key: string) => Promise<string | null>;
-			onDeepLinkJoin: (callback: (sessionCode: string) => void) => void;
+			onDeepLinkJoin: (callback: (data: { code: string; password: string | null }) => void) => void;
 			downloadBlackHole: () => Promise<{ success: boolean; error?: string; path?: string }>;
 			onDownloadProgress: (callback: (progress: number) => void) => void;
 			openAudioMIDISetup: () => Promise<void>;
