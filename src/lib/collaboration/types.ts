@@ -9,6 +9,7 @@ export interface SessionInfo {
 	role: SessionRole;
 	roomName: string;
 	serverUrl: string;
+	password?: string;
 }
 
 export interface Participant {

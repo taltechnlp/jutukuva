@@ -15,7 +15,7 @@ const HOST = process.env.HOST || '127.0.0.1';
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(',') || ['*'];
 
 // Session tracking
-const activeSessions = new Map(); // roomName -> { createdAt, connections, metadata }
+const activeSessions = new Map(); // roomName -> { createdAt, connections, metadata, password }
 const docs = new Map(); // roomName -> Y.Doc
 const awarenessInstances = new Map(); // roomName -> Awareness
 
@@ -246,32 +246,64 @@ const server = createServer(app);
 // Create WebSocket server
 const wss = new WebSocketServer({
 	server,
-	verifyClient: (info) => {
+	verifyClient: (info, callback) => {
 		// Verify origin if specified
 		const origin = info.origin || info.req.headers.origin;
-		if (ALLOWED_ORIGINS.includes('*')) {
-			return true;
+		if (!ALLOWED_ORIGINS.includes('*') && !ALLOWED_ORIGINS.some(allowed => origin?.includes(allowed))) {
+			callback(false, 403, 'Origin not allowed');
+			return;
 		}
-		return ALLOWED_ORIGINS.some(allowed => origin?.includes(allowed));
+
+		// Parse URL for room name and password
+		const parsedUrl = parse(info.req.url, true);
+		const roomName = parsedUrl.pathname?.slice(1) || 'default';
+		const password = parsedUrl.query.password;
+		const role = parsedUrl.query.role;
+
+		// Check if session exists and has a password
+		const session = activeSessions.get(roomName);
+
+		if (!session) {
+			// New session - allow connection (password will be set by host)
+			callback(true);
+		} else if (session.password) {
+			// Existing session with password - verify
+			if (password === session.password) {
+				callback(true);
+			} else {
+				console.log(`[${new Date().toISOString()}] Password verification failed for room: ${roomName}`);
+				callback(false, 401, 'Invalid password');
+			}
+		} else {
+			// Existing session without password - allow
+			callback(true);
+		}
 	}
 });
 
 wss.on('connection', (ws, req) => {
 	const parsedUrl = parse(req.url, true);
 	const roomName = parsedUrl.pathname?.slice(1) || 'default';
+	const password = parsedUrl.query.password;
+	const role = parsedUrl.query.role;
 
-	console.log(`[${new Date().toISOString()}] New connection to room: ${roomName} from ${req.socket.remoteAddress}`);
+	console.log(`[${new Date().toISOString()}] New connection to room: ${roomName} from ${req.socket.remoteAddress} (role: ${role || 'guest'})`);
 
 	// Store room name on the WebSocket connection
 	ws._roomName = roomName;
 
 	// Track session
 	if (!activeSessions.has(roomName)) {
+		// New session - store password if host is connecting with one
 		activeSessions.set(roomName, {
 			createdAt: new Date().toISOString(),
 			connections: 0,
-			metadata: {}
+			metadata: {},
+			password: (role === 'host' && password) ? password : null
 		});
+		if (role === 'host' && password) {
+			console.log(`[${new Date().toISOString()}] Password set for room: ${roomName}`);
+		}
 	}
 	activeSessions.get(roomName).connections++;
 

@@ -69,11 +69,20 @@ export class CollaborationManager {
 			}
 		}
 
+		// Build room URL with password and role parameters
+		const params = new URLSearchParams();
+		if (sessionInfo.password) {
+			params.set('password', sessionInfo.password);
+		}
+		params.set('role', sessionInfo.role);
+		const queryString = params.toString();
+		const roomWithParams = queryString ? `${sessionInfo.roomName}?${queryString}` : sessionInfo.roomName;
+
 		// Connect to WebSocket provider
-		console.log('[CollaborationManager] Connecting to:', sessionInfo.serverUrl, 'room:', sessionInfo.roomName);
+		console.log('[CollaborationManager] Connecting to:', sessionInfo.serverUrl, 'room:', roomWithParams);
 		this.provider = new WebsocketProvider(
 			sessionInfo.serverUrl,
-			sessionInfo.roomName,
+			roomWithParams,
 			this.ydoc,
 			{
 				connect: true,

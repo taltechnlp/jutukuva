@@ -36,6 +36,7 @@ declare global {
 					session_code?: string;
 					collaboration_role?: string;
 					participants?: string;
+					session_password?: string | null;
 				}
 			) => Promise<boolean>;
 			getSession: (id: string) => Promise<TranscriptionSession | null>;
@@ -199,6 +200,7 @@ declare global {
 		cancelled_at: string | null;
 		speakers: string | null;
 		editor_state: string | null;
+		session_password: string | null;
 	}
 
 	interface AutocompleteDictionary {
