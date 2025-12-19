@@ -200,18 +200,8 @@
 			console.log('[WEB-VIEWER] Connection closed:', event?.code, event?.reason);
 			// Check if it's a password error (code 4001 from our server)
 			if (event?.code === 4001 || event?.reason?.includes('password') || event?.reason?.includes('Invalid')) {
-				passwordRequired = true;
-				passwordError = urlPassword
-					? $_('viewer.wrong_password', { default: 'Incorrect password' })
-					: '';
-				connectionState = 'error';
-			}
-		});
-
-		// Also listen for WebSocket errors which might indicate password issues
-		collaborationManager.provider?.ws?.addEventListener('close', (event: CloseEvent) => {
-			console.log('[WEB-VIEWER] WebSocket close event:', event.code, event.reason);
-			if (event.code === 4001) {
+				// Stop auto-reconnect by disconnecting the provider
+				collaborationManager?.provider?.disconnect();
 				passwordRequired = true;
 				passwordError = urlPassword
 					? $_('viewer.wrong_password', { default: 'Incorrect password' })
