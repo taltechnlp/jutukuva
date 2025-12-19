@@ -41,7 +41,7 @@
 
 	function handleCodeInput(e: Event) {
 		const input = e.target as HTMLInputElement;
-		// Normalize input: uppercase, remove invalid chars
+		// Normalize input: uppercase, limit to 6 chars
 		sessionCode = normalizeSessionCode(input.value).slice(0, 6);
 	}
 
@@ -61,7 +61,7 @@
 
 		// Validate session code
 		if (!isValidSessionCode(sessionId)) {
-			error = $_('sessions.create.invalidCode', { default: 'Session code must be 6 characters (A-Z, 2-9, no O/0/I/1/L)' });
+			error = $_('sessions.create.invalidCode', { default: 'Session code must be 6 characters (A-Z, 0-9)' });
 			return;
 		}
 
@@ -164,10 +164,10 @@
 						value={sessionCode}
 						oninput={handleCodeInput}
 						disabled={creating}
-						maxlength="6"
-					/>
-					<p class="label-text-alt text-base-content/60 px-1 mt-1">
-						{$_('sessions.create.codeHint', { default: 'Use letters A-Z (except O, I, L) and numbers 2-9' })}
+					maxlength="6"
+				/>
+				<p class="label-text-alt text-base-content/60 px-1 mt-1">
+					{$_('sessions.create.codeHint', { default: '6 characters, letters A-Z and numbers 0-9' })}
 					</p>
 				{:else}
 					<div class="flex items-center gap-2">
