@@ -28,7 +28,7 @@ export async function fetchLatestRelease(): Promise<Release> {
 
 export function getAssetForPlatform(assets: ReleaseAsset[], platform: Platform): ReleaseAsset | null {
 	// Match overlay-captions binaries (contain "Subtiitrid" in name)
-	// Naming pattern: Jutukuva.Subtiitrid_0.4.1_{arch}.{ext}
+	// Naming pattern: Jutukuva.Subtiitrid_{version}_{arch}.{ext}
 	const subtiitridAssets = assets.filter((a) => a.name.includes('Subtiitrid'));
 
 	const patterns: Record<Platform, RegExp> = {
