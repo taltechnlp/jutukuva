@@ -734,6 +734,8 @@
       "passwordPlaceholder": "Jäta tühjaks, kui parooli pole vaja",
       "passwordSet": "Sellel sessioonil on praegu parool seadistatud",
       "passwordHint": "Lisa parool, et piirata juurdepääsu sellele sessioonile",
+      "showPassword": "Näita parooli",
+      "hidePassword": "Peida parool",
       "nameRequired": "Sessiooni nimi on nõutud",
       "failedToUpdate": "Sessiooni uuendamine ebaõnnestus",
       "cancel": "Tühista",
