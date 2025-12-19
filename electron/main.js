@@ -75,19 +75,33 @@ let pendingDeepLinkUrl = null;
 function handleDeepLink(url) {
 	console.log('[Deep Link] Received URL:', url);
 
-	// Parse jutukuva://join/CODE format
-	const match = url.match(/^jutukuva:\/\/join\/([A-Z0-9]+)$/i);
+	// Parse jutukuva://join/CODE or jutukuva://join/CODE?password=xxx format
+	const match = url.match(/^jutukuva:\/\/join\/([A-Z0-9]+)(\?.*)?$/i);
 	if (match) {
 		const sessionCode = match[1].toUpperCase();
-		console.log('[Deep Link] Session code:', sessionCode);
+		let password = null;
+
+		// Parse query string for password
+		if (match[2]) {
+			try {
+				const params = new URLSearchParams(match[2].substring(1));
+				password = params.get('password');
+			} catch (e) {
+				console.error('[Deep Link] Failed to parse query string:', e);
+			}
+		}
+
+		console.log('[Deep Link] Session code:', sessionCode, 'password:', password ? '[provided]' : 'none');
+
+		const joinData = { code: sessionCode, password };
 
 		if (mainWindow) {
 			// Send to renderer process
-			mainWindow.webContents.send('deep-link-join', sessionCode);
+			mainWindow.webContents.send('deep-link-join', joinData);
 			mainWindow.focus();
 		} else {
 			// Store for later when window is ready
-			pendingDeepLinkUrl = sessionCode;
+			pendingDeepLinkUrl = joinData;
 		}
 	}
 }

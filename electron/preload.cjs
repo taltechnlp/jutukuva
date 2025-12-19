@@ -98,8 +98,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	onDownloadProgress: (callback) => ipcRenderer.on('download-progress', (event, progress) => callback(progress)),
 	setSetting: (key, value) => ipcRenderer.invoke('db:setSetting', key, value),
 	getSetting: (key) => ipcRenderer.invoke('db:getSetting', key),
-	// Deep link handler
-	onDeepLinkJoin: (callback) => ipcRenderer.on('deep-link-join', (event, sessionCode) => callback(sessionCode))
+	// Deep link handler - receives { code: string, password: string | null }
+	onDeepLinkJoin: (callback) => ipcRenderer.on('deep-link-join', (event, data) => callback(data))
 });
 
 // Expose Local ASR API (sherpa-onnx)

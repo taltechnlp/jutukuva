@@ -26,6 +26,7 @@ export class CollaborationManager {
 	private onParticipantsChange?: (participants: Participant[]) => void;
 	private onConnectionStatusChange?: (connected: boolean) => void;
 	private onSpeakersChange?: (speakers: Speaker[]) => void;
+	private onPasswordRequired?: () => void;
 
 	constructor() {
 		this.ydoc = new Y.Doc();
@@ -44,6 +45,7 @@ export class CollaborationManager {
 			onParticipantsChange?: (participants: Participant[]) => void;
 			onConnectionStatusChange?: (connected: boolean) => void;
 			onSpeakersChange?: (speakers: Speaker[]) => void;
+			onPasswordRequired?: () => void;
 		},
 		options?: {
 			initialContent?: object;
@@ -53,6 +55,7 @@ export class CollaborationManager {
 		this.onParticipantsChange = callbacks?.onParticipantsChange;
 		this.onConnectionStatusChange = callbacks?.onConnectionStatusChange;
 		this.onSpeakersChange = callbacks?.onSpeakersChange;
+		this.onPasswordRequired = callbacks?.onPasswordRequired;
 
 		// If initial content is provided, populate the Yjs XmlFragment BEFORE connecting
 		// This ensures existing editor content is preserved when starting a session
@@ -123,6 +126,18 @@ export class CollaborationManager {
 		// Listen for connection errors
 		this.provider.on('connection-error', (event: Event) => {
 			console.error('[CollaborationManager] Connection error:', event);
+		});
+
+		// Listen for connection close (to detect password-required errors)
+		this.provider.on('connection-close', (event: CloseEvent | null) => {
+			console.log('[CollaborationManager] Connection closed:', event?.code, event?.reason);
+			// Code 4001 means password required/invalid
+			if (event?.code === 4001 || event?.reason?.toLowerCase().includes('password')) {
+				console.log('[CollaborationManager] Password required for session');
+				// Disconnect to prevent auto-reconnect
+				this.disconnect();
+				this.onPasswordRequired?.();
+			}
 		});
 
 		// Set user info in awareness

@@ -276,17 +276,11 @@ const wss = new WebSocketServer({
 			activeSessions.set(roomName, session);
 			if (role === 'host' && password) {
 				console.log(`[${new Date().toISOString()}] Password set for room: ${roomName}`);
-				// Mark that this connection set a new password (disconnect any other clients)
-				info.req._passwordChanged = true;
 			}
-		} else if (role === 'host' && password && session.password !== password) {
-			// Host reconnecting with a (new) password - update it
-			const previousPassword = session.password;
-			session.password = password;
-			console.log(`[${new Date().toISOString()}] Password updated for room: ${roomName}`);
-			// Mark that this connection triggered a password change (for re-auth of other clients)
-			info.req._passwordChanged = previousPassword !== password;
 		}
+		// Note: Once a password is set for a session, it cannot be changed.
+		// Anyone attempting to connect with a different password will be rejected,
+		// regardless of their claimed role. This prevents password hijacking.
 
 		// Store password validation result on the request for use in connection handler
 		// We accept all connections here, then close with proper code if password is wrong
@@ -327,23 +321,6 @@ wss.on('connection', (ws, req) => {
 	if (session) {
 		session.connections++;
 		session.clients.add(ws);
-
-		// If host just set/changed password, disconnect all other clients
-		// They will need to reconnect with the correct password
-		if (req._passwordChanged && role === 'host') {
-			const clientsToDisconnect = [];
-			for (const client of session.clients) {
-				if (client !== ws) {
-					clientsToDisconnect.push(client);
-				}
-			}
-			if (clientsToDisconnect.length > 0) {
-				console.log(`[${new Date().toISOString()}] Password set/changed for room: ${roomName}, disconnecting ${clientsToDisconnect.length} other client(s)`);
-				for (const client of clientsToDisconnect) {
-					client.close(4001, 'Password required');
-				}
-			}
-		}
 	} else {
 		// This shouldn't happen since verifyClient creates the session
 		console.error(`[${new Date().toISOString()}] Session not found for room: ${roomName} (this is unexpected)`);
