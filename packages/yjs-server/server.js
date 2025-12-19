@@ -15,7 +15,7 @@ const HOST = process.env.HOST || '127.0.0.1';
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(',') || ['*'];
 
 // Session tracking
-const activeSessions = new Map(); // roomName -> { createdAt, connections, metadata, password }
+const activeSessions = new Map(); // roomName -> { createdAt, connections, clients, metadata, password }
 const docs = new Map(); // roomName -> Y.Doc
 const awarenessInstances = new Map(); // roomName -> Awareness
 
@@ -269,17 +269,23 @@ const wss = new WebSocketServer({
 			session = {
 				createdAt: new Date().toISOString(),
 				connections: 0,
+				clients: new Set(), // Track WebSocket connections for re-auth
 				metadata: {},
 				password: (role === 'host' && password) ? password : null
 			};
 			activeSessions.set(roomName, session);
 			if (role === 'host' && password) {
 				console.log(`[${new Date().toISOString()}] Password set for room: ${roomName}`);
+				// Mark that this connection set a new password (disconnect any other clients)
+				info.req._passwordChanged = true;
 			}
 		} else if (role === 'host' && password && session.password !== password) {
 			// Host reconnecting with a (new) password - update it
+			const previousPassword = session.password;
 			session.password = password;
 			console.log(`[${new Date().toISOString()}] Password updated for room: ${roomName}`);
+			// Mark that this connection triggered a password change (for re-auth of other clients)
+			info.req._passwordChanged = previousPassword !== password;
 		}
 
 		// Store password validation result on the request for use in connection handler
@@ -312,13 +318,32 @@ wss.on('connection', (ws, req) => {
 
 	console.log(`[${new Date().toISOString()}] New connection to room: ${roomName} from ${req.socket.remoteAddress} (role: ${role || 'guest'})`);
 
-	// Store room name on the WebSocket connection
+	// Store room name and role on the WebSocket connection
 	ws._roomName = roomName;
+	ws._role = role || 'guest';
 
-	// Track connection count (session already created in verifyClient)
+	// Track connection count and add client to Set (session already created in verifyClient)
 	const session = activeSessions.get(roomName);
 	if (session) {
 		session.connections++;
+		session.clients.add(ws);
+
+		// If host just set/changed password, disconnect all other clients
+		// They will need to reconnect with the correct password
+		if (req._passwordChanged && role === 'host') {
+			const clientsToDisconnect = [];
+			for (const client of session.clients) {
+				if (client !== ws) {
+					clientsToDisconnect.push(client);
+				}
+			}
+			if (clientsToDisconnect.length > 0) {
+				console.log(`[${new Date().toISOString()}] Password set/changed for room: ${roomName}, disconnecting ${clientsToDisconnect.length} other client(s)`);
+				for (const client of clientsToDisconnect) {
+					client.close(4001, 'Password required');
+				}
+			}
+		}
 	} else {
 		// This shouldn't happen since verifyClient creates the session
 		console.error(`[${new Date().toISOString()}] Session not found for room: ${roomName} (this is unexpected)`);
@@ -332,6 +357,7 @@ wss.on('connection', (ws, req) => {
 		const session = activeSessions.get(roomName);
 		if (session) {
 			session.connections--;
+			session.clients.delete(ws);
 			if (session.connections <= 0) {
 				activeSessions.delete(roomName);
 				// Clean up document and awareness for this room
