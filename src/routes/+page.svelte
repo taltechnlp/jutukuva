@@ -383,6 +383,47 @@
 		await loadCollaborationSessions();
 	}
 
+	/**
+	 * Handle session switching with proper cleanup
+	 * Called from SessionsModal when user confirms switching to another session
+	 */
+	async function handleSwitchSession(newSessionId: string, action: 'leave' | 'end') {
+		console.log('[SESSION] Switching session, action:', action, 'newSessionId:', newSessionId);
+
+		// Stop recording if active
+		if (isRecording) {
+			await stopRecording();
+		}
+
+		if (action === 'end') {
+			// End current session (mark as completed, keep content)
+			if (speechEditor) {
+				await speechEditor.saveState();
+			}
+
+			if (currentDbSession && window.db) {
+				try {
+					await window.db.endSession(currentDbSession.id, false); // false = keep content
+					console.log('[SESSION] Current session ended:', currentDbSession.id);
+				} catch (error) {
+					console.error('[SESSION] Failed to end current session:', error);
+				}
+			}
+
+			// Disconnect collaboration (skip refresh since we're about to start a new session)
+			await disconnectCollaboration(true);
+		} else {
+			// Just leave the session (disconnect but keep it active)
+			await disconnectCollaboration(true);
+		}
+
+		// Now start the new session
+		await startCollaborativeSession(newSessionId);
+
+		// Refresh the sessions list
+		await loadCollaborationSessions();
+	}
+
 	// Audio source management functions
 	async function loadAudioDevices(skipDesktopSources: boolean = false) {
 		if (!audioSourceManager) return;
@@ -1732,6 +1773,9 @@
 <SessionsModal
 	bind:open={modalStore.showSessionsModal}
 	onActivateSession={(sessionId) => startCollaborativeSession(sessionId)}
+	onSwitchSession={handleSwitchSession}
+	currentSessionInfo={sessionInfo}
+	{isRecording}
 	onClose={() => modalStore.closeSessions()}
 />
 

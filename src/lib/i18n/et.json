@@ -687,7 +687,8 @@
       "open": "Ava",
       "view": "Vaata",
       "cancelled": "Tühistatud",
-      "share": "Jaga"
+      "share": "Jaga",
+      "edit": "Muuda"
     },
     "errors": {
       "loadFailed": "Sessioonide laadimine ebaõnnestus",
@@ -721,6 +722,24 @@
       "creating": "Loon...",
       "submit": "Loo sessioon"
     },
+    "edit": {
+      "title": "Muuda sessiooni",
+      "name": "Sessiooni nimi",
+      "namePlaceholder": "nt Meeskonnakoosolek, Intervjuu",
+      "date": "Kuupäev",
+      "time": "Kellaaeg",
+      "sessionCode": "Sessiooni kood",
+      "codeReadonly": "Sessiooni koodi ei saa muuta",
+      "password": "Parool",
+      "passwordPlaceholder": "Jäta tühjaks, kui parooli pole vaja",
+      "passwordSet": "Sellel sessioonil on praegu parool seadistatud",
+      "passwordHint": "Lisa parool, et piirata juurdepääsu sellele sessioonile",
+      "nameRequired": "Sessiooni nimi on nõutud",
+      "failedToUpdate": "Sessiooni uuendamine ebaõnnestus",
+      "cancel": "Tühista",
+      "saving": "Salvestan...",
+      "submit": "Salvesta muudatused"
+    },
     "cancelModal": {
       "title": "Tühista sessioon?",
       "confirm": "Kas oled kindel, et soovid selle sessiooni tühistada?",
@@ -729,6 +748,18 @@
       "warning": "See tegevus märgib sessiooni tühistatuks. Sessioon jääb sinu ajalukku, kuid seda ei saa enam aktiveerida.",
       "keep": "Säilita sessioon",
       "cancel": "Tühista sessioon"
+    },
+    "switch": {
+      "title": "Vaheta sessiooni?",
+      "message": "Sa oled hetkel aktiivses sessioonis.",
+      "currentSession": "Praegune sessioon:",
+      "newSession": "Uus sessioon:",
+      "recordingWarning": "Salvestamine on aktiivne ja see peatatakse.",
+      "leaveAndSwitch": "Lahku ja vaheta",
+      "endAndSwitch": "Lõpeta ja vaheta",
+      "cancel": "Tühista",
+      "leaveHint": "Katkesta ühendus, kuid jäta sessioon aktiivseks",
+      "endHint": "Märgi praegune sessioon lõpetatuks"
     }
   },
   "settings": {
