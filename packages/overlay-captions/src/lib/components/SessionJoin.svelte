@@ -11,8 +11,8 @@
 
 	let { initialCode = '', initialPassword = '' }: Props = $props();
 
-	let sessionCode = $state(initialCode);
-	let sessionPassword = $state(initialPassword);
+	let sessionCode = $state('');
+	let sessionPassword = $state('');
 	let inputError = $state('');
 	let showPasswordInput = $state(false);
 
@@ -23,15 +23,17 @@
 		}
 	});
 
-	// Auto-connect if initial values provided
+	// Initialize from props and auto-connect if valid
 	$effect(() => {
-		if (initialCode && initialCode.length === 6) {
+		if (initialCode) {
 			sessionCode = initialCode;
 			if (initialPassword) {
 				sessionPassword = initialPassword;
 			}
-			// Auto-connect after a short delay
-			setTimeout(() => connect(), 100);
+			// Auto-connect after a short delay if code is valid
+			if (initialCode.length === 6) {
+				setTimeout(() => connect(), 100);
+			}
 		}
 	});
 
