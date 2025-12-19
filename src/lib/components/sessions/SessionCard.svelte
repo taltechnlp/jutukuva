@@ -126,6 +126,15 @@
 		<!-- Actions -->
 		<div class="card-actions justify-end mt-4">
 			{#if session.status === 'planned'}
+				<button
+					class="btn btn-sm btn-ghost"
+					onclick={onEdit}
+					title={$_('sessions.card.edit', { default: 'Edit' })}
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+					</svg>
+				</button>
 				{#if onShare && session.session_code}
 					<button
 						class="btn btn-sm btn-outline"
@@ -154,6 +163,15 @@
 					{$_('sessions.card.cancel', { default: 'Cancel' })}
 				</button>
 			{:else if session.status === 'active'}
+				<button
+					class="btn btn-sm btn-ghost"
+					onclick={onEdit}
+					title={$_('sessions.card.edit', { default: 'Edit' })}
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+					</svg>
+				</button>
 				<button
 					class="btn btn-sm btn-success"
 					onclick={onComplete}

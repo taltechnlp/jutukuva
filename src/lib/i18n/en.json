@@ -693,7 +693,8 @@
       "open": "Open",
       "view": "View",
       "cancelled": "Cancelled",
-      "share": "Share"
+      "share": "Share",
+      "edit": "Edit"
     },
     "errors": {
       "loadFailed": "Failed to load sessions",
@@ -727,6 +728,24 @@
       "creating": "Creating...",
       "submit": "Create Session"
     },
+    "edit": {
+      "title": "Edit Session",
+      "name": "Session Name",
+      "namePlaceholder": "e.g., Team Meeting, Interview Session",
+      "date": "Date",
+      "time": "Time",
+      "sessionCode": "Session Code",
+      "codeReadonly": "Session code cannot be changed",
+      "password": "Password",
+      "passwordPlaceholder": "Leave empty for no password",
+      "passwordSet": "This session currently has a password set",
+      "passwordHint": "Add a password to restrict access to this session",
+      "nameRequired": "Session name is required",
+      "failedToUpdate": "Failed to update session",
+      "cancel": "Cancel",
+      "saving": "Saving...",
+      "submit": "Save Changes"
+    },
     "cancelModal": {
       "title": "Cancel Session?",
       "confirm": "Are you sure you want to cancel this session?",
@@ -735,6 +754,18 @@
       "warning": "This action will mark the session as cancelled. The session will remain in your history but cannot be activated.",
       "keep": "Keep Session",
       "cancel": "Cancel Session"
+    },
+    "switch": {
+      "title": "Switch Session?",
+      "message": "You are currently in an active session.",
+      "currentSession": "Current session:",
+      "newSession": "New session:",
+      "recordingWarning": "Recording is active and will be stopped.",
+      "leaveAndSwitch": "Leave & Switch",
+      "endAndSwitch": "End & Switch",
+      "cancel": "Cancel",
+      "leaveHint": "Disconnect but keep session active",
+      "endHint": "Mark current session as completed"
     }
   },
   "settings": {

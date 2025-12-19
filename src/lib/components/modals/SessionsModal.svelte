@@ -2,28 +2,38 @@
 	import { onMount } from 'svelte';
 	import { _ } from 'svelte-i18n';
 	import CreateSessionModal from '$lib/components/sessions/CreateSessionModal.svelte';
+	import EditSessionModal from '$lib/components/sessions/EditSessionModal.svelte';
 	import CancelConfirmationModal from '$lib/components/sessions/CancelConfirmationModal.svelte';
 	import SharePlannedSessionModal from '$lib/components/sessions/SharePlannedSessionModal.svelte';
+	import SwitchSessionModal from '$lib/components/sessions/SwitchSessionModal.svelte';
 	import SessionCard from '$lib/components/sessions/SessionCard.svelte';
+	import type { SessionInfo } from '$lib/collaboration/types';
 
 	type ViewMode = 'upcoming' | 'active' | 'past' | 'all';
 
 	interface Props {
 		open: boolean;
 		onActivateSession?: (sessionId: string) => void;
+		onSwitchSession?: (newSessionId: string, action: 'leave' | 'end') => void;
+		currentSessionInfo?: SessionInfo | null;
+		isRecording?: boolean;
 		onClose?: () => void;
 	}
 
-	let { open = $bindable(false), onActivateSession, onClose }: Props = $props();
+	let { open = $bindable(false), onActivateSession, onSwitchSession, currentSessionInfo = null, isRecording = false, onClose }: Props = $props();
 
 	let sessions = $state<TranscriptionSession[]>([]);
 	let filteredSessions = $state<TranscriptionSession[]>([]);
 	let viewMode = $state<ViewMode>('upcoming');
 	let showCreateModal = $state(false);
+	let showEditModal = $state(false);
 	let showCancelModal = $state(false);
 	let showShareModal = $state(false);
+	let showSwitchModal = $state(false);
+	let sessionToEdit = $state<TranscriptionSession | null>(null);
 	let sessionToCancel = $state<TranscriptionSession | null>(null);
 	let sessionToShare = $state<TranscriptionSession | null>(null);
+	let sessionToSwitchTo = $state<TranscriptionSession | null>(null);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 
@@ -93,6 +103,14 @@
 	}
 
 	async function handleActivateSession(session: TranscriptionSession) {
+		// If already in a session, show switch confirmation modal
+		if (currentSessionInfo) {
+			sessionToSwitchTo = session;
+			showSwitchModal = true;
+			return;
+		}
+
+		// Otherwise proceed normally
 		try {
 			await window.db.activateSession(session.id);
 			// Close modal and notify parent
@@ -103,6 +121,21 @@
 			console.error('Failed to activate session:', err);
 			alert('Failed to activate session');
 		}
+	}
+
+	function handleSwitchConfirmed(action: 'leave' | 'end') {
+		if (!sessionToSwitchTo) return;
+
+		showSwitchModal = false;
+		open = false;
+		onClose?.();
+		onSwitchSession?.(sessionToSwitchTo.id, action);
+		sessionToSwitchTo = null;
+	}
+
+	function handleSwitchCancelled() {
+		showSwitchModal = false;
+		sessionToSwitchTo = null;
 	}
 
 	async function handleCompleteSession(session: TranscriptionSession) {
@@ -134,9 +167,15 @@
 		}
 	}
 
-	async function handleEditSession(session: TranscriptionSession) {
-		// TODO: Implement edit functionality
-		console.log('Edit session:', session);
+	function handleEditSession(session: TranscriptionSession) {
+		sessionToEdit = session;
+		showEditModal = true;
+	}
+
+	async function handleSessionUpdated() {
+		showEditModal = false;
+		sessionToEdit = null;
+		await loadSessions();
 	}
 
 	function handleShareSession(session: TranscriptionSession) {
@@ -320,6 +359,17 @@
 	/>
 {/if}
 
+{#if showEditModal && sessionToEdit}
+	<EditSessionModal
+		session={sessionToEdit}
+		onClose={() => {
+			showEditModal = false;
+			sessionToEdit = null;
+		}}
+		onSessionUpdated={handleSessionUpdated}
+	/>
+{/if}
+
 {#if showCancelModal && sessionToCancel}
 	<CancelConfirmationModal
 		session={sessionToCancel}
@@ -338,5 +388,17 @@
 			showShareModal = false;
 			sessionToShare = null;
 		}}
+	/>
+{/if}
+
+{#if showSwitchModal && sessionToSwitchTo && currentSessionInfo}
+	<SwitchSessionModal
+		currentSessionName={currentSessionInfo.code}
+		newSessionName={sessionToSwitchTo.name}
+		{isRecording}
+		isHost={currentSessionInfo.role === 'host'}
+		onLeave={() => handleSwitchConfirmed('leave')}
+		onEnd={() => handleSwitchConfirmed('end')}
+		onCancel={handleSwitchCancelled}
 	/>
 {/if}
