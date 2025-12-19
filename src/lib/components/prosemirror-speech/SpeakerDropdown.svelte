@@ -23,6 +23,7 @@
 	let inputElement: HTMLInputElement | null = $state(null);
 	let dropdownElement: HTMLDivElement | null = $state(null);
 	let anchorElement: HTMLSpanElement | null = $state(null);
+	let listElement: HTMLUListElement | null = $state(null);
 	let highlightedIndex = $state(0);
 	let dropdownStyle = $state('');
 
@@ -97,7 +98,12 @@
 		} else if (e.key === 'ArrowDown') {
 			e.preventDefault();
 			if (filtered.length > 0) {
-				highlightedIndex = (highlightedIndex + 1) % filtered.length;
+				// Focus the first list item
+				const listItems = listElement?.querySelectorAll('li');
+				if (listItems && listItems.length > 0) {
+					highlightedIndex = 0;
+					(listItems[0] as HTMLElement).focus();
+				}
 			}
 		} else if (e.key === 'ArrowUp') {
 			e.preventDefault();
@@ -108,6 +114,38 @@
 			// Tab to autocomplete the highlighted suggestion
 			e.preventDefault();
 			newSpeakerName = filtered[highlightedIndex].name;
+		}
+	}
+
+	function handleListKeydown(e: KeyboardEvent, index: number) {
+		const filtered = filteredSpeakers();
+
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			handleSelect(filtered[index]);
+		} else if (e.key === 'Escape') {
+			onClose();
+		} else if (e.key === 'ArrowDown') {
+			e.preventDefault();
+			if (index < filtered.length - 1) {
+				highlightedIndex = index + 1;
+				const listItems = listElement?.querySelectorAll('li');
+				if (listItems) {
+					(listItems[highlightedIndex] as HTMLElement).focus();
+				}
+			}
+		} else if (e.key === 'ArrowUp') {
+			e.preventDefault();
+			if (index > 0) {
+				highlightedIndex = index - 1;
+				const listItems = listElement?.querySelectorAll('li');
+				if (listItems) {
+					(listItems[highlightedIndex] as HTMLElement).focus();
+				}
+			} else {
+				// At first item, go back to input
+				inputElement?.focus();
+			}
 		}
 	}
 
@@ -197,21 +235,21 @@
 
 		<!-- Filtered speakers list -->
 		{#if filteredSpeakers().length > 0}
-			<ul class="speaker-list">
+			<ul class="speaker-list" bind:this={listElement}>
 				{#each filteredSpeakers() as speaker, index}
 					<li
 						class="hover:bg-base-200"
 						class:selected={speaker.id === selectedId}
-						class:highlighted={index === highlightedIndex && newSpeakerName.trim()}
+						class:highlighted={index === highlightedIndex}
 						onclick={() => handleSelect(speaker)}
-						onkeydown={(e) => e.key === 'Enter' && handleSelect(speaker)}
+						onkeydown={(e) => handleListKeydown(e, index)}
 						role="option"
 						aria-selected={speaker.id === selectedId}
 						tabindex="0"
 					>
 						<span class="speaker-color" style:background-color={speaker.color}></span>
 						<span class="speaker-name">{speaker.name}</span>
-						{#if index === highlightedIndex && newSpeakerName.trim()}
+						{#if index === highlightedIndex}
 							<span class="hint">↵</span>
 						{/if}
 					</li>

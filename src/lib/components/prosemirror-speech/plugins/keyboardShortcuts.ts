@@ -137,36 +137,61 @@ const selectPreviousWord: Command = (state, dispatch) => {
 };
 
 /**
- * Enter command that creates new paragraph and signals speaker dropdown should open
+ * Enter command that creates new paragraph without opening speaker dropdown
+ * Speaker stays empty - user must explicitly use Ctrl+Enter to set speaker
  */
-const enterWithSpeakerDropdown: Command = (state, dispatch, view) => {
-	if (!dispatch || !view) {
-		// Just perform the split without metadata
+const enterCommand: Command = (state, dispatch) => {
+	if (!dispatch) {
 		return splitBlock(state, dispatch);
 	}
 
-	// Wrap dispatch to inject deduplication flag SYNCHRONOUSLY into the split transaction
-	// This fixes the race condition where streaming text could arrive before the flag was set
+	// Wrap dispatch to inject deduplication flag
 	const wrappedDispatch = (tr: Transaction) => {
 		tr.setMeta('manualParagraphCreated', true);
 		dispatch(tr);
 	};
 
-	// Perform the split with the wrapped dispatch
+	return splitBlock(state, wrappedDispatch);
+};
+
+/**
+ * Ctrl+Enter command that creates new paragraph and opens speaker dropdown
+ */
+const enterWithSpeakerDropdown: Command = (state, dispatch, view) => {
+	if (!dispatch || !view) {
+		return splitBlock(state, dispatch);
+	}
+
+	// Wrap dispatch to inject deduplication flag
+	const wrappedDispatch = (tr: Transaction) => {
+		tr.setMeta('manualParagraphCreated', true);
+		dispatch(tr);
+	};
+
+	// Perform the split
 	if (!splitBlock(state, wrappedDispatch)) return false;
 
-	// Speaker dropdown uses setTimeout (UI timing, not dedup-critical)
+	// Open speaker dropdown by directly clicking the prefix button
 	setTimeout(() => {
-		const dropdownState = view.state;
-		const { $from } = dropdownState.selection;
-		// Get the position of the current paragraph (the new one)
-		const paragraphPos = $from.before($from.depth);
+		const { $from } = view.state.selection;
 
-		const dropdownTr = dropdownState.tr.setMeta(speakerDropdownKey, {
-			showDropdownAtPos: paragraphPos
-		});
-		view.dispatch(dropdownTr);
-	}, 0);
+		// Get the DOM element at the current cursor position
+		const domAtCursor = view.domAtPos($from.pos);
+
+		// Traverse up to find the paragraph element
+		let paragraphDom: HTMLElement | null = domAtCursor.node as HTMLElement;
+		if (paragraphDom.nodeType === Node.TEXT_NODE) {
+			paragraphDom = paragraphDom.parentElement;
+		}
+		while (paragraphDom && !paragraphDom.classList?.contains('paragraph-with-speaker')) {
+			paragraphDom = paragraphDom.parentElement;
+		}
+
+		const prefixButton = paragraphDom?.querySelector('.speaker-prefix');
+		if (prefixButton) {
+			(prefixButton as HTMLElement).click();
+		}
+	}, 10);
 
 	return true;
 };
@@ -176,6 +201,8 @@ const enterWithSpeakerDropdown: Command = (state, dispatch, view) => {
  * Opens the speaker dropdown
  */
 const navigateToSpeakerSelection: Command = (state, dispatch, view) => {
+	if (!view) return false;
+
 	const { $from } = state.selection;
 
 	// Check if cursor is at the start of paragraph content
@@ -184,18 +211,26 @@ const navigateToSpeakerSelection: Command = (state, dispatch, view) => {
 
 	if (!isAtStart) return false;
 
-	// Get the paragraph position
-	const paragraphPos = $from.before($from.depth);
+	// Get the DOM element at the current cursor position (same logic as Ctrl+Enter)
+	const domAtCursor = view.domAtPos($from.pos);
 
-	// Signal to show speaker dropdown
-	if (dispatch) {
-		const tr = state.tr.setMeta(speakerDropdownKey, {
-			showDropdownAtPos: paragraphPos
-		});
-		dispatch(tr);
+	// Traverse up to find the paragraph element
+	let paragraphDom: HTMLElement | null = domAtCursor.node as HTMLElement;
+	if (paragraphDom.nodeType === Node.TEXT_NODE) {
+		paragraphDom = paragraphDom.parentElement;
+	}
+	while (paragraphDom && !paragraphDom.classList?.contains('paragraph-with-speaker')) {
+		paragraphDom = paragraphDom.parentElement;
 	}
 
-	return true;
+	const prefixButton = paragraphDom?.querySelector('.speaker-prefix');
+	if (prefixButton) {
+		(prefixButton as HTMLElement).click();
+		return true;
+	}
+
+	// If no button found, let default behavior handle it
+	return false;
 };
 
 /**
@@ -227,9 +262,23 @@ export function speakerDropdownPlugin() {
  * Create keyboard shortcuts plugin
  */
 export function keyboardShortcutsPlugin() {
-	return keymap({
-		// Enter creates a new paragraph and opens speaker dropdown
-		Enter: enterWithSpeakerDropdown,
+	// Plugin to handle Ctrl+Enter before the keymap processes it
+	const ctrlEnterPlugin = new Plugin({
+		props: {
+			handleKeyDown(view, event) {
+				if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+					event.preventDefault();
+					enterWithSpeakerDropdown(view.state, view.dispatch, view);
+					return true;
+				}
+				return false;
+			}
+		}
+	});
+
+	const keymapPlugin = keymap({
+		// Enter creates a new paragraph (no speaker dropdown)
+		Enter: enterCommand,
 
 		// Tab selects next word, Shift+Tab at start opens speaker dropdown
 		Tab: selectNextWord,
@@ -260,4 +309,7 @@ export function keyboardShortcutsPlugin() {
 		'Mod-y': redoCommand,
 		'Mod-Shift-z': redoCommand
 	});
+
+	// Return both plugins - ctrlEnterPlugin must come first to intercept Ctrl+Enter
+	return [ctrlEnterPlugin, keymapPlugin];
 }

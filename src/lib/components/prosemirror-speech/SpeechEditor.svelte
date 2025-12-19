@@ -324,7 +324,7 @@
 
 		// Determine plugins based on collaboration mode
 		const basePlugins = [
-			keyboardShortcutsPlugin(),  // Custom shortcuts first (takes precedence)
+			...keyboardShortcutsPlugin(),  // Custom shortcuts first (takes precedence)
 			keymap(baseKeymap),          // Base keymap for standard editing (joinBackward, etc.)
 			speakerDropdownPlugin(),
 			streamingTextPlugin(collaborationManager),
