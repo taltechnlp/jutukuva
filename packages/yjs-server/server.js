@@ -260,18 +260,34 @@ const wss = new WebSocketServer({
 		const password = parsedUrl.query.password;
 		const role = parsedUrl.query.role;
 
-		// Check if session exists and has a password
-		const session = activeSessions.get(roomName);
+		// Check if session exists
+		let session = activeSessions.get(roomName);
 
 		if (!session) {
-			// New session - allow connection (password will be set by host)
+			// New session - create it now with password if host is connecting
+			// This ensures password is set BEFORE any other verifyClient calls
+			session = {
+				createdAt: new Date().toISOString(),
+				connections: 0,
+				metadata: {},
+				password: (role === 'host' && password) ? password : null
+			};
+			activeSessions.set(roomName, session);
+			if (role === 'host' && password) {
+				console.log(`[${new Date().toISOString()}] Password set for room: ${roomName}`);
+			}
+			callback(true);
+		} else if (role === 'host' && password && session.password !== password) {
+			// Host reconnecting with a (new) password - update it
+			session.password = password;
+			console.log(`[${new Date().toISOString()}] Password updated for room: ${roomName}`);
 			callback(true);
 		} else if (session.password) {
 			// Existing session with password - verify
 			if (password === session.password) {
 				callback(true);
 			} else {
-				console.log(`[${new Date().toISOString()}] Password verification failed for room: ${roomName}`);
+				console.log(`[${new Date().toISOString()}] Password verification failed for room: ${roomName}, provided: ${password ? '[redacted]' : 'none'}`);
 				callback(false, 401, 'Invalid password');
 			}
 		} else {
@@ -292,20 +308,14 @@ wss.on('connection', (ws, req) => {
 	// Store room name on the WebSocket connection
 	ws._roomName = roomName;
 
-	// Track session
-	if (!activeSessions.has(roomName)) {
-		// New session - store password if host is connecting with one
-		activeSessions.set(roomName, {
-			createdAt: new Date().toISOString(),
-			connections: 0,
-			metadata: {},
-			password: (role === 'host' && password) ? password : null
-		});
-		if (role === 'host' && password) {
-			console.log(`[${new Date().toISOString()}] Password set for room: ${roomName}`);
-		}
+	// Track connection count (session already created in verifyClient)
+	const session = activeSessions.get(roomName);
+	if (session) {
+		session.connections++;
+	} else {
+		// This shouldn't happen since verifyClient creates the session
+		console.error(`[${new Date().toISOString()}] Session not found for room: ${roomName} (this is unexpected)`);
 	}
-	activeSessions.get(roomName).connections++;
 
 	// Setup Yjs connection
 	setupWSConnection(ws, req, roomName);

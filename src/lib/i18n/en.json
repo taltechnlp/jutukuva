@@ -740,6 +740,8 @@
       "passwordPlaceholder": "Leave empty for no password",
       "passwordSet": "This session currently has a password set",
       "passwordHint": "Add a password to restrict access to this session",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
       "nameRequired": "Session name is required",
       "failedToUpdate": "Failed to update session",
       "cancel": "Cancel",
