@@ -4,6 +4,7 @@
 
 import type { Node } from 'prosemirror-model';
 import type { EditorView, NodeView, ViewMutationRecord } from 'prosemirror-view';
+import { TextSelection } from 'prosemirror-state';
 import type { Speaker } from '$lib/collaboration/types';
 import { speakerDropdownKey } from '../plugins/keyboardShortcuts';
 import SpeakerPrefix from '../SpeakerPrefix.svelte';
@@ -79,11 +80,18 @@ export function createParagraphNodeView(
 				const pos = getPos();
 				if (pos === undefined) return;
 
+				// Update speaker and move cursor to start of paragraph content
 				const tr = view.state.tr.setNodeMarkup(pos, undefined, {
 					...node.attrs,
 					speakerId: selectedSpeaker?.id || null
 				});
+
+				// Set selection to start of paragraph content (pos + 1 is inside the paragraph)
+				const paragraphStart = pos + 1;
+				tr.setSelection(TextSelection.create(tr.doc, paragraphStart));
+
 				view.dispatch(tr);
+				view.focus();
 			},
 			onAddSpeaker: (name: string): Speaker => {
 				return context.addSpeaker(name);
