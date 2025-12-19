@@ -30,8 +30,8 @@ export function isValidSessionCode(code: string): boolean {
 		return false;
 	}
 
-	// Check if all characters are in our alphabet
-	return code.split('').every(char => ALPHABET.includes(char));
+	// Check if all characters are alphanumeric
+	return /^[A-Z0-9]+$/.test(code);
 }
 
 /**
