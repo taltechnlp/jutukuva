@@ -285,8 +285,12 @@ const wss = new WebSocketServer({
 		// Store password validation result on the request for use in connection handler
 		// We accept all connections here, then close with proper code if password is wrong
 		// This allows browsers to receive our custom close code
-		info.req._passwordValid = !session.password || password === session.password;
+		const passwordValid = !session.password || password === session.password;
+		info.req._passwordValid = passwordValid;
 		info.req._roomName = roomName;
+
+		console.log(`[${new Date().toISOString()}] verifyClient for room: ${roomName}, role: ${role || 'guest'}, hasSessionPassword: ${!!session.password}, providedPassword: ${password ? '[provided]' : 'none'}, valid: ${passwordValid}`);
+
 		callback(true);
 	}
 });
@@ -299,8 +303,9 @@ wss.on('connection', (ws, req) => {
 
 	// Check if password validation failed (set in verifyClient)
 	// We close here instead of in verifyClient so browsers receive our custom close code
-	if (req._passwordValid === false) {
-		console.log(`[${new Date().toISOString()}] Password verification failed for room: ${roomName}, closing with code 4001`);
+	// Use !== true to catch both false and undefined cases
+	if (req._passwordValid !== true) {
+		console.log(`[${new Date().toISOString()}] Password verification failed for room: ${roomName}, _passwordValid=${req._passwordValid}, closing with code 4001`);
 		ws.close(4001, 'Invalid password');
 		return;
 	}
