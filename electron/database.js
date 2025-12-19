@@ -100,6 +100,13 @@ export function initDatabase() {
 		// Column already exists
 	}
 
+	// Add session_password column for optional password protection
+	try {
+		db.exec('ALTER TABLE transcription_sessions ADD COLUMN session_password TEXT');
+	} catch (e) {
+		// Column already exists
+	}
+
 	// Create indexes for better query performance
 	db.exec(`
 		CREATE INDEX IF NOT EXISTS idx_sessions_status
@@ -273,6 +280,10 @@ export const dbOperations = {
 		if (data.participants !== undefined) {
 			fields.push('participants = ?');
 			values.push(data.participants);
+		}
+		if (data.session_password !== undefined) {
+			fields.push('session_password = ?');
+			values.push(data.session_password);
 		}
 
 		if (fields.length > 0) {

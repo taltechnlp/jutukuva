@@ -4,8 +4,36 @@
 	import { captionStore } from '$lib/stores/caption.svelte';
 	import { settingsStore } from '$lib/stores/settings.svelte';
 
-	let sessionCode = $state('');
+	interface Props {
+		initialCode?: string;
+		initialPassword?: string;
+	}
+
+	let { initialCode = '', initialPassword = '' }: Props = $props();
+
+	let sessionCode = $state(initialCode);
+	let sessionPassword = $state(initialPassword);
 	let inputError = $state('');
+	let showPasswordInput = $state(false);
+
+	// Check if password is required based on error
+	$effect(() => {
+		if (yjsStore.error === 'password_required') {
+			showPasswordInput = true;
+		}
+	});
+
+	// Auto-connect if initial values provided
+	$effect(() => {
+		if (initialCode && initialCode.length === 6) {
+			sessionCode = initialCode;
+			if (initialPassword) {
+				sessionPassword = initialPassword;
+			}
+			// Auto-connect after a short delay
+			setTimeout(() => connect(), 100);
+		}
+	});
 
 	function validateCode(code: string): boolean {
 		return /^[A-Z0-9]{6}$/.test(code);
@@ -23,7 +51,11 @@
 			return;
 		}
 
-		yjsStore.connect(sessionCode, settingsStore.settings.connection.yjsServerUrl);
+		yjsStore.connect(
+			sessionCode,
+			settingsStore.settings.connection.yjsServerUrl,
+			sessionPassword || undefined
+		);
 		captionStore.startObserving();
 		await settingsStore.setLastSessionCode(sessionCode);
 	}
@@ -32,6 +64,8 @@
 		captionStore.stopObserving();
 		captionStore.clear();
 		yjsStore.disconnect();
+		showPasswordInput = false;
+		sessionPassword = '';
 	}
 
 	async function quickJoin() {
@@ -39,6 +73,15 @@
 			sessionCode = settingsStore.settings.lastSessionCode;
 			await connect();
 		}
+	}
+
+	function handlePasswordSubmit() {
+		if (!sessionPassword.trim()) {
+			inputError = $_('session.password_required', { default: 'Please enter a password' });
+			return;
+		}
+		inputError = '';
+		connect();
 	}
 </script>
 
@@ -81,18 +124,35 @@
 					oninput={handleInput}
 					placeholder="000000"
 					class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-center font-mono text-3xl font-bold tracking-[0.5em] text-white placeholder-white/10 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all uppercase"
-					class:border-error={inputError}
+					class:border-error={inputError && !showPasswordInput}
 					maxlength="6"
 				/>
-				{#if inputError}
-					<p class="absolute -bottom-6 left-0 w-full text-center text-error text-xs font-medium animate-shake">
-						{inputError}
-					</p>
-				{/if}
 			</div>
 
+			<!-- Password Input (shown when required) -->
+			{#if showPasswordInput}
+				<div class="relative group">
+					<input
+						type="password"
+						bind:value={sessionPassword}
+						placeholder={$_('session.password_placeholder', { default: 'Enter password' })}
+						class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center text-white placeholder-white/30 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
+						class:border-error={inputError}
+					/>
+					<p class="text-xs text-white/50 text-center mt-2">
+						{$_('session.password_hint', { default: 'This session requires a password' })}
+					</p>
+				</div>
+			{/if}
+
+			{#if inputError}
+				<p class="text-center text-error text-xs font-medium animate-shake">
+					{inputError}
+				</p>
+			{/if}
+
 			<button
-				onclick={connect}
+				onclick={showPasswordInput ? handlePasswordSubmit : connect}
 				disabled={yjsStore.connecting || sessionCode.length !== 6}
 				class="btn btn-primary btn-lg w-full rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 disabled:bg-white/5 disabled:text-white/20 font-bold"
 			>
@@ -112,7 +172,7 @@
 				</button>
 			{/if}
 			
-			{#if yjsStore.error}
+			{#if yjsStore.error && yjsStore.error !== 'password_required'}
 				<div class="alert alert-error text-xs py-2 mt-4 rounded-lg bg-error/10 text-error border-error/20">
 					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />

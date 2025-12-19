@@ -10,7 +10,10 @@
     "disconnect": "Katkesta",
     "connected": "Ühendatud",
     "rejoin": "Taasühenda",
-    "error_invalid_code": "Sisesta kehtiv 6-kohaline kood"
+    "error_invalid_code": "Sisesta kehtiv 6-kohaline kood",
+    "password_placeholder": "Sisesta parool",
+    "password_hint": "See sessioon nõuab parooli",
+    "password_required": "Palun sisesta parool"
   },
   "preview": {
     "title": "Eelvaade",

@@ -20,11 +20,15 @@
 	import { AutoScroller } from '$lib/actions/autoscroll.svelte';
 	import type { Speaker } from '$shared/collaboration/types';
 
-	// Get session code from URL
+	// Get session code and password from URL
 	const sessionCode = $derived(normalizeSessionCode($page.params.code || ''));
+	const urlPassword = $derived($page.url.searchParams.get('password') || '');
 
 	// State
 	let settings = $state<DisplaySettings>(defaultSettings);
+	let passwordRequired = $state(false);
+	let passwordInput = $state('');
+	let passwordError = $state('');
 	let drawerOpen = $state(false);
 	// Overlay minimized state removed as overlay mode is gone
 	let text = $state('');
@@ -155,106 +159,149 @@
 		}
 	}
 
+	// Helper function to connect with optional password
+	function connectWithPassword(password?: string) {
+		const serverUrl = import.meta.env.VITE_YJS_SERVER_URL || 'wss://tekstiks.ee/kk';
+
+		sessionInfo = {
+			code: sessionCode,
+			role: 'guest',
+			roomName: sessionCode,
+			serverUrl,
+			password: password || undefined
+		};
+
+		console.log('[WEB-VIEWER] Setting up collaboration for session:', sessionCode, password ? '(with password)' : '');
+
+		// Initialize and connect collaboration manager
+		if (collaborationManager) {
+			collaborationManager.disconnect();
+		}
+		collaborationManager = new CollaborationManager();
+
+		// Connect the collaboration manager
+		collaborationManager.connect(sessionInfo, null as any, {
+			onParticipantsChange: (p) => {
+				participants = p;
+				console.log('[WEB-VIEWER] Participants changed:', p);
+			},
+			onConnectionStatusChange: (connected) => {
+				connectionState = connected ? 'connected' : 'disconnected';
+				console.log('[WEB-VIEWER] Connection status:', connected);
+				if (connected) {
+					passwordRequired = false;
+					passwordError = '';
+				}
+			}
+		});
+
+		// Listen for connection errors (for password-protected sessions)
+		collaborationManager.provider?.on('connection-close', (event: any) => {
+			console.log('[WEB-VIEWER] Connection closed:', event);
+			// Check if it's a 401 error (password required)
+			if (event?.code === 4001 || event?.reason?.includes('401') || event?.reason?.includes('password')) {
+				passwordRequired = true;
+				passwordError = $_('viewer.wrong_password', { default: 'Incorrect password' });
+				connectionState = 'error';
+			}
+		});
+
+		// Setup text observers
+		setupTextObservers();
+	}
+
+	// Setup text observers for the collaboration manager
+	function setupTextObservers() {
+		if (!collaborationManager) return;
+
+		// Get XML fragment and observe it for changes
+		const xmlFrag = collaborationManager.ydoc.getXmlFragment('prosemirror');
+
+		// Function to update text from XML fragment
+		const updateTextFromFragment = () => {
+			const newText = extractTextFromYDoc();
+			if (newText !== text) {
+				text = newText;
+				lastUpdated = Date.now();
+				console.log('[WEB-VIEWER] Text updated from XML fragment:', newText.substring(0, 100));
+			}
+		};
+
+		// Observe XML fragment for changes (more reliable than polling)
+		const observer = () => {
+			console.log('[WEB-VIEWER] XML fragment changed');
+			updateTextFromFragment();
+		};
+		xmlFrag.observe(observer);
+		xmlFragmentObserver = () => xmlFrag.unobserve(observer);
+
+		// Observe speakers map for changes (to update speaker prefixes)
+		const speakersMap = collaborationManager.ydoc.getMap('speakers');
+		const speakersObserverFn = () => {
+			console.log('[WEB-VIEWER] Speakers changed');
+			speakers = collaborationManager?.getSpeakers() || [];
+			// Re-extract text to update speaker prefixes
+			updateTextFromFragment();
+		};
+		speakersMap.observe(speakersObserverFn);
+		speakersObserver = () => speakersMap.unobserve(speakersObserverFn);
+
+		// Initial speakers load
+		speakers = collaborationManager.getSpeakers();
+
+		// Also listen for Yjs document updates as a fallback
+		updateHandler = (update: Uint8Array, origin: any) => {
+			console.log('[WEB-VIEWER] Yjs update event fired', { updateSize: update.length, origin });
+			// Small delay to ensure XML fragment is updated
+			setTimeout(() => {
+				updateTextFromFragment();
+			}, 10);
+		};
+		collaborationManager.ydoc.on('update', updateHandler);
+
+		// Initial text extraction - try a few times after connection
+		// Wait for provider to sync first
+		let attempts = 0;
+		extractInterval = setInterval(() => {
+			attempts++;
+			const extractedText = extractTextFromYDoc();
+			console.log('[WEB-VIEWER] Initial extraction attempt:', attempts, 'text length:', extractedText.length);
+
+			if (extractedText) {
+				text = extractedText;
+				lastUpdated = Date.now();
+				if (extractInterval) {
+					clearInterval(extractInterval);
+					extractInterval = null;
+				}
+				console.log('[WEB-VIEWER] Initial text extraction successful');
+			} else if (attempts >= 20) {
+				if (extractInterval) {
+					clearInterval(extractInterval);
+					extractInterval = null;
+				}
+				console.log('[WEB-VIEWER] Initial extraction complete (will update when content arrives)');
+			}
+		}, 500);
+	}
+
+	// Handle password submit
+	function handlePasswordSubmit() {
+		if (!passwordInput.trim()) {
+			passwordError = $_('viewer.password_required_error', { default: 'Please enter a password' });
+			return;
+		}
+		passwordError = '';
+		connectWithPassword(passwordInput.trim());
+	}
+
 	// Initialize collaboration
 	onMount(async () => {
 		if (!browser) return;
 
 		try {
-			const serverUrl = import.meta.env.VITE_YJS_SERVER_URL || 'wss://tekstiks.ee/kk';
-
-			sessionInfo = {
-				code: sessionCode,
-				role: 'guest',
-				roomName: sessionCode,
-				serverUrl
-			};
-
-			console.log('[WEB-VIEWER] Setting up collaboration for session:', sessionCode);
-
-			// Initialize and connect collaboration manager
-			collaborationManager = new CollaborationManager();
-
-			// Connect the collaboration manager
-			collaborationManager.connect(sessionInfo, null as any, {
-				onParticipantsChange: (p) => {
-					participants = p;
-					console.log('[WEB-VIEWER] Participants changed:', p);
-				},
-				onConnectionStatusChange: (connected) => {
-					connectionState = connected ? 'connected' : 'disconnected';
-					console.log('[WEB-VIEWER] Connection status:', connected);
-				}
-			});
-
-			// Get XML fragment and observe it for changes
-			const xmlFrag = collaborationManager.ydoc.getXmlFragment('prosemirror');
-			
-			// Function to update text from XML fragment
-			const updateTextFromFragment = () => {
-				const newText = extractTextFromYDoc();
-				if (newText !== text) {
-					text = newText;
-					lastUpdated = Date.now();
-					console.log('[WEB-VIEWER] Text updated from XML fragment:', newText.substring(0, 100));
-				}
-			};
-
-			// Observe XML fragment for changes (more reliable than polling)
-			const observer = () => {
-				console.log('[WEB-VIEWER] XML fragment changed');
-				updateTextFromFragment();
-			};
-			xmlFrag.observe(observer);
-			xmlFragmentObserver = () => xmlFrag.unobserve(observer);
-
-			// Observe speakers map for changes (to update speaker prefixes)
-			const speakersMap = collaborationManager.ydoc.getMap('speakers');
-			const speakersObserverFn = () => {
-				console.log('[WEB-VIEWER] Speakers changed');
-				speakers = collaborationManager?.getSpeakers() || [];
-				// Re-extract text to update speaker prefixes
-				updateTextFromFragment();
-			};
-			speakersMap.observe(speakersObserverFn);
-			speakersObserver = () => speakersMap.unobserve(speakersObserverFn);
-
-			// Initial speakers load
-			speakers = collaborationManager.getSpeakers();
-
-			// Also listen for Yjs document updates as a fallback
-			updateHandler = (update: Uint8Array, origin: any) => {
-				console.log('[WEB-VIEWER] Yjs update event fired', { updateSize: update.length, origin });
-				// Small delay to ensure XML fragment is updated
-				setTimeout(() => {
-					updateTextFromFragment();
-				}, 10);
-			};
-			collaborationManager.ydoc.on('update', updateHandler);
-
-			// Initial text extraction - try a few times after connection
-			// Wait for provider to sync first
-			let attempts = 0;
-			extractInterval = setInterval(() => {
-				attempts++;
-				const extractedText = extractTextFromYDoc();
-				console.log('[WEB-VIEWER] Initial extraction attempt:', attempts, 'text length:', extractedText.length);
-
-				if (extractedText) {
-					text = extractedText;
-					lastUpdated = Date.now();
-					if (extractInterval) {
-						clearInterval(extractInterval);
-						extractInterval = null;
-					}
-					console.log('[WEB-VIEWER] Initial text extraction successful');
-				} else if (attempts >= 20) {
-					if (extractInterval) {
-						clearInterval(extractInterval);
-						extractInterval = null;
-					}
-					console.log('[WEB-VIEWER] Initial extraction complete (will update when content arrives)');
-				}
-			}, 500);
+			// Use password from URL if available
+			connectWithPassword(urlPassword || undefined);
 		} catch (err) {
 			console.error('[WEB-VIEWER] Failed to setup collaboration:', err);
 			errorMessage = 'Failed to setup collaboration: ' + (err as Error).message;
@@ -349,6 +396,33 @@
 
 	<ConnectionStatus state={connectionState} />
 
+	<!-- Password Prompt Modal -->
+	{#if passwordRequired}
+		<div class="password-modal">
+			<div class="password-modal-content">
+				<h2>{$_('viewer.password_required', { default: 'Password Required' })}</h2>
+				<p>{$_('viewer.password_required_description', { default: 'This session is password protected. Please enter the password to join.' })}</p>
+
+				{#if passwordError}
+					<div class="password-error">{passwordError}</div>
+				{/if}
+
+				<form onsubmit={(e) => { e.preventDefault(); handlePasswordSubmit(); }}>
+					<input
+						type="password"
+						class="password-input"
+						placeholder={$_('viewer.password_placeholder', { default: 'Enter password' })}
+						bind:value={passwordInput}
+						autofocus
+					/>
+					<button type="submit" class="password-submit">
+						{$_('viewer.connect', { default: 'Connect' })}
+					</button>
+				</form>
+			</div>
+		</div>
+	{/if}
+
 	<SettingsDrawer
 		open={drawerOpen}
 		{settings}
@@ -381,3 +455,81 @@
 	{/if}
 </div>
 
+<style>
+	.password-modal {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.8);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+	}
+
+	.password-modal-content {
+		background: #1a1a2e;
+		padding: 2rem;
+		border-radius: 12px;
+		max-width: 400px;
+		width: 90%;
+		text-align: center;
+	}
+
+	.password-modal-content h2 {
+		color: #fff;
+		margin: 0 0 1rem 0;
+		font-size: 1.5rem;
+	}
+
+	.password-modal-content p {
+		color: #aaa;
+		margin: 0 0 1.5rem 0;
+		font-size: 0.9rem;
+	}
+
+	.password-error {
+		background: rgba(239, 68, 68, 0.2);
+		color: #ef4444;
+		padding: 0.75rem;
+		border-radius: 6px;
+		margin-bottom: 1rem;
+		font-size: 0.9rem;
+	}
+
+	.password-input {
+		width: 100%;
+		padding: 0.75rem 1rem;
+		font-size: 1rem;
+		border: 1px solid #444;
+		border-radius: 6px;
+		background: #2a2a4e;
+		color: #fff;
+		margin-bottom: 1rem;
+		box-sizing: border-box;
+	}
+
+	.password-input:focus {
+		outline: none;
+		border-color: #6366f1;
+	}
+
+	.password-submit {
+		width: 100%;
+		padding: 0.75rem 1rem;
+		font-size: 1rem;
+		font-weight: 500;
+		background: #6366f1;
+		color: #fff;
+		border: none;
+		border-radius: 6px;
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+
+	.password-submit:hover {
+		background: #5458dd;
+	}
+</style>

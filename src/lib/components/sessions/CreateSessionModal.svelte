@@ -14,6 +14,7 @@
 	let scheduledTime = $state('');
 	let description = $state('');
 	let sessionCode = $state('');
+	let sessionPassword = $state('');
 	let useCustomCode = $state(false);
 	let creating = $state(false);
 	let error = $state<string | null>(null);
@@ -73,6 +74,11 @@
 
 			// Create session in database
 			await window.db.createSession(sessionId, name.trim(), dateTimeString, description.trim() || null);
+
+			// Update session with password if provided
+			if (sessionPassword.trim()) {
+				await window.db.updateSession(sessionId, { session_password: sessionPassword.trim() });
+			}
 
 			// Notify parent component
 			onSessionCreated();
@@ -225,6 +231,24 @@
 					bind:value={description}
 					disabled={creating}
 				></textarea>
+			</div>
+
+			<!-- Password (Optional) -->
+			<div class="form-control mb-4">
+				<label class="label" for="session-password">
+					<span class="label-text">{$_('sessions.create.password', { default: 'Password (optional)' })}</span>
+				</label>
+				<input
+					id="session-password"
+					type="password"
+					placeholder={$_('sessions.create.passwordPlaceholder', { default: 'Leave empty for no password' })}
+					class="input input-bordered w-full"
+					bind:value={sessionPassword}
+					disabled={creating}
+				/>
+				<p class="label-text-alt text-warning px-1 mt-1">
+					{$_('sessions.create.passwordHint', { default: 'If set, viewers will need this password to join' })}
+				</p>
 			</div>
 
 			<!-- Error Message -->

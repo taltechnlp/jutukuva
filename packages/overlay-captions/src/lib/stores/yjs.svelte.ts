@@ -15,14 +15,24 @@ class YjsStore {
 	speakers = $state<Map<string, Speaker>>(new Map());
 	error = $state<string | null>(null);
 
-	connect(sessionCode: string, serverUrl: string) {
+	connect(sessionCode: string, serverUrl: string, password?: string) {
 		this.disconnect();
 		this.connecting = true;
 		this.error = null;
 
 		try {
 			this.ydoc = new Y.Doc();
-			this.provider = new WebsocketProvider(serverUrl, sessionCode, this.ydoc, {
+
+			// Build room URL with password parameter if provided
+			const params = new URLSearchParams();
+			if (password) {
+				params.set('password', password);
+			}
+			params.set('role', 'guest');
+			const queryString = params.toString();
+			const roomWithParams = queryString ? `${sessionCode}?${queryString}` : sessionCode;
+
+			this.provider = new WebsocketProvider(serverUrl, roomWithParams, this.ydoc, {
 				connect: true,
 				maxBackoffTime: 5000,
 				disableBc: true
@@ -43,6 +53,16 @@ class YjsStore {
 				this.error = 'Connection failed';
 				this.connected = false;
 				this.connecting = false;
+			});
+
+			// Listen for connection close (for password-protected sessions)
+			this.provider.on('connection-close', (event: any) => {
+				console.log('[YJS] Connection closed:', event);
+				if (event?.code === 4001 || event?.reason?.includes('401') || event?.reason?.includes('password')) {
+					this.error = 'password_required';
+					this.connected = false;
+					this.connecting = false;
+				}
 			});
 
 			// Observe speakers map

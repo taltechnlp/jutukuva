@@ -172,11 +172,12 @@
 		console.log('[COLLAB] Environment variable VITE_YJS_SERVER_URL:', import.meta.env.VITE_YJS_SERVER_URL);
 
 		// Prepare session info (but don't set it yet to avoid triggering editor remount)
-		let tempSessionInfo = {
+		let tempSessionInfo: import('$lib/collaboration/types').SessionInfo = {
 			code,
 			role: 'host' as const,
 			roomName: code,
-			serverUrl
+			serverUrl,
+			password: undefined
 		};
 
 		// Create or load session in database
@@ -190,6 +191,10 @@
 						if (currentDbSession.session_code) {
 							tempSessionInfo.code = currentDbSession.session_code;
 							tempSessionInfo.roomName = currentDbSession.session_code;
+						}
+						// Use password if set
+						if (currentDbSession.session_password) {
+							tempSessionInfo.password = currentDbSession.session_password;
 						}
 						// Activate the session
 						await window.db.activateSession(dbSessionId);
