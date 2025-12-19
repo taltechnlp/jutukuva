@@ -1414,12 +1414,9 @@
 {/if}
 
 <div class="flex flex-col bg-base-100">
-	<!-- Toolbar -->
-	<div class="navbar bg-base-100 border-b border-base-200 shrink-0 z-20">
-		<div class="grid grid-cols-3 w-full items-center gap-4">
-			<!-- Left: Logo & Status -->
-			<div class="flex items-center gap-3">
-								
+	<!-- Status Bar -->
+	<div class="navbar bg-base-100 border-b border-base-200 shrink-0 z-10">
+		<div class="flex w-full justify-center items-center gap-3">
 			<!-- Status Badge -->
 			{#if connectionError}
 				<div class="badge badge-error gap-2">
@@ -1446,252 +1443,25 @@
 				</div>
 			{/if}
 
-				{#if sessionInfo}
-					<div class="badge badge-secondary gap-2">
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-						</svg>
-						{sessionInfo.code}
-						<button
-							class="hover:text-white transition-colors cursor-pointer"
-							onclick={() => {
-								navigator.clipboard.writeText(sessionInfo.code);
-							}}
-							title={$_('share_session.copy')}
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-							</svg>
-						</button>
-					</div>
-				{/if}
-			</div>
-
-			<!-- Center: Recording Control -->
-			<div class="flex justify-center">
-				{#if !isRecording}
+			{#if sessionInfo}
+				<div class="badge badge-secondary gap-2">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+					</svg>
+					{sessionInfo.code}
 					<button
-						class="btn btn-circle btn-primary btn-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
-						onclick={startRecording}
-						disabled={!isWasmReady}
-						title={$_('dictate.startRecording')}
+						class="hover:text-white transition-colors cursor-pointer"
+						onclick={() => {
+							navigator.clipboard.writeText(sessionInfo.code);
+						}}
+						title={$_('share_session.copy')}
 					>
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
 						</svg>
 					</button>
-				{:else}
-					<button class="btn btn-circle btn-error btn-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200" onclick={stopRecording} title={$_('dictate.stopRecording')} aria-label={$_('dictate.stopRecording')}>
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
-						</svg>
-					</button>
-				{/if}
-			</div>
-
-			<!-- Right: Tools -->
-			<div class="flex justify-end items-center gap-2">
-				<!-- Collaboration Menu -->
-				<div class="dropdown dropdown-end">
-					<button type="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('collaboration.collaborative_session')} onclick={() => loadCollaborationSessions()} onfocus={() => loadCollaborationSessions()}>
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-						</svg>
-					</button>
-					<div class="dropdown-content z-[1] p-3 shadow-xl bg-base-100 rounded-box min-w-80 max-w-96 border border-base-300 mt-2 max-h-[70vh] flex flex-col overflow-x-hidden">
-						{#if !sessionInfo}
-							<ul class="menu p-0">
-								<li><h3 class="menu-title text-sm font-semibold">{$_('collaboration.collaborative_session')}</h3></li>
-								<li>
-									<button class="gap-3 cursor-pointer" onclick={() => startCollaborativeSession()}>
-										<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-										</svg>
-										{$_('collaboration.start_session')}
-									</button>
-								</li>
-								<li class="menu-title mt-3 text-sm font-semibold">{$_('collaboration.join_existing')}</li>
-								<li class="p-2">
-									<div class="join w-full p-0">
-										<input
-											type="text"
-											placeholder={$_('collaboration.enter_code')}
-											class="input input-sm input-bordered join-item w-full font-mono uppercase"
-											maxlength="6"
-											bind:value={joinSessionCode}
-											oninput={(e) => { joinSessionCode = e.currentTarget.value.toUpperCase(); }}
-											onkeydown={(e) => { if (e.key === 'Enter' && joinSessionCode.length === 6) joinCollaborativeSession(joinSessionCode); }}
-										/>
-										<button
-											class="btn btn-sm btn-secondary join-item"
-											disabled={joinSessionCode.length !== 6}
-											onclick={() => joinCollaborativeSession(joinSessionCode)}
-										>
-											{$_('collaboration.join')}
-										</button>
-									</div>
-								</li>
-							</ul>
-
-							<!-- Planned & Active Sessions -->
-							{#if plannedAndActiveSessions.length > 0 || isLoadingSessions}
-								<div class="divider my-2"></div>
-								<div class="flex-1 overflow-y-auto min-h-0">
-									<ul class="menu p-0">
-										<li class="menu-title text-sm font-semibold">{$_('collaboration.your_sessions')}</li>
-										{#if isLoadingSessions}
-											<li class="p-2">
-												<div class="flex justify-center">
-													<span class="loading loading-spinner loading-sm"></span>
-												</div>
-											</li>
-										{:else}
-											{#each plannedAndActiveSessions as session (session.id)}
-												<li>
-													<button class="flex flex-col items-start gap-0.5 py-2 cursor-pointer" onclick={() => startCollaborativeSession(session.id)}>
-														<div class="flex items-center gap-2 w-full">
-															<span class="font-medium text-sm truncate flex-1 text-left">{session.name}</span>
-															<span class={`badge badge-xs ${session.status === 'active' ? 'badge-success' : 'badge-info'}`}>
-																{$_(`sessions.status.${session.status}`)}
-															</span>
-														</div>
-														<div class="flex items-center gap-3 text-xs opacity-70 w-full">
-															{#if session.session_code}
-																<span class="font-mono">{session.session_code}</span>
-															{/if}
-															{#if session.scheduled_date}
-																<span>{new Date(session.scheduled_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-															{:else}
-																<span>{new Date(session.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-															{/if}
-														</div>
-													</button>
-												</li>
-											{/each}
-										{/if}
-									</ul>
-								</div>
-							{/if}
-
-							<div class="divider my-2"></div>
-							<ul class="menu p-0">
-								<li>
-									<button class="gap-3 cursor-pointer" onclick={() => modalStore.openSessions()}>
-										<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-										</svg>
-										{$_('collaboration.manage_sessions')}
-									</button>
-								</li>
-							</ul>
-						{:else}
-							<ul class="menu p-0">
-								<li><h3 class="menu-title text-sm font-semibold">{$_('collaboration.session_active')}</h3></li>
-								<li>
-									<div class="flex flex-col items-start gap-1 cursor-default hover:bg-transparent p-3">
-										<span class="text-xs opacity-70">{$_('share_session.code_label')}</span>
-										<div class="flex items-center gap-2">
-											<span class="font-mono text-lg font-bold select-all">{sessionInfo.code}</span>
-											<button
-												class="btn btn-ghost btn-xs btn-circle cursor-pointer"
-												onclick={() => navigator.clipboard.writeText(sessionInfo.code)}
-												title={$_('share_session.copy')}
-											>
-												<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-												</svg>
-											</button>
-										</div>
-									</div>
-								</li>
-								<li>
-									<button class="gap-3 cursor-pointer" onclick={() => (showShareModal = true)}>
-										<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-										</svg>
-										{$_('collaboration.share_session')}
-									</button>
-								</li>
-								<li>
-									<button class="gap-3 cursor-pointer" onclick={() => disconnectCollaboration()}>
-										<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-										</svg>
-										{$_('collaboration.leave_session')}
-									</button>
-								</li>
-								<li>
-									<button class="text-error gap-3 cursor-pointer" onclick={() => (showEndSessionModal = true)}>
-										<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-										</svg>
-										{$_('collaboration.end_session')}
-									</button>
-								</li>
-							</ul>
-						{/if}
-					</div>
 				</div>
-
-				<!-- Settings Menu -->
-				<div class="dropdown dropdown-end">
-					<button type="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('dictate.audioSource')}>
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-						</svg>
-					</button>
-					<ul class="dropdown-content z-[1] menu p-3 shadow-xl bg-base-100 rounded-box w-72 border border-base-300 mt-2">
-						<li><h3 class="menu-title text-sm font-semibold">{$_('dictate.audioSource')}</h3></li>
-						
-						<!-- Source Type -->
-						<li class="mb-2">
-							<select
-								class="select select-bordered select-sm w-full"
-								bind:value={audioSourceType}
-								onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
-								disabled={isAudioSourceSwitching || !isWasmReady}
-							>
-								<option value="microphone">🎤 {$_('dictate.audioSourceMicrophone')}</option>
-								{#if systemAudioAvailable}
-									<option value="system">🔊 {$_('dictate.audioSourceSystem')}</option>
-								{/if}
-							</select>
-						</li>
-
-						<!-- Device Selection -->
-						{#if availableAudioDevices.length > 0 || audioSourceType === 'system'}
-							<li><h3 class="menu-title text-xs opacity-70 mt-2">
-								{audioSourceType === 'system' && availableAudioDevices.some(d => d.kind === 'desktop')
-									? $_('dictate.captureSource')
-									: $_('dictate.device')}
-							</h3></li>
-							<li>
-								<select
-									class="select select-bordered select-sm w-full"
-									bind:value={selectedDeviceId}
-									onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
-									disabled={isAudioSourceSwitching || !isWasmReady}
-								>
-									<option value={null}>{$_('dictate.deviceDefault')}</option>
-									{#each availableAudioDevices as device}
-										<option value={device.deviceId}>{device.label}</option>
-									{/each}
-								</select>
-							</li>
-						{/if}
-
-						<!-- Switching Indicator -->
-						{#if isAudioSourceSwitching}
-							<li class="mt-2 text-center text-xs opacity-50">
-								<span class="loading loading-spinner loading-xs"></span>
-								<span>Switching...</span>
-							</li>
-						{/if}
-					</ul>
-				</div>
-			</div>
+			{/if}
 		</div>
 	</div>
 
@@ -1734,8 +1504,8 @@
 	</div>
 
 	<!-- Main Content: Editor -->
-	<div class=" relative">
-		<div class=" w-full overflow-y-auto">
+	<div class="relative">
+		<div class="w-full overflow-visible">
 			<div>
 				{#key sessionInfo?.code || 'solo'}
 					<SpeechEditor
@@ -1745,7 +1515,231 @@
 						config={{
 							fontSize: 16
 						}}
-					/>
+					>
+						{#snippet toolbarCenterContent()}
+							<!-- Recording Button -->
+							{#if !isRecording}
+								<button
+									class="btn btn-circle btn-primary btn-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+									onclick={startRecording}
+									disabled={!isWasmReady}
+									title={$_('dictate.startRecording')}
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+									</svg>
+								</button>
+							{:else}
+								<button class="btn btn-circle btn-error btn-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200" onclick={stopRecording} title={$_('dictate.stopRecording')} aria-label={$_('dictate.stopRecording')}>
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+									</svg>
+								</button>
+							{/if}
+						{/snippet}
+						{#snippet toolbarRightContent()}
+							<!-- Collaboration Menu -->
+							<div class="dropdown dropdown-end">
+								<button type="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('collaboration.collaborative_session')} onclick={() => loadCollaborationSessions()} onfocus={() => loadCollaborationSessions()}>
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+									</svg>
+								</button>
+								<div class="dropdown-content z-[100] p-3 shadow-xl bg-base-100 rounded-box min-w-80 max-w-96 border border-base-300 mt-2 max-h-[70vh] flex flex-col overflow-x-hidden">
+									{#if !sessionInfo}
+										<ul class="menu p-0">
+											<li><h3 class="menu-title text-sm font-semibold">{$_('collaboration.collaborative_session')}</h3></li>
+											<li>
+												<button class="gap-3 cursor-pointer" onclick={() => startCollaborativeSession()}>
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+													</svg>
+													{$_('collaboration.start_session')}
+												</button>
+											</li>
+											<li class="menu-title mt-3 text-sm font-semibold">{$_('collaboration.join_existing')}</li>
+											<li class="p-2">
+												<div class="join w-full p-0">
+													<input
+														type="text"
+														placeholder={$_('collaboration.enter_code')}
+														class="input input-sm input-bordered join-item w-full font-mono uppercase"
+														maxlength="6"
+														bind:value={joinSessionCode}
+														oninput={(e) => { joinSessionCode = e.currentTarget.value.toUpperCase(); }}
+														onkeydown={(e) => { if (e.key === 'Enter' && joinSessionCode.length === 6) joinCollaborativeSession(joinSessionCode); }}
+													/>
+													<button
+														class="btn btn-sm btn-secondary join-item"
+														disabled={joinSessionCode.length !== 6}
+														onclick={() => joinCollaborativeSession(joinSessionCode)}
+													>
+														{$_('collaboration.join')}
+													</button>
+												</div>
+											</li>
+										</ul>
+
+										<!-- Planned & Active Sessions -->
+										{#if plannedAndActiveSessions.length > 0 || isLoadingSessions}
+											<div class="divider my-2"></div>
+											<div class="flex-1 overflow-y-auto min-h-0">
+												<ul class="menu p-0">
+													<li class="menu-title text-sm font-semibold">{$_('collaboration.your_sessions')}</li>
+													{#if isLoadingSessions}
+														<li class="p-2">
+															<div class="flex justify-center">
+																<span class="loading loading-spinner loading-sm"></span>
+															</div>
+														</li>
+													{:else}
+														{#each plannedAndActiveSessions as session (session.id)}
+															<li>
+																<button class="flex flex-col items-start gap-0.5 py-2 cursor-pointer" onclick={() => startCollaborativeSession(session.id)}>
+																	<div class="flex items-center gap-2 w-full">
+																		<span class="font-medium text-sm truncate flex-1 text-left">{session.name}</span>
+																		<span class={`badge badge-xs ${session.status === 'active' ? 'badge-success' : 'badge-info'}`}>
+																			{$_(`sessions.status.${session.status}`)}
+																		</span>
+																	</div>
+																	<div class="flex items-center gap-3 text-xs opacity-70 w-full">
+																		{#if session.session_code}
+																			<span class="font-mono">{session.session_code}</span>
+																		{/if}
+																		{#if session.scheduled_date}
+																			<span>{new Date(session.scheduled_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+																		{:else}
+																			<span>{new Date(session.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+																		{/if}
+																	</div>
+																</button>
+															</li>
+														{/each}
+													{/if}
+												</ul>
+											</div>
+										{/if}
+
+										<div class="divider my-2"></div>
+										<ul class="menu p-0">
+											<li>
+												<button class="gap-3 cursor-pointer" onclick={() => modalStore.openSessions()}>
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+													</svg>
+													{$_('collaboration.manage_sessions')}
+												</button>
+											</li>
+										</ul>
+									{:else}
+										<ul class="menu p-0">
+											<li><h3 class="menu-title text-sm font-semibold">{$_('collaboration.session_active')}</h3></li>
+											<li>
+												<div class="flex flex-col items-start gap-1 cursor-default hover:bg-transparent p-3">
+													<span class="text-xs opacity-70">{$_('share_session.code_label')}</span>
+													<div class="flex items-center gap-2">
+														<span class="font-mono text-lg font-bold select-all">{sessionInfo.code}</span>
+														<button
+															class="btn btn-ghost btn-xs btn-circle cursor-pointer"
+															onclick={() => navigator.clipboard.writeText(sessionInfo.code)}
+															title={$_('share_session.copy')}
+														>
+															<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+																<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+															</svg>
+														</button>
+													</div>
+												</div>
+											</li>
+											<li>
+												<button class="gap-3 cursor-pointer" onclick={() => (showShareModal = true)}>
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+													</svg>
+													{$_('collaboration.share_session')}
+												</button>
+											</li>
+											<li>
+												<button class="gap-3 cursor-pointer" onclick={() => disconnectCollaboration()}>
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+													</svg>
+													{$_('collaboration.leave_session')}
+												</button>
+											</li>
+											<li>
+												<button class="text-error gap-3 cursor-pointer" onclick={() => (showEndSessionModal = true)}>
+													<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+													</svg>
+													{$_('collaboration.end_session')}
+												</button>
+											</li>
+										</ul>
+									{/if}
+								</div>
+							</div>
+
+							<!-- Settings Menu -->
+							<div class="dropdown dropdown-end">
+								<button type="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('dictate.audioSource')}>
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+									</svg>
+								</button>
+								<ul class="dropdown-content z-[100] menu p-3 shadow-xl bg-base-100 rounded-box w-72 border border-base-300 mt-2">
+									<li><h3 class="menu-title text-sm font-semibold">{$_('dictate.audioSource')}</h3></li>
+
+									<!-- Source Type -->
+									<li class="mb-2">
+										<select
+											class="select select-bordered select-sm w-full"
+											bind:value={audioSourceType}
+											onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
+											disabled={isAudioSourceSwitching || !isWasmReady}
+										>
+											<option value="microphone">🎤 {$_('dictate.audioSourceMicrophone')}</option>
+											{#if systemAudioAvailable}
+												<option value="system">🔊 {$_('dictate.audioSourceSystem')}</option>
+											{/if}
+										</select>
+									</li>
+
+									<!-- Device Selection -->
+									{#if availableAudioDevices.length > 0 || audioSourceType === 'system'}
+										<li><h3 class="menu-title text-xs opacity-70 mt-2">
+											{audioSourceType === 'system' && availableAudioDevices.some(d => d.kind === 'desktop')
+												? $_('dictate.captureSource')
+												: $_('dictate.device')}
+										</h3></li>
+										<li>
+											<select
+												class="select select-bordered select-sm w-full"
+												bind:value={selectedDeviceId}
+												onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
+												disabled={isAudioSourceSwitching || !isWasmReady}
+											>
+												<option value={null}>{$_('dictate.deviceDefault')}</option>
+												{#each availableAudioDevices as device}
+													<option value={device.deviceId}>{device.label}</option>
+												{/each}
+											</select>
+										</li>
+									{/if}
+
+									<!-- Switching Indicator -->
+									{#if isAudioSourceSwitching}
+										<li class="mt-2 text-center text-xs opacity-50">
+											<span class="loading loading-spinner loading-xs"></span>
+											<span>Switching...</span>
+										</li>
+									{/if}
+								</ul>
+							</div>
+						{/snippet}
+					</SpeechEditor>
 				{/key}
 			</div>
 		</div>

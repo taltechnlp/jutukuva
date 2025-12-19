@@ -19,6 +19,7 @@
 	import { speakerStore } from '$lib/stores/speakerStore';
 	import { createParagraphNodeView, type ParagraphNodeViewContext } from './nodeViews/paragraphNodeView';
 	import Toolbar from './Toolbar.svelte';
+	import type { Snippet } from 'svelte';
 
 	// Shared speaker store for all NodeViews - created at module level so all paragraphs share it
 	const sharedSpeakersStore: Writable<Speaker[]> = writable([]);
@@ -29,13 +30,17 @@
 		class: className = '',
 		collaborationManager = undefined,
 		readOnly = false,
-		sessionId = ''
+		sessionId = '',
+		toolbarCenterContent,
+		toolbarRightContent
 	}: {
 		config?: EditorConfig;
 		class?: string;
 		collaborationManager?: CollaborationManager | null;
 		readOnly?: boolean;
 		sessionId?: string;
+		toolbarCenterContent?: Snippet;
+		toolbarRightContent?: Snippet;
 	} = $props();
 
 	// Speaker state
@@ -624,17 +629,21 @@
 	}
 </script>
 
-<div bind:this={containerElement} class="flex flex-col bg-base-100 border border-base-300 rounded-lg overflow-hidden {className}">
+<div bind:this={containerElement} class="flex flex-col bg-base-100 border border-base-300 rounded-lg {className}">
 	{#if !readOnly}
-		<!-- Toolbar -->
-		<Toolbar
-			onUndo={() => undo()}
-			onRedo={() => redo()}
-			{speakers}
-			onAddSpeaker={addSpeaker}
-			onRemoveSpeaker={removeSpeaker}
-			onUpdateSpeaker={updateSpeaker}
-		/>
+		<!-- Toolbar - sticky at top when scrolling -->
+		<div class="sticky top-0 z-20">
+			<Toolbar
+				onUndo={() => undo()}
+				onRedo={() => redo()}
+				{speakers}
+				onAddSpeaker={addSpeaker}
+				onRemoveSpeaker={removeSpeaker}
+				onUpdateSpeaker={updateSpeaker}
+				centerContent={toolbarCenterContent}
+				rightContent={toolbarRightContent}
+			/>
+		</div>
 	{/if}
 
 	<!-- Editor -->
