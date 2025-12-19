@@ -8,7 +8,7 @@
  * - Case-insensitive matching with dictionary case output
  */
 
-import { Plugin, PluginKey, type Transaction, type EditorState } from 'prosemirror-state';
+import { Plugin, PluginKey, type Transaction, type EditorState, TextSelection } from 'prosemirror-state';
 import { Decoration, DecorationSet, type EditorView } from 'prosemirror-view';
 
 export interface TextSnippetEntry {
@@ -244,13 +244,22 @@ export function textSnippetsPlugin(options: { entries: TextSnippetEntry[] }): Pl
  */
 function applyReplacement(view: EditorView, match: TextSnippetMatch): void {
 	const { from, to, replacement } = match;
-	const tr = view.state.tr;
+	const state = view.state;
+	const tr = state.tr;
+	const schema = state.schema;
 
-	// Delete the trigger text
-	tr.delete(from, to);
+	// Check if there's already a space after the trigger
+	const textAfter = state.doc.textBetween(to, Math.min(to + 1, state.doc.content.size), '\n', '\ufffc');
+	const hasSpaceAfter = textAfter && /\s/.test(textAfter[0]);
 
-	// Insert the replacement
-	tr.insertText(replacement + ' ', from);
+	// Only add non-breaking space if there's no space after (i.e., at end of paragraph)
+	const textToInsert = hasSpaceAfter ? replacement : replacement + '\u00A0';
+	const textNode = schema.text(textToInsert);
+	tr.replaceWith(from, to, textNode);
+
+	// Position cursor after inserted text (before existing space if any, after our space if we added one)
+	const newCursorPos = from + textToInsert.length + (hasSpaceAfter ? 1 : 0);
+	tr.setSelection(TextSelection.create(tr.doc, newCursorPos));
 
 	// Clear the match state
 	tr.setMeta(textSnippetKey, { cancel: true });
