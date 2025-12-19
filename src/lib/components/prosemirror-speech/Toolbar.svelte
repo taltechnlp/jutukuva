@@ -2,6 +2,7 @@
 	import { _ } from 'svelte-i18n';
 	import type { Speaker } from '$lib/collaboration/types';
 	import { clickOutside } from './utils/clickOutside';
+	import type { Snippet } from 'svelte';
 
 	// Props
 	let {
@@ -10,7 +11,9 @@
 		speakers = [],
 		onAddSpeaker,
 		onRemoveSpeaker,
-		onUpdateSpeaker
+		onUpdateSpeaker,
+		centerContent,
+		rightContent
 	}: {
 		onUndo?: () => void;
 		onRedo?: () => void;
@@ -18,6 +21,8 @@
 		onAddSpeaker?: (name: string) => Speaker;
 		onRemoveSpeaker?: (id: string) => void;
 		onUpdateSpeaker?: (id: string, name: string) => void;
+		centerContent?: Snippet;
+		rightContent?: Snippet;
 	} = $props();
 
 	// Keyboard shortcuts modal state
@@ -97,35 +102,37 @@
 	}
 </script>
 
-<div class="flex items-center flex-wrap gap-3 px-4 py-3 bg-base-200 border-b border-base-300">
-	<!-- Undo/Redo -->
-	<div class="toolbar-group">
-		<button
-			class="toolbar-button"
-			onclick={onUndo}
-			title={$_('dictate.toolbar.undoShortcut')}
-			aria-label={$_('dictate.toolbar.undo')}
-		>
-			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-				<path d="M3 7v6h6" />
-				<path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13" />
-			</svg>
-		</button>
-		<button
-			class="toolbar-button"
-			onclick={onRedo}
-			title={$_('dictate.toolbar.redoShortcut')}
-			aria-label={$_('dictate.toolbar.redo')}
-		>
-			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-				<path d="M21 7v6h-6" />
-				<path d="M3 17a9 9 0 019-9 9 9 0 016 2.3l3 2.7" />
-			</svg>
-		</button>
-	</div>
+<div class="grid grid-cols-3 items-center px-4 py-3 bg-base-200 border-b border-base-300">
+	<!-- Left: Editing tools -->
+	<div class="flex items-center flex-wrap gap-3">
+		<!-- Undo/Redo -->
+		<div class="toolbar-group">
+			<button
+				class="toolbar-button"
+				onclick={onUndo}
+				title={$_('dictate.toolbar.undoShortcut')}
+				aria-label={$_('dictate.toolbar.undo')}
+			>
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M3 7v6h6" />
+					<path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13" />
+				</svg>
+			</button>
+			<button
+				class="toolbar-button"
+				onclick={onRedo}
+				title={$_('dictate.toolbar.redoShortcut')}
+				aria-label={$_('dictate.toolbar.redo')}
+			>
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M21 7v6h-6" />
+					<path d="M3 17a9 9 0 019-9 9 9 0 016 2.3l3 2.7" />
+				</svg>
+			</button>
+		</div>
 
-	<!-- Speakers Manager -->
-	<div class="toolbar-group relative">
+		<!-- Speakers Manager -->
+		<div class="toolbar-group relative">
 		<button
 			class="toolbar-button"
 			onclick={toggleSpeakerDropdown}
@@ -218,19 +225,34 @@
 		{/if}
 	</div>
 
-	<!-- Keyboard Shortcuts Help -->
-	<div class="toolbar-group">
-		<button
-			class="toolbar-button"
-			onclick={openShortcutsModal}
-			title={$_('dictate.shortcuts.title')}
-			aria-label={$_('dictate.shortcuts.title')}
-		>
-			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-				<rect x="2" y="4" width="20" height="16" rx="2" />
-				<path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10" />
-			</svg>
-		</button>
+		<!-- Keyboard Shortcuts Help -->
+		<div class="toolbar-group">
+			<button
+				class="toolbar-button"
+				onclick={openShortcutsModal}
+				title={$_('dictate.shortcuts.title')}
+				aria-label={$_('dictate.shortcuts.title')}
+			>
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<rect x="2" y="4" width="20" height="16" rx="2" />
+					<path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10" />
+				</svg>
+			</button>
+		</div>
+	</div>
+
+	<!-- Center: Recording control -->
+	<div class="flex justify-center">
+		{#if centerContent}
+			{@render centerContent()}
+		{/if}
+	</div>
+
+	<!-- Right: Collaboration & Settings -->
+	<div class="flex justify-end items-center gap-2">
+		{#if rightContent}
+			{@render rightContent()}
+		{/if}
 	</div>
 </div>
 

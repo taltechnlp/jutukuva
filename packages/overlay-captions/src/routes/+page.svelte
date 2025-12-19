@@ -15,8 +15,29 @@
 
 	let overlayVisible = $state(false);
 	let settingsDrawerOpen = $state(false);
+	let deepLinkCode = $state('');
+	let deepLinkPassword = $state('');
 
 	let cleanup: (() => void) | null = null;
+
+	// Parse jutukuva:// deep link URL
+	function parseDeepLink(url: string): { code: string; password: string } | null {
+		try {
+			// URL format: jutukuva://join/ABC123 or jutukuva://join/ABC123?password=secret
+			const parsed = new URL(url);
+			if (parsed.protocol !== 'jutukuva:') return null;
+
+			const pathParts = parsed.pathname.replace(/^\/+/, '').split('/');
+			if (pathParts[0] === 'join' && pathParts[1]) {
+				const code = pathParts[1].toUpperCase();
+				const password = parsed.searchParams.get('password') || '';
+				return { code, password };
+			}
+			return null;
+		} catch {
+			return null;
+		}
+	}
 
 	onMount(() => {
 		// Initialize async operations
@@ -45,9 +66,20 @@
 				settingsDrawerOpen = true;
 			});
 
+			// Listen for deep link events
+			const unlistenDeepLink = await listen<string>('deep-link', (event) => {
+				const result = parseDeepLink(event.payload);
+				if (result) {
+					console.log('Deep link received:', result.code, result.password ? '(with password)' : '');
+					deepLinkCode = result.code;
+					deepLinkPassword = result.password;
+				}
+			});
+
 			cleanup = () => {
 				unlistenToggle();
 				unlistenOpenSettings();
+				unlistenDeepLink();
 			};
 		})();
 
@@ -139,14 +171,14 @@
 			{#if !yjsStore.connected}
 				<!-- Disconnected State: Centered Join Form -->
 				<div class="flex-1 flex flex-col justify-center items-center -mt-10">
-					<SessionJoin />
+					<SessionJoin initialCode={deepLinkCode} initialPassword={deepLinkPassword} />
 				</div>
 			{:else}
 				<!-- Connected State: Dashboard View -->
 				<div class="flex flex-col h-full gap-6">
 					<!-- Top: Status Bar -->
 					<div class="w-full">
-						<SessionJoin />
+						<SessionJoin initialCode={deepLinkCode} initialPassword={deepLinkPassword} />
 					</div>
 
 					<!-- Middle: Preview Area -->

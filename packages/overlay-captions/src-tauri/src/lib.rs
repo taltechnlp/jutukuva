@@ -9,7 +9,7 @@ use tauri::{
     image::Image,
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Emitter, Manager, WindowEvent,
+    Emitter, Listener, Manager, WindowEvent,
 };
 
 pub struct AppState {
@@ -67,6 +67,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_deep_link::init())
         .manage(app_state)
         .invoke_handler(tauri::generate_handler![
             get_settings,
@@ -196,6 +197,22 @@ pub fn run() {
                     let _ = handle.emit("toggle-overlay", ());
                 })
                 .ok();
+
+            // Register deep link handler
+            let app_handle = app.handle().clone();
+            app.listen("deep-link://new-url", move |event| {
+                let payload = event.payload();
+                // Parse the JSON array of URLs
+                if let Ok(url_list) = serde_json::from_str::<Vec<String>>(payload) {
+                    for url in url_list {
+                        log::info!("Deep link received: {}", url);
+                        // Emit to frontend for handling
+                        let _ = app_handle.emit("deep-link", url.clone());
+                        // Also show main window when deep link is received
+                        show_main_window(&app_handle);
+                    }
+                }
+            });
 
             Ok(())
         })
