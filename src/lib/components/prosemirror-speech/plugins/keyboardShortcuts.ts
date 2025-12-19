@@ -67,7 +67,7 @@ const selectNextWord: Command = (state, dispatch) => {
 
 	const wordEnd = offset;
 
-	if (wordStart === wordEnd) return false; // No word found
+	if (wordStart === wordEnd) return true; // No word found, but prevent default Tab behavior
 
 	// Create selection from wordStart to wordEnd
 	const from = $from.pos + wordStart;
