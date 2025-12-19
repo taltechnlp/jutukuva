@@ -14,6 +14,7 @@
 	import SessionsModal from '$lib/components/modals/SessionsModal.svelte';
 	import DictionariesModal from '$lib/components/modals/DictionariesModal.svelte';
 	import { modalStore } from '$lib/stores/modalStore.svelte';
+	import { clickOutside } from '$lib/components/prosemirror-speech/utils/clickOutside';
 
 	// Configure ONNX Runtime to use WASM only (disable WebGPU to avoid warnings)
 	if (browser) {
@@ -1540,18 +1541,19 @@
 						{/snippet}
 						{#snippet toolbarRightContent()}
 							<!-- Collaboration Menu -->
-							<div class="dropdown dropdown-end">
-								<button type="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('collaboration.collaborative_session')} onclick={() => loadCollaborationSessions()} onfocus={() => loadCollaborationSessions()}>
+							<div class="relative">
+								<button type="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('collaboration.collaborative_session')} onclick={() => { showCollabMenu = !showCollabMenu; if (showCollabMenu) loadCollaborationSessions(); }}>
 									<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
 									</svg>
 								</button>
-								<div class="dropdown-content z-[100] p-3 shadow-xl bg-base-100 rounded-box min-w-80 max-w-96 border border-base-300 mt-2 max-h-[70vh] flex flex-col overflow-x-hidden">
+								{#if showCollabMenu}
+								<div class="absolute right-0 top-full z-[100] p-3 shadow-xl bg-base-100 rounded-box min-w-80 max-w-96 border border-base-300 mt-2 max-h-[70vh] flex flex-col overflow-x-hidden" use:clickOutside={() => showCollabMenu = false}>
 									{#if !sessionInfo}
 										<ul class="menu p-0">
 											<li><h3 class="menu-title text-sm font-semibold">{$_('collaboration.collaborative_session')}</h3></li>
 											<li>
-												<button class="gap-3 cursor-pointer" onclick={() => startCollaborativeSession()}>
+												<button class="gap-3 cursor-pointer" onclick={() => { showCollabMenu = false; startCollaborativeSession(); }}>
 													<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
 													</svg>
@@ -1568,12 +1570,12 @@
 														maxlength="6"
 														bind:value={joinSessionCode}
 														oninput={(e) => { joinSessionCode = e.currentTarget.value.toUpperCase(); }}
-														onkeydown={(e) => { if (e.key === 'Enter' && joinSessionCode.length === 6) joinCollaborativeSession(joinSessionCode); }}
+														onkeydown={(e) => { if (e.key === 'Enter' && joinSessionCode.length === 6) { showCollabMenu = false; joinCollaborativeSession(joinSessionCode); } }}
 													/>
 													<button
 														class="btn btn-sm btn-secondary join-item"
 														disabled={joinSessionCode.length !== 6}
-														onclick={() => joinCollaborativeSession(joinSessionCode)}
+														onclick={() => { showCollabMenu = false; joinCollaborativeSession(joinSessionCode); }}
 													>
 														{$_('collaboration.join')}
 													</button>
@@ -1596,7 +1598,7 @@
 													{:else}
 														{#each plannedAndActiveSessions as session (session.id)}
 															<li>
-																<button class="flex flex-col items-start gap-0.5 py-2 cursor-pointer" onclick={() => startCollaborativeSession(session.id)}>
+																<button class="flex flex-col items-start gap-0.5 py-2 cursor-pointer" onclick={() => { showCollabMenu = false; startCollaborativeSession(session.id); }}>
 																	<div class="flex items-center gap-2 w-full">
 																		<span class="font-medium text-sm truncate flex-1 text-left">{session.name}</span>
 																		<span class={`badge badge-xs ${session.status === 'active' ? 'badge-success' : 'badge-info'}`}>
@@ -1624,7 +1626,7 @@
 										<div class="divider my-2"></div>
 										<ul class="menu p-0">
 											<li>
-												<button class="gap-3 cursor-pointer" onclick={() => modalStore.openSessions()}>
+												<button class="gap-3 cursor-pointer" onclick={() => { showCollabMenu = false; modalStore.openSessions(); }}>
 													<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
 													</svg>
@@ -1653,7 +1655,7 @@
 												</div>
 											</li>
 											<li>
-												<button class="gap-3 cursor-pointer" onclick={() => (showShareModal = true)}>
+												<button class="gap-3 cursor-pointer" onclick={() => { showCollabMenu = false; showShareModal = true; }}>
 													<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
 													</svg>
@@ -1661,7 +1663,7 @@
 												</button>
 											</li>
 											<li>
-												<button class="gap-3 cursor-pointer" onclick={() => disconnectCollaboration()}>
+												<button class="gap-3 cursor-pointer" onclick={() => { showCollabMenu = false; disconnectCollaboration(); }}>
 													<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
 													</svg>
@@ -1669,7 +1671,7 @@
 												</button>
 											</li>
 											<li>
-												<button class="text-error gap-3 cursor-pointer" onclick={() => (showEndSessionModal = true)}>
+												<button class="text-error gap-3 cursor-pointer" onclick={() => { showCollabMenu = false; showEndSessionModal = true; }}>
 													<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
 													</svg>
@@ -1679,17 +1681,19 @@
 										</ul>
 									{/if}
 								</div>
+								{/if}
 							</div>
 
 							<!-- Settings Menu -->
-							<div class="dropdown dropdown-end">
-								<button type="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('dictate.audioSource')}>
+							<div class="relative">
+								<button type="button" class="btn btn-ghost btn-circle hover:bg-base-200 transition-colors" title={$_('dictate.audioSource')} onclick={() => showSettings = !showSettings}>
 									<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
 									</svg>
 								</button>
-								<ul class="dropdown-content z-[100] menu p-3 shadow-xl bg-base-100 rounded-box w-72 border border-base-300 mt-2">
+								{#if showSettings}
+								<ul class="absolute right-0 top-full z-[100] menu p-3 shadow-xl bg-base-100 rounded-box w-72 border border-base-300 mt-2" use:clickOutside={() => showSettings = false}>
 									<li><h3 class="menu-title text-sm font-semibold">{$_('dictate.audioSource')}</h3></li>
 
 									<!-- Source Type -->
@@ -1737,6 +1741,7 @@
 										</li>
 									{/if}
 								</ul>
+								{/if}
 							</div>
 						{/snippet}
 					</SpeechEditor>
