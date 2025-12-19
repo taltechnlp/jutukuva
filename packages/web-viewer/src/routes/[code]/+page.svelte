@@ -24,6 +24,9 @@
 	const sessionCode = $derived(normalizeSessionCode($page.params.code || ''));
 	const urlPassword = $derived($page.url.searchParams.get('password') || '');
 
+	// Track the password that was attempted (for error messages)
+	let attemptedPassword = $state('');
+
 	// State
 	let settings = $state<DisplaySettings>(defaultSettings);
 	let passwordRequired = $state(false);
@@ -161,6 +164,9 @@
 
 	// Helper function to connect with optional password
 	function connectWithPassword(password?: string) {
+		// Track the password being attempted for error messages
+		attemptedPassword = password || '';
+
 		const serverUrl = import.meta.env.VITE_YJS_SERVER_URL || 'wss://tekstiks.ee/kk';
 
 		sessionInfo = {
@@ -203,7 +209,8 @@
 				// Stop auto-reconnect by disconnecting the provider
 				collaborationManager?.provider?.disconnect();
 				passwordRequired = true;
-				passwordError = urlPassword
+				// Show error if a password was attempted (from URL or form)
+				passwordError = attemptedPassword
 					? $_('viewer.wrong_password', { default: 'Incorrect password' })
 					: '';
 				connectionState = 'error';
