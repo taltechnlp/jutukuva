@@ -571,6 +571,8 @@
       "approval": "Approval",
       "approveUpToCurrent": "Approve all words up to current word",
       "editing": "Editing",
+      "newParagraph": "Create new paragraph",
+      "newParagraphWithSpeaker": "New paragraph and select speaker",
       "undo": "Undo",
       "redo": "Redo",
       "selectNextWord": "Select next word",
