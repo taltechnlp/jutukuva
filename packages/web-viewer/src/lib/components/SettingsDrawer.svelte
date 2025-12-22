@@ -36,7 +36,7 @@
 		return () => mediaQuery.removeEventListener('change', checkMobile);
 	});
 
-	const fontSizeMin = $derived(isMobile ? 16 : 48);
+	const fontSizeMin = $derived(isMobile ? 10 : 18);
 	const fontSizeMax = $derived(isMobile ? 72 : 96);
 	const fontSizeStep = $derived(isMobile ? 2 : 2);
 
@@ -162,26 +162,26 @@
 					</div>
 				</label>
 
-			<label class="slider-control" for="line-height-slider">
-				<div class="slider-header">
-					<span class="control-label">{$_('settings.line_height')}</span>
-					<span class="value-badge">{settings.lineHeight.toFixed(2)}</span>
-				</div>
-				<input
-					id="line-height-slider"
-					type="range"
-					min={0.8}
-					max={2.5}
-					step={0.1}
-					value={settings.lineHeight}
-					oninput={(event) =>
-						handleSettingChange('lineHeight', Number(event.currentTarget.value))}
-				/>
-				<div class="slider-labels">
-					<span>0.8</span>
-					<span>2.5</span>
-				</div>
-			</label>
+				<label class="slider-control" for="line-height-slider">
+					<div class="slider-header">
+						<span class="control-label">{$_('settings.line_height')}</span>
+						<span class="value-badge">{settings.lineHeight.toFixed(2)}</span>
+					</div>
+					<input
+						id="line-height-slider"
+						type="range"
+						min="0.8"
+						max="2.5"
+						step="0.1"
+						value={settings.lineHeight}
+						oninput={(event) =>
+							handleSettingChange('lineHeight', Number(event.currentTarget.value))}
+					/>
+					<div class="slider-labels">
+						<span>0.8</span>
+						<span>2.5</span>
+					</div>
+				</label>
 
 				<div class="control-subsection">
 					<span class="control-label">{$_('settings.font_weight')}</span>
