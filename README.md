@@ -1,128 +1,137 @@
 # Jutukuva
 
-A desktop application built with SvelteKit, Electron, SQLite, and TypeScript.
+Reaalajas eestikeelse kõne tekstiks muutmise rakendus. Rakendus tuvastab kõne automaatselt ja kuvab selle tekstina, mida saab koheselt redigeerida ja teistega jagada.
 
-## Tech Stack
+## Allalaadimine
 
-- **SvelteKit** - Web framework with adapter-static for SSG
-- **Electron** - Desktop application framework
-- **SQLite** - Local database via better-sqlite3
-- **TypeScript** - Type-safe development
-- **Vite** - Build tool and dev server
+### Jutukuva (põhirakendus)
 
-## Project Structure
+| Platvorm | Allalaadimine |
+|----------|---------------|
+| Windows | [Jutukuva.Setup.0.8.0.exe](https://github.com/taltechnlp/jutukuva/releases/download/v0.8.0/Jutukuva.Setup.0.8.0.exe) |
+| macOS (Intel) | [Jutukuva-0.8.0.dmg](https://github.com/taltechnlp/jutukuva/releases/download/v0.8.0/Jutukuva-0.8.0.dmg) |
+| macOS (Apple Silicon) | [Jutukuva-0.8.0-arm64.dmg](https://github.com/taltechnlp/jutukuva/releases/download/v0.8.0/Jutukuva-0.8.0-arm64.dmg) |
+| Linux | [Jutukuva-0.8.0.AppImage](https://github.com/taltechnlp/jutukuva/releases/download/v0.8.0/Jutukuva-0.8.0.AppImage) |
+
+### Jutukuva Subtiitrid (ülekatte rakendus)
+
+Kuvab subtiitreid mis tahes rakenduse kohal - ideaalne videokõnede, esitluste ja otseülekannete jaoks.
+
+| Platvorm | Allalaadimine |
+|----------|---------------|
+| Windows | [Jutukuva.Subtiitrid_0.8.0_x64-setup.exe](https://github.com/taltechnlp/jutukuva/releases/download/v0.8.0/Jutukuva.Subtiitrid_0.8.0_x64-setup.exe) |
+| macOS | [Jutukuva.Subtiitrid_0.8.0_aarch64.dmg](https://github.com/taltechnlp/jutukuva/releases/download/v0.8.0/Jutukuva.Subtiitrid_0.8.0_aarch64.dmg) |
+| Linux (AppImage) | [Jutukuva.Subtiitrid_0.8.0_amd64.AppImage](https://github.com/taltechnlp/jutukuva/releases/download/v0.8.0/Jutukuva.Subtiitrid_0.8.0_amd64.AppImage) |
+| Linux (Debian) | [Jutukuva.Subtiitrid_0.8.0_amd64.deb](https://github.com/taltechnlp/jutukuva/releases/download/v0.8.0/Jutukuva.Subtiitrid_0.8.0_amd64.deb) |
+
+---
+
+## Kasutusjuhend
+
+### Alustamine
+
+1. **Lae rakendus alla** ja paigalda see oma arvutisse
+2. **Käivita Jutukuva**
+3. **Vali heliallikas:**
+   - **Mikrofon** - oma kõne salvestamiseks
+   - **Süsteemiheli** - arvutist tuleva heli salvestamiseks (nt videokõne)
+4. **Vajuta salvestamise nuppu** - kõnetuvastus käivitub automaatselt
+
+### Teksti redigeerimine
+
+- Tuvastatud tekst ilmub redaktorisse reaalajas
+- **Ootel sõnad** on esile tõstetud - need ootavad kinnitamist
+- Vajuta **Enter**, et kinnitada kõik sõnad kuni kursori asukohani
+- Lülita sisse **automaatne kinnitamine**, et sõnad kinnitataks automaatselt mõne sekundi pärast
+- Vigu saab parandada otse tekstis
+
+### Sessiooni jagamine
+
+Jaga oma kõnetuvastuse sessiooni teistega:
+
+1. **Sessiooni kood** - 6-kohaline kood (nt ABC123), mida teised saavad sisestada
+2. **QR-kood** - skaneeri mobiilseadmega kiireks liitumiseks
+3. **Veebilink** - jaga linki `tekstiks.ee/kt/KOOD` veebilehitseja kaudu vaatamiseks
+
+Jagatud sessioonis saavad kõik osalejad:
+- Näha teksti reaalajas
+- Redigeerida ja parandada vigu
+- Kinnitada sõnu
+
+### Ülekatte subtiitrite kasutamine
+
+**Jutukuva Subtiitrid** kuvab subtiitreid läbipaistva aknana mis tahes rakenduse kohal:
+
+1. Paigalda **Jutukuva Subtiitrid** rakendus
+2. Käivita põhirakenduses sessioon
+3. Ava **Jutukuva Subtiitrid** ja sisesta sessiooni kood
+4. Liiguta subtiitrite aken soovitud kohta ekraanil
+
+Alternatiivina saab ülekatte rakenduse avada otse põhirakendusest jagamise dialoogist.
+
+---
+
+## Nõuanded
+
+- **Kasuta kvaliteetset mikrofoni** - selgem heli annab parema tulemuse
+- **Räägi selgelt ja mõõdukas tempos** - kiire kõne võib tekitada rohkem vigu
+- **Vaikne keskkond** - taustamüra võib segada tuvastust
+- **Eesti keel** - rakendus on optimeeritud eesti keele tuvastamiseks
+
+### Andmebaasi asukoht
+
+Rakenduse andmed salvestatakse:
+- **Linux:** `~/.config/jutukuva/database.sqlite`
+- **macOS:** `~/Library/Application Support/jutukuva/database.sqlite`
+- **Windows:** `%APPDATA%/jutukuva/database.sqlite`
+
+---
+
+## Panustamine
+
+Vigade raporteerimiseks või ettepanekute tegemiseks:
+- Loo [GitHub issue](https://github.com/taltechnlp/jutukuva/issues)
+
+---
+
+## Tehniline ülevaade
+
+### Tehnoloogiad
+
+- **SvelteKit** - kasutajaliidese raamistik
+- **Electron** - töölauarakenduse raamistik (põhirakendus)
+- **Tauri** - töölauarakenduse raamistik (ülekatte rakendus)
+- **SQLite** - kohalik andmebaas (better-sqlite3)
+- **sherpa-onnx** - kõnetuvastuse mootor
+- **Yjs** - reaalajas koostöö (CRDT)
+- **ProseMirror** - tekstiredaktor
+
+### Projekti struktuur
 
 ```
 kirikaja/
-├── electron/
-│   ├── main.js          # Electron main process
-│   ├── preload.js       # Preload script for IPC
-│   └── database.js      # SQLite database handler
-├── src/
-│   ├── routes/
-│   │   ├── +layout.ts   # SvelteKit layout config
-│   │   └── +page.svelte # Main application page
-│   ├── app.html         # HTML template
-│   └── app.d.ts         # TypeScript declarations
-├── build/               # SvelteKit build output
-├── dist/                # Electron build output
-├── package.json
-├── svelte.config.js
-├── vite.config.ts
-└── tsconfig.json
+├── electron/           # Electron põhiprotsess
+├── src/                # SvelteKit kasutajaliides
+├── packages/
+│   ├── overlay-captions/  # Tauri ülekatte rakendus
+│   ├── web-viewer/        # Veebivaataja server
+│   └── yjs-server/        # Koostöö sünkroniseerimise server
+└── build/              # Ehituse väljund
 ```
 
-## Development
-
-### Install dependencies
+### Arendamine
 
 ```bash
+# Sõltuvuste paigaldamine
 npm install
-```
 
-### Run in development mode
-
-```bash
+# Arendusrežiimis käivitamine
 npm run electron:dev
-```
 
-This will:
-1. Start the Vite dev server on port 5173
-2. Launch Electron and load the app
-3. Open DevTools automatically
-
-### Build for production
-
-```bash
+# Tootmisversiooni ehitamine
 npm run electron:build
 ```
 
-This will:
-1. Build the SvelteKit app to static files
-2. Package the Electron app with electron-builder
-3. Output to the `dist/` directory
-
-### Run the built app
-
-After running `npm run build`, you can run the app without packaging:
-
-```bash
-npx electron . --no-sandbox
-```
-
-Or if you have Electron installed globally:
-
-```bash
-electron . --no-sandbox
-```
-
-This is useful for testing the production build before creating a distributable package.
-
-To run the packaged app from `dist/`:
-
-```bash
-# Linux
-./dist/kirikaja-0.0.1-x86_64.AppImage
-
-# macOS
-open dist/mac/Kirikaja.app
-
-# Windows
-dist\win-unpacked\Kirikaja.exe
-```
-
-## Database
-
-The app uses SQLite with better-sqlite3. The database file is stored in the user data directory:
-
-- **Linux**: `~/.config/jutukuva/database.sqlite`
-- **macOS**: `~/Library/Application Support/jutukuva/database.sqlite`
-- **Windows**: `%APPDATA%/jutukuva/database.sqlite`
-
-### Database API
-
-The database is accessed from the renderer process via IPC:
-
-```typescript
-// Get a setting
-const value = await window.db.getSetting('key');
-
-// Set a setting
-await window.db.setSetting('key', 'value');
-
-// Get all settings
-const settings = await window.db.getAllSettings();
-```
-
-## Scripts
-
-- `npm run dev` - Start Vite dev server only
-- `npm run build` - Build SvelteKit app
-- `npm run preview` - Preview production build
-- `npm run check` - Run TypeScript and Svelte checks
-- `npm run electron:dev` - Run app in Electron with hot reload
-- `npm run electron:build` - Build production Electron app
-
-## License
+## Litsents
 
 MIT
