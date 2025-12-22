@@ -65,7 +65,9 @@
 		};
 	});
 
-	async function startDragging() {
+	async function startDragging(e: MouseEvent) {
+		e.preventDefault();
+		e.stopPropagation();
 		const window = await getCurrentWindow();
 		await window.startDragging();
 	}
@@ -228,6 +230,9 @@
 		transition: opacity 0.2s ease;
 		background: rgba(255, 255, 255, 0.1);
 		border-radius: 0 0 8px 8px;
+		z-index: 1000;
+		user-select: none;
+		pointer-events: auto;
 	}
 
 	.hovering .drag-handle {
@@ -239,6 +244,8 @@
 		height: 4px;
 		background: rgba(255, 255, 255, 0.5);
 		border-radius: 2px;
+		pointer-events: none;
+		user-select: none;
 	}
 
 	.settings-btn {
@@ -257,6 +264,9 @@
 		opacity: 0;
 		transition: opacity 0.2s ease, background 0.2s ease;
 		color: white;
+		z-index: 1000;
+		user-select: none;
+		pointer-events: auto;
 	}
 
 	.hovering .settings-btn {
@@ -283,6 +293,9 @@
 		opacity: 0;
 		transition: opacity 0.2s ease, background 0.2s ease;
 		color: white;
+		z-index: 1000;
+		user-select: none;
+		pointer-events: auto;
 	}
 
 	.hovering .close-btn {
@@ -295,10 +308,16 @@
 
 	.caption-wrapper {
 		display: flex;
-		align-items: center;
+		flex: 1;
+		align-items: flex-end;
 		justify-content: center;
+		width: 100%;
 		max-width: 100%;
 		padding: 20px;
+		padding-top: 30px;
+		overflow: hidden;
+		z-index: 1;
+		position: relative;
 	}
 
 	.resize-handle {
@@ -311,6 +330,9 @@
 		opacity: 0;
 		transition: opacity 0.2s ease;
 		color: rgba(255, 255, 255, 0.5);
+		z-index: 1000;
+		user-select: none;
+		pointer-events: auto;
 	}
 
 	.hovering .resize-handle {
