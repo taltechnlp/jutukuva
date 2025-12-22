@@ -1505,7 +1505,7 @@
 	</div>
 
 	<!-- Error Messages Overlay -->
-	<div class="absolute top-20 left-0 right-0 z-10 px-4 pointer-events-none flex flex-col items-center gap-3">
+	<div class="fixed top-20 left-0 right-0 z-50 px-4 pointer-events-none flex flex-col items-center gap-3">
 		{#if microphoneError}
 			<div class="alert alert-warning shadow-xl max-w-lg pointer-events-auto animate-in fade-in slide-in-from-top-2 duration-300">
 				<div class="flex gap-3 items-center flex-1">

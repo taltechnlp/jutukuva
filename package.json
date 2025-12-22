@@ -20,7 +20,8 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development LD_LIBRARY_PATH=./node_modules/sherpa-onnx-linux-x64:$LD_LIBRARY_PATH electron . --no-sandbox\"",
     "electron:build": "npm run build && electron-builder",
-    "rebuild": "npx @electron/rebuild --force --module-dir . --which-module better-sqlite3"
+    "rebuild": "npx @electron/rebuild --force --module-dir . --which-module better-sqlite3",
+    "postinstall": "bash scripts/fix-sherpa-rpath.sh || true"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.1",
@@ -76,6 +77,7 @@
   "build": {
     "appId": "com.jutukuva.app",
     "productName": "Jutukuva",
+    "afterPack": "./scripts/afterPack.cjs",
     "files": [
       "build/**/*",
       "electron/**/*",
@@ -107,8 +109,8 @@
         }
       ],
       "category": "public.app-category.productivity",
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist",
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist",
       "hardenedRuntime": true,
       "extendInfo": {
         "NSScreenCaptureUsageDescription": "This app needs to access screen recording to capture system audio from specific windows and screens.",

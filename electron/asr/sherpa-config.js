@@ -147,8 +147,8 @@ export function getRecognizerConfig(modelDir) {
  * Model information
  */
 export const MODEL_INFO = {
-  name: 'streaming-zipformer-large.et-en.w2n',
-  huggingFaceRepo: 'TalTechNLP/streaming-zipformer-large.et-en.w2n',
+  name: 'streaming-zipformer-large.et-en',
+  huggingFaceRepo: 'TalTechNLP/streaming-zipformer-large.et-en',
   // Using fp32 models for better compatibility with sherpa-onnx-node
   files: [
     'encoder.onnx',
@@ -158,5 +158,5 @@ export const MODEL_INFO = {
   ],
   // Base URL for downloading from HuggingFace
   getDownloadUrl: (filename) =>
-    `https://huggingface.co/TalTechNLP/streaming-zipformer-large.et-en.w2n/resolve/main/${filename}`
+    `https://huggingface.co/TalTechNLP/streaming-zipformer-large.et-en/resolve/main/${filename}`
 };

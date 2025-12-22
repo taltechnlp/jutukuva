@@ -6,43 +6,36 @@ import { readFile } from 'fs/promises';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Setup library path for sherpa-onnx native modules on macOS
-// Must be done before any native modules are loaded
-if (process.platform === 'darwin') {
+// Setup for sherpa-onnx native modules on macOS
+// Note: The fix-sherpa-rpath.sh script adds @loader_path to the .node file at install time,
+// which allows it to find dylibs in the same directory. This code is kept as fallback.
+if (process.platform === 'darwin' && !app.isPackaged) {
 	const libPackage = process.arch === 'arm64' ? 'sherpa-onnx-darwin-arm64' : 'sherpa-onnx-darwin-x64';
-	let libPath;
+	const libPath = path.join(app.getAppPath(), 'node_modules', libPackage);
 
-	if (app.isPackaged) {
-		libPath = path.join(process.resourcesPath, 'sherpa-libs');
-	} else {
-		libPath = path.join(app.getAppPath(), 'node_modules', libPackage);
-	}
+	console.log('[Main] macOS dev mode: sherpa-onnx libPath:', libPath);
 
-	console.log('[Main] macOS sherpa-onnx setup, libPath:', libPath);
-
+	// Create symlinks to Electron Frameworks as fallback (in case rpath fix wasn't applied)
 	if (fs.existsSync(libPath)) {
-		// The .node file has @rpath set to the build machine path
-		// We need to symlink dylibs to Electron's Frameworks directory where dlopen looks
 		const electronFrameworksDir = path.join(
 			app.getAppPath(),
 			'node_modules/electron/dist/Electron.app/Contents/Frameworks'
 		);
 
-		console.log('[Main] Electron frameworks dir:', electronFrameworksDir);
+		if (fs.existsSync(electronFrameworksDir)) {
+			const dylibs = ['libonnxruntime.1.17.1.dylib', 'libonnxruntime.dylib', 'libsherpa-onnx-c-api.dylib', 'libsherpa-onnx-cxx-api.dylib'];
 
-		const dylibs = ['libonnxruntime.1.17.1.dylib', 'libonnxruntime.dylib', 'libsherpa-onnx-c-api.dylib', 'libsherpa-onnx-cxx-api.dylib'];
+			for (const dylib of dylibs) {
+				const srcPath = path.join(libPath, dylib);
+				const dstPath = path.join(electronFrameworksDir, dylib);
 
-		for (const dylib of dylibs) {
-			const srcPath = path.join(libPath, dylib);
-			const dstPath = path.join(electronFrameworksDir, dylib);
-
-			if (fs.existsSync(srcPath) && !fs.existsSync(dstPath)) {
-				try {
-					// Create symlink to the dylib in Electron's Frameworks directory
-					fs.symlinkSync(srcPath, dstPath);
-					console.log('[Main] Symlinked:', dylib);
-				} catch (e) {
-					console.log('[Main] Could not symlink', dylib, ':', e.message);
+				if (fs.existsSync(srcPath) && !fs.existsSync(dstPath)) {
+					try {
+						fs.symlinkSync(srcPath, dstPath);
+						console.log('[Main] Symlinked:', dylib);
+					} catch (e) {
+						// Ignore errors - the rpath fix should handle this
+					}
 				}
 			}
 		}
