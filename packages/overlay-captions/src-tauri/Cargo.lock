@@ -1649,7 +1649,7 @@ dependencies = [
 
 [[package]]
 name = "jutukuva-subtiitrid"
-version = "0.4.1"
+version = "0.7.0"
 dependencies = [
  "directories",
  "log",

@@ -162,6 +162,27 @@
 					</div>
 				</label>
 
+			<label class="slider-control" for="line-height-slider">
+				<div class="slider-header">
+					<span class="control-label">{$_('settings.line_height')}</span>
+					<span class="value-badge">{settings.lineHeight.toFixed(2)}</span>
+				</div>
+				<input
+					id="line-height-slider"
+					type="range"
+					min={0.8}
+					max={2.5}
+					step={0.1}
+					value={settings.lineHeight}
+					oninput={(event) =>
+						handleSettingChange('lineHeight', Number(event.currentTarget.value))}
+				/>
+				<div class="slider-labels">
+					<span>0.8</span>
+					<span>2.5</span>
+				</div>
+			</label>
+
 				<div class="control-subsection">
 					<span class="control-label">{$_('settings.font_weight')}</span>
 					<div class="button-group" role="group" aria-label={$_('settings.font_weight')}>
@@ -178,6 +199,8 @@
 						{/each}
 					</div>
 				</div>
+
+
 			</div>
 		</section>
 
