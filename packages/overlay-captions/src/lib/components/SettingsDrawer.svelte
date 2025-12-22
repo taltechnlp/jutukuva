@@ -305,7 +305,7 @@
 					<span class="control-label">{$_('settings.overlay.title')}</span>
                     
                     <!-- Display Mode -->
-                    <div class="flex flex-col gap-2">
+                    <!-- <div class="flex flex-col gap-2">
                          <span class="text-sm text-white/60">{$_('settings.overlay.display_mode')}</span>
                          <div class="grid grid-cols-2 gap-2">
                              <button 
@@ -321,7 +321,7 @@
                                 <span class="option-label">{$_('settings.overlay.multi_line')}</span>
                              </button>
                          </div>
-                    </div>
+                    </div> -->
 
                     <!-- Click Through -->
                      <label class="flex items-center justify-between p-3 bg-white/5 rounded-xl cursor-pointer hover:bg-white/10 transition-colors border border-white/10">
