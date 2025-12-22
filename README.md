@@ -39,11 +39,34 @@ Kuvab subtiitreid mis tahes rakenduse kohal - ideaalne videokõnede, esitluste j
 
 ### Teksti redigeerimine
 
-- Tuvastatud tekst ilmub redaktorisse reaalajas
-- **Ootel sõnad** on esile tõstetud - need ootavad kinnitamist
-- Vajuta **Enter**, et kinnitada kõik sõnad kuni kursori asukohani
-- Lülita sisse **automaatne kinnitamine**, et sõnad kinnitataks automaatselt mõne sekundi pärast
+- Tuvastatud tekst ilmub redaktorisse kohe, kui räägid
+- Teksti saab redigeerida paralleelselt kõnetuvastusega
 - Vigu saab parandada otse tekstis
+
+**Kiirklahvid:**
+| Klahv | Tegevus |
+|-------|---------|
+| **Enter** | Loo uus lõik |
+| **Ctrl+Enter** | Uus lõik ja vali kõneleja |
+| **Ctrl+Z** | Võta tagasi |
+| **Ctrl+Shift+Z** | Tee uuesti |
+| **Tab** | Vali järgmine sõna |
+| **Shift+Tab** | Vali eelmine sõna |
+
+### Asendussõnastikud
+
+Asendussõnastikud võimaldavad lühendeid automaatselt pikemaks tekstiks muuta:
+
+1. Ava **Asendused** menüüst
+2. Loo uus sõnastik või vali olemasolev
+3. Lisa kirjeid: päästik (nt "tln") → asendus (nt "Tallinn")
+
+Kasutamine:
+- Kirjuta päästik ja näed asenduse eelvaadet
+- Vajuta **Tühik** asenduse rakendamiseks
+- Vajuta **Escape** asenduse tühistamiseks
+
+Sõnastikke saab importida ja eksportida JSON formaadis.
 
 ### Sessiooni jagamine
 
@@ -56,7 +79,6 @@ Jaga oma kõnetuvastuse sessiooni teistega:
 Jagatud sessioonis saavad kõik osalejad:
 - Näha teksti reaalajas
 - Redigeerida ja parandada vigu
-- Kinnitada sõnu
 
 ### Ülekatte subtiitrite kasutamine
 

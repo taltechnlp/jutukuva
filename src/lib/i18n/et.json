@@ -556,6 +556,7 @@
       "undo": "Võta tagasi",
       "redo": "Tee uuesti",
       "newParagraph": "Loo uus lõik",
+      "newParagraphWithSpeaker": "Uus lõik ja vali kõneleja",
       "selectNextWord": "Vali järgmine sõna",
       "selectPreviousWord": "Vali eelmine sõna",
       "textSnippets": "Asendused",

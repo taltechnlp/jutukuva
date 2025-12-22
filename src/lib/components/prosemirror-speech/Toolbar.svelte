@@ -282,6 +282,12 @@
 							</td>
 						</tr>
 						<tr>
+							<td>{$_('dictate.shortcuts.newParagraphWithSpeaker', { default: 'New paragraph and select speaker' })}</td>
+							<td>
+								<kbd class="kbd kbd-sm">Ctrl</kbd> + <kbd class="kbd kbd-sm">Enter</kbd>
+							</td>
+						</tr>
+						<tr>
 							<td>{$_('dictate.shortcuts.undo')}</td>
 							<td>
 								<kbd class="kbd kbd-sm">Ctrl</kbd> + <kbd class="kbd kbd-sm">Z</kbd>
