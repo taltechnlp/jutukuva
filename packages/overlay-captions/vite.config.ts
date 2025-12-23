@@ -5,7 +5,7 @@ import { defineConfig } from "vite";
 const host = process.env.TAURI_DEV_HOST;
 
 export default defineConfig({
-	plugins: [tailwindcss(), sveltekit()],
+	plugins: [sveltekit(), tailwindcss()],
 	clearScreen: false,
 	server: {
 		port: 1420,
