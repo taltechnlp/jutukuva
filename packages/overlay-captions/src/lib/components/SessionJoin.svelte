@@ -20,6 +20,10 @@
 	$effect(() => {
 		if (yjsStore.error === 'password_required') {
 			showPasswordInput = true;
+			// Restore session code from the store if it was cleared
+			if (yjsStore.sessionCode) {
+				sessionCode = yjsStore.sessionCode;
+			}
 		}
 	});
 

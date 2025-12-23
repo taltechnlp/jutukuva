@@ -9,6 +9,7 @@ export interface DisplaySettings {
   horizontalAlignment: HorizontalAlignment;
   viewMode: ViewMode;
   letterSpacing: number;
+  lineHeight: number;
 }
 
 export const defaultSettings: DisplaySettings = {
@@ -19,4 +20,5 @@ export const defaultSettings: DisplaySettings = {
   horizontalAlignment: "middle",
   viewMode: "text",
   letterSpacing: 0.02,
+  lineHeight: 1.3,
 };

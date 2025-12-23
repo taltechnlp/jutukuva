@@ -1,74 +1,75 @@
 {
-	"app": {
-		"title": "Jutukuva - Ühine kõneredaktor",
-		"description": "Reaalajas ühine kõneredaktor"
-	},
-	"web_viewer": {
-		"tagline": "Reaalajas ühine kõneredaktor",
-		"join_session": "Liitu sessiooniga",
-		"enter_code": "Sisesta 6-kohaline sessiooni kood",
-		"join": "Liitu sessiooniga",
-		"web_viewer_note": "Veebivaatur (külalise režiim) - Salvestamiseks kasuta töölauarakendust"
-	},
-	"settings": {
-		"title": "Kuvasätted",
-		"subtitle": "Kohanda oma vaatamiskogemust",
-		"close": "Sulge sätted",
-		"reset": "Lähtesta vaikeväärtused",
-		"font_size": "Fondi suurus",
-		"font_weight": "Fondi paksus",
-		"font_weight_regular": "Tavaline",
-		"font_weight_regular_desc": "Standardne paksus",
-		"font_weight_semibold": "Poolpaks",
-		"font_weight_semibold_desc": "Parem nähtavus",
-		"colors": "Värvid",
-		"colors_desc": "Vali eelistatud värviskeemi",
-		"text_color": "Tekst",
-		"background_color": "Taust",
-		"presets": "Eelseaded",
-		"preset_black_on_white": "Must valgel",
-		"preset_white_on_black": "Valge mustal",
-		"preset_yellow_on_black": "Kollane mustal",
-		"preset_cyan_on_dark": "Tsüaan tumedal",
-		"preset_amber_on_charcoal": "Merevaik söehallil",
-		"preset_blue_on_graphite": "Sinine grafiidil",
-		"layout": "Paigutus",
-		"layout_desc": "Seadista teksti joondus ja kuvarežiim",
-		"horizontal_alignment": "Horisontaalne joondus",
-		"align_full": "Servast servani",
-		"align_left": "Vasakule joondatud",
-		"align_middle": "Keskel",
-		"align_right": "Paremale joondatud",
-		"view_mode": "Vaaterežiim",
-		"view_mode_text": "Tekst",
-		"view_mode_text_desc": "Pidev keritav tekst",
-		"view_mode_captions": "Subtiitrid",
-		"view_mode_captions_desc": "Subtiitristiilis kuva",
-		"overlay_download": "Laadi alla ülekatterakendus",
-		"overlay_download_desc": "Ekraanipealne subtiitrite kuvaja",
-		"download_windows": "Windows",
-		"download_macos": "macOS",
-		"download_linux": "Linux",
-		"download_error": "Allalaadimine ebaõnnestus"
-	},
-	"connection": {
-		"connected": "Ühendatud",
-		"disconnected": "Ühendus puudub",
-		"error": "Ühenduse viga"
-	},
-	"subtitle": {
-		"waiting": "Ootan transkriptsiooni…"
-	},
-	"aria": {
-		"open_settings": "Ava sätted",
-		"scroll_to_bottom": "Keri alla"
-	},
-	"viewer": {
-		"password_required": "Parool nõutud",
-		"password_required_description": "See sessioon on parooliga kaitstud. Sisesta parool liitumiseks.",
-		"password_required_error": "Palun sisesta parool",
-		"wrong_password": "Vale parool",
-		"password_placeholder": "Sisesta parool",
-		"connect": "Ühenda"
-	}
+  "app": {
+    "title": "Jutukuva - Ühine kõneredaktor",
+    "description": "Reaalajas ühine kõneredaktor"
+  },
+  "web_viewer": {
+    "tagline": "Reaalajas ühine kõneredaktor",
+    "join_session": "Liitu sessiooniga",
+    "enter_code": "Sisesta 6-kohaline sessiooni kood",
+    "join": "Liitu sessiooniga",
+    "web_viewer_note": "Veebivaatur (külalise režiim) - Salvestamiseks kasuta töölauarakendust"
+  },
+  "settings": {
+    "title": "Kuvasätted",
+    "subtitle": "Kohanda oma vaatamiskogemust",
+    "close": "Sulge sätted",
+    "reset": "Lähtesta vaikeväärtused",
+    "font_size": "Fondi suurus",
+    "font_weight": "Fondi paksus",
+    "line_height": "Rea kõrgus",
+    "font_weight_regular": "Tavaline",
+    "font_weight_regular_desc": "Standardne paksus",
+    "font_weight_semibold": "Poolpaks",
+    "font_weight_semibold_desc": "Parem nähtavus",
+    "colors": "Värvid",
+    "colors_desc": "Vali eelistatud värviskeemi",
+    "text_color": "Tekst",
+    "background_color": "Taust",
+    "presets": "Eelseaded",
+    "preset_black_on_white": "Must valgel",
+    "preset_white_on_black": "Valge mustal",
+    "preset_yellow_on_black": "Kollane mustal",
+    "preset_cyan_on_dark": "Tsüaan tumedal",
+    "preset_amber_on_charcoal": "Merevaik söehallil",
+    "preset_blue_on_graphite": "Sinine grafiidil",
+    "layout": "Paigutus",
+    "layout_desc": "Seadista teksti joondus ja kuvarežiim",
+    "horizontal_alignment": "Horisontaalne joondus",
+    "align_full": "Servast servani",
+    "align_left": "Vasakule joondatud",
+    "align_middle": "Keskel",
+    "align_right": "Paremale joondatud",
+    "view_mode": "Vaaterežiim",
+    "view_mode_text": "Tekst",
+    "view_mode_text_desc": "Pidev keritav tekst",
+    "view_mode_captions": "Subtiitrid",
+    "view_mode_captions_desc": "Subtiitristiilis kuva",
+    "overlay_download": "Laadi alla ülekatterakendus",
+    "overlay_download_desc": "Ekraanipealne subtiitrite kuvaja",
+    "download_windows": "Windows",
+    "download_macos": "macOS",
+    "download_linux": "Linux",
+    "download_error": "Allalaadimine ebaõnnestus"
+  },
+  "connection": {
+    "connected": "Ühendatud",
+    "disconnected": "Ühendus puudub",
+    "error": "Ühenduse viga"
+  },
+  "subtitle": {
+    "waiting": "Ootan transkriptsiooni…"
+  },
+  "aria": {
+    "open_settings": "Ava sätted",
+    "scroll_to_bottom": "Keri alla"
+  },
+  "viewer": {
+    "password_required": "Parool nõutud",
+    "password_required_description": "See sessioon on parooliga kaitstud. Sisesta parool liitumiseks.",
+    "password_required_error": "Palun sisesta parool",
+    "wrong_password": "Vale parool",
+    "password_placeholder": "Sisesta parool",
+    "connect": "Ühenda"
+  }
 }

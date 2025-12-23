@@ -37,6 +37,12 @@ pub struct FontSettings {
     pub weight: u32,
     pub color: String,
     pub align: String,
+    #[serde(default = "default_line_height")]
+    pub line_height: f64,
+}
+
+fn default_line_height() -> f64 {
+    1.3
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -79,6 +85,7 @@ impl Default for AppSettings {
                 weight: 500,
                 color: "#ffffff".to_string(),
                 align: "justify".to_string(),
+                line_height: 1.3,
             },
             connection: ConnectionSettings {
                 yjs_server_url: "wss://tekstiks.ee/kk".to_string(),

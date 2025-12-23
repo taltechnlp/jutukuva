@@ -1,11 +1,28 @@
 import { invoke } from '@tauri-apps/api/core';
 import { yjsStore } from './yjs.svelte';
 
+const MAX_CHARS_LAST_ONLY = 320;
+const MAX_CHARS_MULTI_LINE = 900;
+const TRIM_PREFIX = '...';
+
+const trimToMaxChars = (text: string, maxChars: number): string => {
+	const trimmed = text.trim();
+	if (!trimmed || trimmed.length <= maxChars) {
+		return trimmed;
+	}
+
+	const slice = trimmed.slice(-maxChars);
+	const firstWhitespaceIndex = slice.search(/\s/);
+	const safeSlice = firstWhitespaceIndex > 0 ? slice.slice(firstWhitespaceIndex) : slice;
+	return `${TRIM_PREFIX}${safeSlice.trimStart()}`;
+};
+
 class CaptionStore {
 	text = $state('');
 	lastParagraphs = $state<string[]>([]);
 	lastUpdated = $state<number | null>(null);
 	displayMode = $state<'lastOnly' | 'multiLine'>('lastOnly');
+	displayText = $state('');
 
 	private observer: (() => void) | null = null;
 	private updateHandler: ((update: Uint8Array) => void) | null = null;
@@ -20,6 +37,20 @@ class CaptionStore {
 			.catch((e) => {
 				console.error('[Caption] Failed to broadcast:', e);
 			});
+	}
+
+	private buildDisplayText(mode: 'lastOnly' | 'multiLine', text: string, paragraphs: string[]): string {
+		if (!text) return '';
+
+		if (mode === 'lastOnly') {
+			const lastPara = paragraphs.slice(-1).join('\n');
+			const fallbackLines = text.split('\n').filter((line) => line.trim());
+			const baseText = lastPara || fallbackLines.slice(-1).join('\n') || text;
+			return trimToMaxChars(baseText, MAX_CHARS_LAST_ONLY);
+		}
+
+		const baseText = paragraphs.length > 0 ? paragraphs.join('\n') : text;
+		return trimToMaxChars(baseText, MAX_CHARS_MULTI_LINE);
 	}
 
 	startObserving() {
@@ -37,21 +68,8 @@ class CaptionStore {
 				this.lastUpdated = Date.now();
 
 				// Determine what text to show
-				let captionText: string;
-				if (this.displayMode === 'lastOnly') {
-					// Show last paragraph, or fall back to last line of full text
-					const lastPara = newParagraphs.slice(-1).join('\n');
-					if (lastPara) {
-						captionText = lastPara;
-					} else {
-						// Fallback: get last non-empty line from full text
-						const lines = newText.split('\n').filter((l) => l.trim());
-						captionText = lines.slice(-1).join('\n') || newText;
-					}
-				} else {
-					// Multi-line mode: show last 3 paragraphs or full text
-					captionText = newParagraphs.length > 0 ? newParagraphs.join('\n') : newText;
-				}
+				const captionText = this.buildDisplayText(this.displayMode, newText, newParagraphs);
+				this.displayText = captionText;
 
 				console.log('[Caption] Emitting to overlay:', captionText.substring(0, 50));
 				this.emitToOverlay(captionText);
@@ -80,20 +98,8 @@ class CaptionStore {
 	setDisplayMode(mode: 'lastOnly' | 'multiLine') {
 		this.displayMode = mode;
 		// Re-emit current caption with new mode
-		let captionText: string;
-		if (mode === 'lastOnly') {
-			const lastPara = this.lastParagraphs.slice(-1).join('\n');
-			if (lastPara) {
-				captionText = lastPara;
-			} else {
-				const lines = this.text.split('\n').filter((l) => l.trim());
-				captionText = lines.slice(-1).join('\n') || this.text;
-			}
-		} else {
-			captionText =
-				this.lastParagraphs.length > 0 ? this.lastParagraphs.join('\n') : this.text;
-		}
-
+		const captionText = this.buildDisplayText(mode, this.text, this.lastParagraphs);
+		this.displayText = captionText;
 		this.emitToOverlay(captionText);
 	}
 
@@ -101,6 +107,7 @@ class CaptionStore {
 		this.text = '';
 		this.lastParagraphs = [];
 		this.lastUpdated = null;
+		this.displayText = '';
 	}
 }
 

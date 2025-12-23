@@ -26,6 +26,7 @@ export interface FontSettings {
   weight: number;
   color: string;
   align: "left" | "center" | "right" | "justify";
+  lineHeight: number;
 }
 
 export interface ConnectionSettings {
@@ -59,6 +60,7 @@ export const defaultSettings: AppSettings = {
     weight: 500,
     color: "#ffffff",
     align: "justify",
+    lineHeight: 1.3,
   },
   connection: {
     yjsServerUrl: "wss://tekstiks.ee/kk",
