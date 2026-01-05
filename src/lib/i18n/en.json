@@ -534,6 +534,10 @@
     "initializingASR": "Initializing speech recognition...",
     "noMicrophoneFound": "No microphone found",
     "microphoneInUse": "Microphone is being used by another application",
+    "failedToGetAudioStream": "Failed to get audio stream: {error}",
+    "failedToSwitchAudioSource": "Failed to switch audio source: {error}",
+    "systemAudioNotAvailable": "System audio not available. Please follow the setup instructions below or use microphone.",
+    "deviceNotFound": "Selected audio device not found. Falling back to default device.",
     "languages": {
       "et": "Estonian",
       "en": "English",

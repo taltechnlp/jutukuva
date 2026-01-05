@@ -227,9 +227,19 @@ export class AudioSourceManager {
 		if (deviceId) {
 			// Desktop source IDs start with 'screen:' or 'window:'
 			if (deviceId.startsWith('screen:') || deviceId.startsWith('window:')) {
-				return await this.getDesktopCapturerAudio(deviceId);
+				try {
+					return await this.getDesktopCapturerAudio(deviceId);
+				} catch (error) {
+					console.warn('[AudioSourceManager] Desktop source not found, falling back to default:', error);
+					return await this.getDesktopCapturerAudio(null);
+				}
 			} else {
-				return await this.getLoopbackStream(deviceId);
+				try {
+					return await this.getLoopbackStream(deviceId);
+				} catch (error) {
+					console.warn('[AudioSourceManager] Monitor device not found, falling back to desktopCapturer:', error);
+					return await this.getDesktopCapturerAudio(null);
+				}
 			}
 		}
 
@@ -238,7 +248,12 @@ export class AudioSourceManager {
 		const monitor = devices.find((d) => /Monitor/i.test(d.label));
 
 		if (monitor) {
-			return await this.getLoopbackStream(monitor.deviceId);
+			try {
+				return await this.getLoopbackStream(monitor.deviceId);
+			} catch (error) {
+				console.warn('[AudioSourceManager] Monitor device failed, falling back to desktopCapturer:', error);
+				return await this.getDesktopCapturerAudio(null);
+			}
 		}
 
 		// Fall back to desktopCapturer if no monitor device found

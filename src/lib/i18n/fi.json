@@ -500,6 +500,10 @@
     "initializingASR": "Alustetaan puheentunnistusta...",
     "noMicrophoneFound": "Mikrofonia ei löytynyt",
     "microphoneInUse": "Mikrofoni on toisen sovelluksen käytössä",
+    "failedToGetAudioStream": "Äänivirran saaminen epäonnistui: {error}",
+    "failedToSwitchAudioSource": "Äänilähteen vaihtaminen epäonnistui: {error}",
+    "systemAudioNotAvailable": "Järjestelmän ääni ei ole käytettävissä. Seuraa alla olevia asennusohjeita tai käytä mikrofonia.",
+    "deviceNotFound": "Valittua äänilaitetta ei löytynyt. Käytetään oletuslaitetta.",
     "languages": {
       "et": "viro",
       "en": "englanti",

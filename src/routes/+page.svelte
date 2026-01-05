@@ -593,7 +593,7 @@
 			console.log(`[AUDIO] ✓ Switched to ${newType}`);
 		} catch (error: any) {
 			console.error('[AUDIO] Failed to switch source:', error);
-			vadError = `Failed to switch audio source: ${error.message}`;
+			vadError = $_('dictate.failedToSwitchAudioSource', { values: { error: error.message } });
 		} finally {
 			isAudioSourceSwitching = false;
 		}
@@ -618,7 +618,7 @@
 			if (audioSourceType === 'system' && !systemAudioAvailable) {
 				console.warn('[INIT-AUDIO] System audio selected but not available, falling back to microphone');
 				audioSourceType = 'microphone';
-				vadError = 'System audio not available. Please follow the setup instructions below or use microphone.';
+				vadError = $_('dictate.systemAudioNotAvailable');
 			}
 		}
 	}
@@ -644,7 +644,7 @@
 			console.log('[INIT-VAD] Got audio stream:', customAudioStream.getAudioTracks()[0].label);
 		} catch (error: any) {
 			console.error('[INIT-VAD] Failed to get audio stream:', error);
-			vadError = `Failed to get audio stream: ${error.message}`;
+			vadError = $_('dictate.failedToGetAudioStream', { values: { error: error.message } });
 			isWasmLoading = false;
 			return;
 		}

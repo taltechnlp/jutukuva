@@ -516,6 +516,10 @@
     "initializingASR": "Kõnetuvastuse käivitamine...",
     "noMicrophoneFound": "Mikrofoni ei leitud",
     "microphoneInUse": "Mikrofon on teise rakenduse poolt kasutusel",
+    "failedToGetAudioStream": "Helivoo hankimine ebaõnnestus: {error}",
+    "failedToSwitchAudioSource": "Heliallikale lülitumine ebaõnnestus: {error}",
+    "systemAudioNotAvailable": "Süsteemiheli pole saadaval. Palun järgige allpool olevaid seadistusjuhiseid või kasutage mikrofoni.",
+    "deviceNotFound": "Valitud heliseadet ei leitud. Kasutan vaikimisi seadet.",
     "languages": {
       "et": "eesti",
       "en": "inglise",
