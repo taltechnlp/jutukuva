@@ -189,12 +189,10 @@
 
 						<!-- Preview Content -->
 						<div class="flex-1 overflow-hidden flex items-center justify-center p-4 relative">
-							{#if captionStore.text}
-								<div class="absolute inset-0 flex items-center justify-center p-6 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+							{#if captionStore.displayText}
+								<div class="absolute inset-0 flex items-end justify-center p-6 opacity-80 group-hover:opacity-100 transition-opacity duration-300">
 									<CaptionDisplay
-										text={settingsStore.settings.overlay.displayMode === 'lastOnly'
-											? captionStore.lastParagraphs.slice(-1).join('\n')
-											: captionStore.lastParagraphs.join('\n')}
+										text={captionStore.displayText}
 										fontSettings={settingsStore.settings.font}
 									/>
 								</div>

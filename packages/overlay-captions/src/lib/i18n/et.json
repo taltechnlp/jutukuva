@@ -74,6 +74,7 @@
       "background_color": "Tausta värv",
       "background_opacity": "Tausta läbipaistvus"
     },
+    "line_height": "Rea kõrgus",
     "preview_text": "Eelvaate tekst"
   },
   "overlay": {

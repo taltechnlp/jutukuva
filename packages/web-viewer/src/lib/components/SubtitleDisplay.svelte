@@ -35,7 +35,8 @@
 		`color: ${settings.textColor}; ` +
 			`font-size: ${settings.fontSize}px; ` +
 			`font-weight: ${settings.fontWeight}; ` +
-			`letter-spacing: ${settings.letterSpacing}em;`
+			`letter-spacing: ${settings.letterSpacing}em; ` +
+			`line-height: ${settings.lineHeight};`
 	);
 </script>
 

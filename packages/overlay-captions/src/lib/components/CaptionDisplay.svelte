@@ -9,7 +9,7 @@
 	let { text, fontSettings }: Props = $props();
 </script>
 
-{#key `${text}-${fontSettings.family}-${fontSettings.size}-${fontSettings.weight}-${fontSettings.color}-${fontSettings.align}`}
+{#key `${text}-${fontSettings.family}-${fontSettings.size}-${fontSettings.weight}-${fontSettings.color}-${fontSettings.align}-${fontSettings.lineHeight}`}
 	{#if text}
 		<div
 			class="caption-container"
@@ -21,7 +21,7 @@
 			style:align-items={fontSettings.align === 'left' ? 'flex-start' : fontSettings.align === 'right' ? 'flex-end' : fontSettings.align === 'justify' ? 'stretch' : 'center'}
 		>
 			{#each text.split('\n') as line, i (i)}
-				<p class="caption-line">{line}</p>
+				<p class="caption-line" style:line-height={fontSettings.lineHeight}>{line}</p>
 			{/each}
 		</div>
 	{/if}
@@ -42,7 +42,6 @@
 	.caption-line {
 		margin: 0;
 		padding: 2px 0;
-		line-height: 1.3;
 		word-wrap: break-word;
 		max-width: 100%;
 		position: relative;
