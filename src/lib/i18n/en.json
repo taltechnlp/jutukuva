@@ -537,7 +537,8 @@
     "failedToGetAudioStream": "Failed to get audio stream: {error}",
     "failedToSwitchAudioSource": "Failed to switch audio source: {error}",
     "systemAudioNotAvailable": "System audio not available. Please follow the setup instructions below or use microphone.",
-    "deviceNotFound": "Selected audio device not found. Falling back to default device.",
+    "deviceNotFound": "Selected audio device not found.",
+    "noMonitorDevice": "No monitor device available for system audio capture.",
     "languages": {
       "et": "Estonian",
       "en": "English",

@@ -503,7 +503,8 @@
     "failedToGetAudioStream": "Äänivirran saaminen epäonnistui: {error}",
     "failedToSwitchAudioSource": "Äänilähteen vaihtaminen epäonnistui: {error}",
     "systemAudioNotAvailable": "Järjestelmän ääni ei ole käytettävissä. Seuraa alla olevia asennusohjeita tai käytä mikrofonia.",
-    "deviceNotFound": "Valittua äänilaitetta ei löytynyt. Käytetään oletuslaitetta.",
+    "deviceNotFound": "Valittua äänilaitetta ei löytynyt.",
+    "noMonitorDevice": "Järjestelmääänen kaappaamiseen ei ole monitorilaitetta.",
     "languages": {
       "et": "viro",
       "en": "englanti",

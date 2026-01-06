@@ -54,8 +54,14 @@ export class AudioSourceManager {
 				return true;
 			}
 
-			// On all desktop platforms, desktopCapturer can work as fallback
-			if (this.platform === 'win32' || this.platform === 'linux' || this.platform === 'darwin') {
+			// On Linux, we MUST have loopback devices - desktopCapturer audio-only crashes in Electron 33+
+			if (this.platform === 'linux') {
+				console.log('[AudioSourceManager] No loopback devices found on Linux, system audio not available');
+				return false;
+			}
+
+			// On Windows/macOS, desktopCapturer can work as fallback
+			if (this.platform === 'win32' || this.platform === 'darwin') {
 				return true;
 			}
 
@@ -105,10 +111,12 @@ export class AudioSourceManager {
 
 		// Filter based on source type
 		if (sourceType === 'system') {
-			// On all desktop platforms, prefer desktop sources over monitor/loopback devices
+			// On Windows/macOS, prefer desktop sources over monitor/loopback devices
 			// Desktop sources allow selecting specific windows/screens and work consistently
 			// Skip during initialization to avoid triggering screen sharing permission prompts
-			if (window.electronAPI && !skipDesktopSources) {
+			// NOTE: On Linux, desktopCapturer audio-only capture is not supported in Electron 33+
+			// and will crash the renderer, so we only use PulseAudio/PipeWire monitor devices
+			if (window.electronAPI && !skipDesktopSources && this.platform !== 'linux') {
 				const desktopSources = await this.getDesktopSourcesAsDevices();
 				if (desktopSources.length > 0) {
 					console.log('[AudioSourceManager] Found', desktopSources.length, 'desktop sources');
@@ -116,7 +124,7 @@ export class AudioSourceManager {
 				}
 			}
 
-			// Fall back to loopback/monitor devices if desktop sources not available
+			// Use loopback/monitor devices (required on Linux, fallback on other platforms)
 			const loopbackDevices = this.findLoopbackDevices(allAudioInputs);
 			if (loopbackDevices.length > 0) {
 				console.log('[AudioSourceManager] Found', loopbackDevices.length, 'loopback devices');
@@ -221,29 +229,27 @@ export class AudioSourceManager {
 
 	/**
 	 * Get Linux system audio (PulseAudio/PipeWire monitor)
+	 * Note: desktopCapturer audio-only capture is not supported on Linux in Electron 33+
+	 * and will crash the renderer. Use only PulseAudio/PipeWire monitor devices.
 	 */
 	private async getLinuxSystemAudio(deviceId: string | null): Promise<MediaStream> {
-		// If specific device provided, check if it's a desktop source or monitor device
+		// If specific device provided, use it (must be a monitor device, not desktop source)
 		if (deviceId) {
-			// Desktop source IDs start with 'screen:' or 'window:'
+			// Desktop source IDs start with 'screen:' or 'window:' - these don't work for audio-only on Linux
 			if (deviceId.startsWith('screen:') || deviceId.startsWith('window:')) {
-				try {
-					return await this.getDesktopCapturerAudio(deviceId);
-				} catch (error) {
-					console.warn('[AudioSourceManager] Desktop source not found, falling back to default:', error);
-					return await this.getDesktopCapturerAudio(null);
-				}
+				console.warn('[AudioSourceManager] Desktop sources not supported for audio-only on Linux, finding monitor device...');
+				// Fall through to find a monitor device
 			} else {
 				try {
 					return await this.getLoopbackStream(deviceId);
 				} catch (error) {
-					console.warn('[AudioSourceManager] Monitor device not found, falling back to desktopCapturer:', error);
-					return await this.getDesktopCapturerAudio(null);
+					console.warn('[AudioSourceManager] Monitor device not found:', error);
+					// Fall through to find another monitor device
 				}
 			}
 		}
 
-		// Find monitor device
+		// Find monitor device from PulseAudio/PipeWire
 		const devices = await this.enumerateAudioDevices();
 		const monitor = devices.find((d) => /Monitor/i.test(d.label));
 
@@ -251,14 +257,12 @@ export class AudioSourceManager {
 			try {
 				return await this.getLoopbackStream(monitor.deviceId);
 			} catch (error) {
-				console.warn('[AudioSourceManager] Monitor device failed, falling back to desktopCapturer:', error);
-				return await this.getDesktopCapturerAudio(null);
+				throw new Error(`Failed to access monitor device "${monitor.label}": ${error}`);
 			}
 		}
 
-		// Fall back to desktopCapturer if no monitor device found
-		console.log('[AudioSourceManager] No monitor device found, using desktopCapturer');
-		return await this.getDesktopCapturerAudio(null);
+		// No monitor device found
+		throw new Error('NO_MONITOR_DEVICE');
 	}
 
 	/**

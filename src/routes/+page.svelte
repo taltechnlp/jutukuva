@@ -644,7 +644,14 @@
 			console.log('[INIT-VAD] Got audio stream:', customAudioStream.getAudioTracks()[0].label);
 		} catch (error: any) {
 			console.error('[INIT-VAD] Failed to get audio stream:', error);
-			vadError = $_('dictate.failedToGetAudioStream', { values: { error: error.message } });
+			// Use translated error messages for known error codes
+			if (error.message === 'NO_MONITOR_DEVICE') {
+				vadError = $_('dictate.noMonitorDevice');
+			} else if (error.message?.includes('Requested device not found') || error.message?.includes('not found')) {
+				vadError = $_('dictate.deviceNotFound');
+			} else {
+				vadError = $_('dictate.failedToGetAudioStream', { values: { error: error.message } });
+			}
 			isWasmLoading = false;
 			return;
 		}
@@ -823,14 +830,17 @@
 				isConnected = false;
 			}
 
-			// Step 2: Pre-load VAD WASM models
+			// Step 2: Initialize audio source manager (enumerate devices)
+			// VAD will be created when recording starts (startRecording recreates it anyway)
 			initializationStatusKey = 'dictate.loadingVadModel';
-			console.log('[INIT] Loading VAD WASM models...');
+			console.log('[INIT] Initializing audio source manager...');
 
-			await initializeVAD();
+			await initializeAudioSourceManager();
 
+			// Mark ready - VAD will be created when user clicks record
 			initializationStatusKey = 'dictate.readyToRecord';
-			console.log('[INIT] ✓ VAD WASM loaded successfully');
+			isWasmReady = true;
+			console.log('[INIT] ✓ Audio source manager initialized');
 			console.log('[INIT] ✓ System initialized and ready to record');
 		} catch (error: any) {
 			console.error('[INIT] ❌ Failed to initialize system:', error);
@@ -1154,7 +1164,9 @@
 
 			// Ensure VAD is ready
 			if (!isWasmReady || !vad) {
-				vadError = $_('dictate.failedToInitializeVoiceDetection');
+				// Reset isWasmReady so UI isn't stuck in loading state
+				isWasmReady = true;
+				vadError = vadError || $_('dictate.failedToInitializeVoiceDetection');
 				console.error('[START] VAD initialization failed');
 				return;
 			}
@@ -1525,22 +1537,7 @@
 			</div>
 		{/if}
 		
-		<!-- macOS Setup Guide (if needed) -->
-		{#if audioSourceType === 'system' && !systemAudioAvailable && audioSourceManager}
-			{@const setupInstructions = audioSourceManager.getSetupInstructions()}
-			<div class="alert alert-warning shadow-xl max-w-lg pointer-events-auto animate-in fade-in slide-in-from-top-2 duration-300">
-				<div class="flex flex-col gap-2 w-full">
-					<h3 class="font-bold text-sm">{setupInstructions.title}</h3>
-					<ol class="list-decimal list-inside space-y-1 text-xs">
-						{#each setupInstructions.steps as step}
-							<li>{step}</li>
-						{/each}
-					</ol>
-				</div>
-				<button class="btn btn-ghost btn-sm btn-circle absolute top-2 right-2" onclick={() => audioSourceType = 'microphone'}>✕</button>
-			</div>
-		{/if}
-	</div>
+		</div>
 
 	<!-- Main Content: Editor -->
 	<div class="relative">
@@ -1740,7 +1737,7 @@
 											class="select select-bordered select-sm w-full"
 											bind:value={audioSourceType}
 											onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
-											disabled={isAudioSourceSwitching || !isWasmReady}
+											disabled={isAudioSourceSwitching || isRecording}
 										>
 											<option value="microphone">🎤 {$_('dictate.audioSourceMicrophone')}</option>
 											{#if systemAudioAvailable}
@@ -1761,7 +1758,7 @@
 												class="select select-bordered select-sm w-full"
 												bind:value={selectedDeviceId}
 												onchange={() => switchAudioSource(audioSourceType, selectedDeviceId)}
-												disabled={isAudioSourceSwitching || !isWasmReady}
+												disabled={isAudioSourceSwitching || isRecording}
 											>
 												<option value={null}>{$_('dictate.deviceDefault')}</option>
 												{#each availableAudioDevices as device}
