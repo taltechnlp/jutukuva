@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { _ } from 'svelte-i18n';
-
 	interface Props {
 		onClose: () => void;
 		hasVirtualDevice?: boolean;

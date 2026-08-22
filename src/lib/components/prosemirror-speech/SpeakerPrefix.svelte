@@ -48,10 +48,6 @@
 		}
 	}
 
-	function handleSelect(speaker: Speaker) {
-		onSelect(speaker);
-	}
-
 	function handleClose() {
 		onDropdownToggle(false);
 	}

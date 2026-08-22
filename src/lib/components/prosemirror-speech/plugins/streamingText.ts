@@ -73,7 +73,6 @@ function insertStreamingText(
 		tr.insert(1, newPara);
 		lastParaPos = 1;
 		lastPara = newPara;
-		doc = tr.doc;
 	}
 
 	// Split incoming text into words
@@ -84,7 +83,7 @@ function insertStreamingText(
 	}
 
 	// Check if first word starts with punctuation (no space needed before it)
-	const punctuationRegex = /^[.,!?;:\-–—""''„"«»]/;
+	const punctuationRegex = /^[.,!?;:\-–—"'„«»]/;
 
 	// Append all incoming words to the last paragraph
 	let insertPos = lastParaPos + 1 + (lastPara?.content.size || 0);

@@ -10,11 +10,6 @@ export default defineConfig({
 			allow: ['..']
 		}
 	},
-	optimizeDeps: {
-		esbuildOptions: {
-			target: 'esnext'
-		}
-	},
 	worker: {
 		format: 'es'
 	},

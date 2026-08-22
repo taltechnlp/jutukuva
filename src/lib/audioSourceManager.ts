@@ -14,7 +14,7 @@ export interface AudioDevice {
 	kind: 'audioinput' | 'audiooutput' | 'desktop';
 }
 
-export class AudioSourceManager {
+class AudioSourceManager {
 	private platform: string = 'web';
 
 	constructor() {
@@ -61,11 +61,9 @@ export class AudioSourceManager {
 			}
 
 			// On Windows/macOS, desktopCapturer can work as fallback
-			if (this.platform === 'win32' || this.platform === 'darwin') {
-				return true;
-			}
+			return this.platform === 'win32' || this.platform === 'darwin';
 
-			return false;
+
 		} catch (error) {
 			console.error('[AudioSourceManager] Error checking system audio support:', error);
 			return false;
@@ -154,15 +152,13 @@ export class AudioSourceManager {
 			/Aggregate/i // macOS Aggregate device
 		];
 
-		const monitors = devices.filter((device) => {
+		return devices.filter((device) => {
 			const matches = loopbackPatterns.some((pattern) => pattern.test(device.label));
 			if (matches) {
 				console.log('[AudioSourceManager] Detected monitor device:', device.label);
 			}
 			return matches;
 		});
-
-		return monitors;
 	}
 
 	/**
@@ -463,3 +459,5 @@ export class AudioSourceManager {
 		}
 	}
 }
+
+export default AudioSourceManager

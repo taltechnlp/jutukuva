@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { _ } from 'svelte-i18n';
 	import CreateSessionModal from '$lib/components/sessions/CreateSessionModal.svelte';
 	import EditSessionModal from '$lib/components/sessions/EditSessionModal.svelte';

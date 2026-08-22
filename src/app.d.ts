@@ -33,7 +33,7 @@ declare global {
 					scheduled_date?: string | null;
 					completed_at?: string | null;
 					cancelled_at?: string | null;
-					session_code?: string;
+					session_code?: string | null;
 					collaboration_role?: string;
 					participants?: string;
 					session_password?: string | null;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { _ } from 'svelte-i18n';
 
 	interface Props {
@@ -9,10 +10,10 @@
 
 	let { session, onClose, onSessionUpdated }: Props = $props();
 
-	let name = $state(session.name);
+	let name = $state(untrack(() => session.name));
 	let scheduledDate = $state('');
 	let scheduledTime = $state('');
-	let sessionPassword = $state(session.session_password || '');
+	let sessionPassword = $state(untrack(() => session.session_password || ''));
 	let showPassword = $state(false);
 	let saving = $state(false);
 	let error = $state<string | null>(null);
@@ -36,7 +37,7 @@
 			saving = true;
 			error = null;
 
-			const updateData: Partial<TranscriptionSession> = {
+			const updateData: Parameters<typeof window.db.updateSession>[1] = {
 				name: name.trim()
 			};
 

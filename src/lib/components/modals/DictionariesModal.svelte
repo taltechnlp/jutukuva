@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { _ } from 'svelte-i18n';
 	import DictionaryEditor from '$lib/components/settings/DictionaryEditor.svelte';
 

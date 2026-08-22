@@ -5,7 +5,13 @@
 	import { _, locale } from 'svelte-i18n';
 	import LanguageSelector from '$lib/components/LanguageSelector.svelte';
 	import ThemeSelector from '$lib/components/ThemeSelector.svelte';
-	import { theme } from '$lib/stores/theme';
+	import { theme, type Theme } from '$lib/stores/theme';
+	import type { Snippet } from 'svelte';
+
+	const themeOptions: Theme[] = ['light', 'dark'];
+	const languageOptions = ['et', 'en', 'fi'] as const;
+
+	let { children }: { children: Snippet } = $props();
 	import { modalStore } from '$lib/stores/modalStore.svelte';
 	import { clickOutside } from '$lib/components/prosemirror-speech/utils/clickOutside';
 
@@ -102,13 +108,13 @@
 	<nav class="w-full bg-base-100 border-b border-base-200/50 transition-all duration-300 overflow-visible">
 		<!-- macOS traffic light spacer -->
 		{#if isMacOS}
-		<div class="h-[38px] md:h-[38px]"></div>
+		<div class="h-9.5 md:h-9.5"></div>
 		{/if}
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-visible">
 			<div class="flex items-center justify-between h-14 md:h-16 overflow-visible">
 
 				<!-- Left: Logo -->
-				<div class="flex-shrink-0 flex items-center md:w-[200px]">
+				<div class="shrink-0 flex items-center md:w-50">
 					<a href="/" class="text-xl font-bold tracking-tight hover:opacity-80 transition-opacity">
 						Jutukuva
 					</a>
@@ -127,7 +133,7 @@
 						</svg>
 					</button>
 					{#if mobileMenuOpen}
-					<ul class="absolute right-0 top-full mt-2 menu p-3 shadow-xl bg-base-100 rounded-box w-56 border border-base-300 z-[1000]" use:clickOutside={() => mobileMenuOpen = false}>
+					<ul class="absolute right-0 top-full mt-2 menu p-3 shadow-xl bg-base-100 rounded-box w-56 border border-base-300 z-1000" use:clickOutside={() => mobileMenuOpen = false}>
 						{#each navItems as item}
 							{@const isActive = isNavActive(item.id)}
 							<li>
@@ -142,7 +148,7 @@
 						{/each}
 						<div class="divider my-1"></div>
 						<li class="menu-title">{$_('settings.theme', { default: 'Theme' })}</li>
-						{#each ['light', 'dark'] as themeName}
+						{#each themeOptions as themeName}
 							<li>
 								<button
 									class="cursor-pointer"
@@ -155,7 +161,7 @@
 						{/each}
 						<div class="divider my-1"></div>
 						<li class="menu-title">{$_('settings.language', { default: 'Language' })}</li>
-						{#each ['et', 'en', 'fi'] as lang}
+						{#each languageOptions as lang}
 							<li>
 								<button
 									class="cursor-pointer"
@@ -213,7 +219,7 @@
 						{#if settingsOpen}
 						<ul class="absolute right-0 top-full menu p-3 shadow-xl bg-base-100 rounded-box w-52 border border-base-300 mt-2" use:clickOutside={() => settingsOpen = false}>
 							<li class="menu-title">{$_('settings.theme', { default: 'Theme' })}</li>
-							{#each ['light', 'dark'] as themeName}
+							{#each themeOptions as themeName}
 								<li>
 									<button
 										class="cursor-pointer"
@@ -226,7 +232,7 @@
 							{/each}
 							<div class="divider my-1"></div>
 							<li class="menu-title">{$_('settings.language', { default: 'Language' })}</li>
-							{#each ['et', 'en', 'fi'] as lang}
+							{#each languageOptions as lang}
 								<li>
 									<button
 										class="cursor-pointer"
@@ -245,7 +251,7 @@
 		</div>
 
 		<!-- Mobile menu (Bottom Bar) -->
-		<div class="md:hidden fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-200 pb-safe z-[1000] px-4 py-3">
+		<div class="md:hidden fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-200 pb-safe z-1000 px-4 py-3">
 			<div class="flex justify-between items-center h-12">
 				{#each navItems as item}
 					{@const isActive = isNavActive(item.id)}
@@ -262,7 +268,7 @@
 				{/each}
 
 				<!-- Settings button with dropdown inside bottom bar -->
-				<div class="relative flex-shrink-0 ml-2">
+				<div class="relative shrink-0 ml-2">
 					<button
 						type="button"
 						class="flex flex-col items-center justify-center w-12 h-full space-y-1 rounded-xl transition-colors text-base-content/50 hover:text-base-content"
@@ -277,7 +283,7 @@
 					{#if settingsOpen}
 					<ul class="absolute right-0 bottom-full mb-2 menu p-3 shadow-xl bg-base-100 rounded-box w-52 border border-base-300" use:clickOutside={() => settingsOpen = false}>
 						<li class="menu-title">{$_('settings.theme', { default: 'Theme' })}</li>
-						{#each ['light', 'dark'] as themeName}
+						{#each themeOptions as themeName}
 							<li>
 								<button
 									class="cursor-pointer"
@@ -290,7 +296,7 @@
 						{/each}
 						<div class="divider my-1"></div>
 						<li class="menu-title">{$_('settings.language', { default: 'Language' })}</li>
-						{#each ['et', 'en', 'fi'] as lang}
+						{#each languageOptions as lang}
 							<li>
 								<button
 									class="cursor-pointer"
@@ -310,7 +316,7 @@
 
 	<!-- Main content -->
 	<main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 mb-6 animate-in fade-in duration-500">
-		<slot />
+		{@render children()}
 	</main>
 </div>
 

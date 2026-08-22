@@ -175,6 +175,20 @@
 	user-select: none;
 }
 
+.segment-time {
+	flex-shrink: 0;
+	user-select: none;
+	white-space: nowrap;
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	font-size: 0.75em;
+	color: var(--fallback-bc, oklch(var(--bc) / 0.5));
+	padding-right: 8px;
+}
+
+.segment-time:empty {
+	display: none;
+}
+
 .paragraph-content {
 	flex: 1;
 	min-width: 0;

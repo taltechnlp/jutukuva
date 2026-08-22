@@ -1,320 +1,204 @@
-import { setupLibraryPath, getRecognizerConfig, getModelPath, MODEL_INFO, getLibraryPath } from './sherpa-config.js';
+import {
+	getModelPath,
+	MODEL_INFO,
+	getLibraryPath,
+	setupLibraryPath
+} from './sherpa-config.js';
 import { downloadModel, isModelDownloaded } from './model-downloader.js';
-import { createRequire } from 'module';
 import path from 'path';
-import fs from 'fs';
-import { app } from 'electron';
+import { fileURLToPath } from 'url';
+import { app, utilityProcess } from 'electron';
 
-// Debug logging for ASR hypotheses
-let debugLogStream = null;
-let debugLogPath = null;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-function initDebugLog() {
-  if (!debugLogStream) {
-    debugLogPath = path.join(app.getPath('userData'), 'asr-debug.log');
-    debugLogStream = fs.createWriteStream(debugLogPath, { flags: 'w' });
-    debugLogStream.write(`ASR Debug Log - Started at ${new Date().toISOString()}\n`);
-    debugLogStream.write('='.repeat(80) + '\n\n');
-    console.log('[ASR] Debug log file:', debugLogPath);
-  }
-}
-
-function logHypothesis(text, isFinal) {
-  if (debugLogStream && text) {
-    const timestamp = new Date().toISOString();
-    const marker = isFinal ? '[FINAL]' : '[PARTIAL]';
-    debugLogStream.write(`${timestamp} ${marker} ${text}\n`);
-  }
-}
-
-// Sherpa-onnx module (loaded dynamically after library path setup)
-let sherpa = null;
-
-// Recognizer state
-let recognizer = null;
-let stream = null;
+let worker = null;
 let isInitialized = false;
 let modelDir = null;
 let sessionId = null;
 
+let nextRequestId = 1;
+const pending = new Map();
+
+function sendToWorker(type, extra = {}) {
+	if (!worker) {
+		return Promise.resolve({ error: 'ASR worker not running' });
+	}
+	const id = nextRequestId++;
+	return new Promise((resolve) => {
+		pending.set(id, resolve);
+		worker.postMessage({ type, id, ...extra });
+	});
+}
+
+function attachWorkerHandlers() {
+	worker.on('message', (message) => {
+		if (message && message.type === 'reply') {
+			const resolver = pending.get(message.id);
+			if (resolver) {
+				pending.delete(message.id);
+				resolver(message.result);
+			}
+		}
+	});
+
+	worker.on('exit', (code) => {
+		console.error('[ASR] Worker exited with code:', code);
+		worker = null;
+		isInitialized = false;
+		sessionId = null;
+		for (const resolver of pending.values()) {
+			resolver({ error: 'ASR worker exited' });
+		}
+		pending.clear();
+	});
+}
+
 /**
  * Initialize the ASR system
- * - Downloads model if needed
- * - Sets up library paths
- * - Creates the recognizer
+ * - Downloads model if needed (in main process — needs Electron app API)
+ * - Spawns utility process for sherpa-onnx
  *
  * @param {Function} onProgress - Progress callback for model download
  * @returns {Promise<{success: boolean, error?: string}>}
  */
 export async function initializeASR(onProgress) {
-  if (isInitialized) {
-    console.log('[ASR] Already initialized');
-    return { success: true, alreadyInitialized: true };
-  }
+	if (isInitialized) {
+		console.log('[ASR] Already initialized');
+		return { success: true, alreadyInitialized: true };
+	}
 
-  try {
-    // Step 1: Check/download model
-    console.log('[ASR] Checking for model...');
-    const modelExists = await isModelDownloaded();
+	try {
+		console.log('[ASR] Checking for model...');
+		const modelExists = await isModelDownloaded();
 
-    if (!modelExists) {
-      console.log('[ASR] Model not found, downloading...');
-      modelDir = await downloadModel(onProgress);
-    } else {
-      modelDir = getModelPath(MODEL_INFO.name);
-      console.log('[ASR] Using existing model at:', modelDir);
-    }
+		if (!modelExists) {
+			console.log('[ASR] Model not found, downloading...');
+			modelDir = await downloadModel(onProgress);
+		} else {
+			modelDir = getModelPath(MODEL_INFO.name);
+			console.log('[ASR] Using existing model at:', modelDir);
+		}
 
-    // Step 2: Setup library paths (MUST be done before require)
-    console.log('[ASR] Setting up library paths...');
-    setupLibraryPath();
+		// Verify the native library path exists and log it. The worker will
+		// set DYLD_LIBRARY_PATH for its own process; this call is just to
+		// fail fast with a clear error if the libs are missing.
+		setupLibraryPath();
 
-    // Step 3: Load sherpa-onnx-node module
-    console.log('[ASR] Loading sherpa-onnx-node...');
-    try {
-      const libPath = getLibraryPath();
-      const nativeAddonPath = path.join(libPath, 'sherpa-onnx.node');
-      console.log('[ASR] Native addon path:', nativeAddonPath);
+		console.log('[ASR] Spawning utility process worker...');
+		const workerPath = path.join(__dirname, 'asr-worker.js');
+		worker = utilityProcess.fork(workerPath, [], {
+			serviceName: 'jutukuva-asr',
+			stdio: 'inherit'
+		});
 
-      // Use createRequire to load native modules in ESM context
-      const require = createRequire(import.meta.url);
+		await new Promise((resolve, reject) => {
+			worker.once('spawn', resolve);
+			worker.once('exit', (code) =>
+				reject(new Error(`ASR worker exited during startup (code ${code})`))
+			);
+		});
 
-      // Load the native addon directly from our known path
-      const addon = require(nativeAddonPath);
-      console.log('[ASR] Native addon loaded from:', nativeAddonPath);
+		attachWorkerHandlers();
 
-      // Inject the loaded addon into require.cache so that when streaming-asr.js
-      // does require('./addon.js'), it gets our pre-loaded addon
-      const addonJsPath = require.resolve('sherpa-onnx-node/addon.js');
-      console.log('[ASR] Injecting addon into cache at:', addonJsPath);
+		const debugLogPath = path.join(app.getPath('userData'), 'asr-debug.log');
+		const result = await sendToWorker('init', {
+			config: {
+				libPath: getLibraryPath(),
+				modelDir,
+				debugLogPath,
+				platform: process.platform,
+				pwd: process.cwd()
+			}
+		});
 
-      // Create a proper module cache entry
-      const Module = require('module');
-      const cachedModule = new Module(addonJsPath);
-      cachedModule.filename = addonJsPath;
-      cachedModule.paths = Module._nodeModulePaths(path.dirname(addonJsPath));
-      cachedModule.loaded = true;
-      cachedModule.exports = addon;
-      require.cache[addonJsPath] = cachedModule;
+		if (result.error) {
+			console.error('[ASR] Worker init failed:', result.error);
+			worker?.kill();
+			worker = null;
+			return { success: false, error: `Failed to initialize ASR worker: ${result.error}` };
+		}
 
-      // Now load streaming-asr.js which will use our cached addon
-      const streamingAsr = require('sherpa-onnx-node/streaming-asr.js');
-
-      // Create a sherpa-like module with what we need
-      sherpa = {
-        OnlineRecognizer: streamingAsr.OnlineRecognizer,
-        readWave: addon.readWave,
-        writeWave: addon.writeWave,
-      };
-      console.log('[ASR] sherpa-onnx-node components loaded successfully');
-    } catch (loadError) {
-      console.error('[ASR] Failed to load sherpa-onnx-node:', loadError);
-      return {
-        success: false,
-        error: `Failed to load ASR module: ${loadError.message}`
-      };
-    }
-
-    // Step 4: Create recognizer
-    console.log('[ASR] Creating recognizer...');
-    const config = getRecognizerConfig(modelDir);
-    console.log('[ASR] Recognizer config:', JSON.stringify(config, null, 2));
-
-    try {
-      recognizer = new sherpa.OnlineRecognizer(config);
-      console.log('[ASR] Recognizer created successfully');
-    } catch (recError) {
-      console.error('[ASR] Failed to create recognizer:', recError);
-      return {
-        success: false,
-        error: `Failed to create recognizer: ${recError.message}`
-      };
-    }
-
-    isInitialized = true;
-    return { success: true };
-  } catch (error) {
-    console.error('[ASR] Initialization failed:', error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
+		isInitialized = true;
+		console.log('[ASR] Debug log file:', debugLogPath);
+		return { success: true };
+	} catch (error) {
+		console.error('[ASR] Initialization failed:', error);
+		return { success: false, error: error.message };
+	}
 }
 
 /**
  * Start a new ASR session
- * @returns {{success: boolean, sessionId?: string, error?: string}}
+ * @returns {Promise<{success: boolean, sessionId?: string, error?: string}>}
  */
-export function startSession() {
-  if (!isInitialized || !recognizer) {
-    return {
-      success: false,
-      error: 'ASR not initialized. Call initializeASR() first.'
-    };
-  }
+export async function startSession() {
+	if (!isInitialized) {
+		return { success: false, error: 'ASR not initialized. Call initializeASR() first.' };
+	}
 
-  // End any existing session
-  if (stream) {
-    console.log('[ASR] Ending previous session');
-    stream = null;
-  }
-
-  try {
-    // Create new stream for this session
-    stream = recognizer.createStream();
-    sessionId = `asr-${Date.now()}`;
-
-    // Initialize debug logging
-    initDebugLog();
-
-    console.log('[ASR] Started new session:', sessionId);
-    return {
-      success: true,
-      sessionId
-    };
-  } catch (error) {
-    console.error('[ASR] Failed to start session:', error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
+	const result = await sendToWorker('start');
+	if (result?.success) {
+		sessionId = result.sessionId;
+	}
+	return result;
 }
 
 /**
  * Process audio samples
  * @param {Float32Array} samples - Audio samples at 16kHz
- * @returns {{text: string, isFinal: boolean, error?: string}}
+ * @returns {Promise<{text: string, isFinal: boolean, error?: string}>}
  */
-export function processAudio(samples) {
-  if (!stream || !recognizer) {
-    return {
-      text: '',
-      isFinal: false,
-      error: 'No active session'
-    };
-  }
-
-  try {
-    // Feed audio to recognizer
-    stream.acceptWaveform({
-      sampleRate: 16000,
-      samples: samples
-    });
-
-    // Decode available frames
-    while (recognizer.isReady(stream)) {
-      recognizer.decode(stream);
-    }
-
-    // Get current result
-    const result = recognizer.getResult(stream);
-    const text = result.text || '';
-
-    // Check for endpoint (utterance boundary)
-    let isFinal = false;
-    if (recognizer.isEndpoint(stream)) {
-      isFinal = true;
-      recognizer.reset(stream);
-    }
-
-    // Log hypothesis for debugging
-    logHypothesis(text.trim(), isFinal);
-
-    return {
-      text: text.trim(),
-      isFinal
-    };
-  } catch (error) {
-    console.error('[ASR] Audio processing error:', error);
-    return {
-      text: '',
-      isFinal: false,
-      error: error.message
-    };
-  }
+export async function processAudio(samples) {
+	if (!isInitialized) {
+		return { text: '', isFinal: false, error: 'ASR not initialized' };
+	}
+	return sendToWorker('audio', { samples });
 }
 
 /**
  * Stop the current ASR session
- * @returns {{text: string, isFinal: boolean, error?: string}}
+ * @returns {Promise<{text: string, isFinal: boolean, error?: string}>}
  */
-export function stopSession() {
-  if (!stream || !recognizer) {
-    return {
-      text: '',
-      isFinal: true
-    };
-  }
-
-  try {
-    // Flush any remaining audio
-    stream.inputFinished();
-
-    // Decode remaining frames
-    while (recognizer.isReady(stream)) {
-      recognizer.decode(stream);
-    }
-
-    // Get final result
-    const result = recognizer.getResult(stream);
-    const text = result.text || '';
-
-    // Clean up stream
-    stream = null;
-    const endedSessionId = sessionId;
-    sessionId = null;
-
-    console.log('[ASR] Session ended:', endedSessionId);
-
-    return {
-      text: text.trim(),
-      isFinal: true
-    };
-  } catch (error) {
-    console.error('[ASR] Error stopping session:', error);
-    stream = null;
-    sessionId = null;
-    return {
-      text: '',
-      isFinal: true,
-      error: error.message
-    };
-  }
+export async function stopSession() {
+	if (!isInitialized) {
+		return { text: '', isFinal: true };
+	}
+	const result = await sendToWorker('stop');
+	sessionId = null;
+	return result;
 }
 
 /**
  * Get ASR status
- * @returns {{isInitialized: boolean, hasActiveSession: boolean, sessionId: string|null, modelPath: string|null}}
  */
 export function getStatus() {
-  return {
-    isInitialized,
-    hasActiveSession: stream !== null,
-    sessionId,
-    modelPath: modelDir
-  };
+	return {
+		isInitialized,
+		hasActiveSession: sessionId !== null,
+		sessionId,
+		modelPath: modelDir
+	};
 }
 
 /**
  * Cleanup ASR resources
  */
 export function cleanup() {
-  console.log('[ASR] Cleaning up...');
-
-  if (stream) {
-    stream = null;
-  }
-
-  if (recognizer) {
-    recognizer = null;
-  }
-
-  isInitialized = false;
-  modelDir = null;
-  sessionId = null;
-  sherpa = null;
-
-  console.log('[ASR] Cleanup complete');
+	console.log('[ASR] Cleaning up...');
+	if (worker) {
+		try {
+			worker.kill();
+		} catch (e) {
+			console.warn('[ASR] Error killing worker:', e.message);
+		}
+		worker = null;
+	}
+	isInitialized = false;
+	modelDir = null;
+	sessionId = null;
+	for (const resolver of pending.values()) {
+		resolver({ error: 'ASR shutdown' });
+	}
+	pending.clear();
+	console.log('[ASR] Cleanup complete');
 }

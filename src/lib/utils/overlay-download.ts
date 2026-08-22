@@ -10,13 +10,6 @@ interface Release {
 
 export type Platform = 'windows' | 'macos' | 'linux';
 
-export function detectPlatform(): Platform {
-	const ua = navigator.userAgent.toLowerCase();
-	if (ua.includes('win')) return 'windows';
-	if (ua.includes('mac')) return 'macos';
-	return 'linux';
-}
-
 export async function fetchLatestRelease(): Promise<Release> {
 	const url =
 		import.meta.env.VITE_OVERLAY_RELEASE_URL ||

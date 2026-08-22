@@ -643,7 +643,7 @@ app.whenReady().then(() => {
 	// Start ASR session
 	ipcMain.handle('asr:start', async () => {
 		try {
-			return startASRSession();
+			return await startASRSession();
 		} catch (error) {
 			console.error('[Main] ASR start error:', error);
 			return { success: false, error: error.message };
@@ -655,7 +655,7 @@ app.whenReady().then(() => {
 		try {
 			// Convert ArrayBuffer back to Float32Array
 			const samples = new Float32Array(audioBuffer);
-			return processAudio(samples);
+			return await processAudio(samples);
 		} catch (error) {
 			console.error('[Main] ASR audio processing error:', error);
 			return { text: '', isFinal: false, error: error.message };
@@ -665,7 +665,7 @@ app.whenReady().then(() => {
 	// Stop ASR session
 	ipcMain.handle('asr:stop', async () => {
 		try {
-			return stopASRSession();
+			return await stopASRSession();
 		} catch (error) {
 			console.error('[Main] ASR stop error:', error);
 			return { text: '', isFinal: true, error: error.message };

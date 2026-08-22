@@ -63,7 +63,7 @@ function isValidTheme(value: string): boolean {
 
 // Create the theme store
 function createThemeStore() {
-	const { subscribe, set, update } = writable<Theme>(getInitialTheme());
+	const { subscribe, set } = writable<Theme>(getInitialTheme());
 
 	return {
 		subscribe,
@@ -99,40 +99,4 @@ export const availableThemes: Theme[] = [
 	'pastel',
 	'cyberpunk',
 	'nord'
-];
-
-// All available themes
-export const allThemes: Theme[] = [
-	'light',
-	'dark',
-	'cupcake',
-	'bumblebee',
-	'emerald',
-	'corporate',
-	'synthwave',
-	'retro',
-	'cyberpunk',
-	'valentine',
-	'halloween',
-	'garden',
-	'forest',
-	'aqua',
-	'lofi',
-	'pastel',
-	'fantasy',
-	'wireframe',
-	'black',
-	'luxury',
-	'dracula',
-	'cmyk',
-	'autumn',
-	'business',
-	'acid',
-	'lemonade',
-	'night',
-	'coffee',
-	'winter',
-	'dim',
-	'nord',
-	'sunset'
 ];

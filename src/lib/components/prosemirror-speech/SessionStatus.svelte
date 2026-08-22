@@ -16,9 +16,6 @@
 		onShowShareModal?: () => void;
 		onEndSession?: () => void;
 	} = $props();
-
-	// Get participant count (excluding self)
-	const otherParticipants = $derived(participants.filter((p) => p.role !== sessionInfo?.role).length);
 </script>
 
 {#if sessionInfo}

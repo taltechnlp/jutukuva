@@ -242,7 +242,7 @@
 	</div>
 
 	<!-- Center: Recording control -->
-	<div class="flex justify-center">
+	<div class="flex justify-center items-center gap-2">
 		{#if centerContent}
 			{@render centerContent()}
 		{/if}
