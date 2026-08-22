@@ -543,6 +543,7 @@
     "transcribingFile": "Transcribing file...",
     "cancelFileTranscription": "Cancel file transcription",
     "fileTranscriptionFailed": "Failed to transcribe file: {error}",
+    "includeTimings": "Timings",
     "languages": {
       "et": "Estonian",
       "en": "English",

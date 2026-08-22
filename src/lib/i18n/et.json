@@ -525,6 +525,7 @@
     "transcribingFile": "Helifaili transkribeerimine...",
     "cancelFileTranscription": "Tühista helifaili transkribeerimine",
     "fileTranscriptionFailed": "Helifaili transkribeerimine ebaõnnestus: {error}",
+    "includeTimings": "Ajakoodid",
     "languages": {
       "et": "eesti",
       "en": "inglise",

@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh api *)",
+      "Bash(awk 'NR>=1700 && NR<=1860 {if\\(/{#if|{:else|{:else if|{\\\\/if/\\) print NR\": \"$0}' /Users/ahti/dev/muu/jutukuva/src/routes/+page.svelte)",
+      "Bash(npm run *)",
+      "Bash(npm ls *)",
+      "Bash(npm view *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:mediabunny.dev)",
+      "Bash(npm install *)",
+      "Bash(npm uninstall *)",
+      "Bash(git remote *)"
+    ]
+  }
+}

@@ -75,6 +75,9 @@
     let isRecording = $state(false);
     let isTranscribingFile = $state(false);
     let fileTranscriptionProgress = $state(0); // 0-100
+    let includeTimings = $state(true); // Stamp file-transcription segments with timings
+    let fileAudioSeconds = 0; // Position in the audio file (seconds sent to ASR)
+    let fileSegmentStart = 0; // Start of the current segment
     let fileInputEl: HTMLInputElement | null = $state(null);
     let isWasmLoading = $state(false);
     let isWasmReady = $state(false);
@@ -1112,6 +1115,12 @@
                     text: result.text,
                     is_final: result.isFinal
                 });
+
+                // File transcription: each endpoint closes a timed segment
+                if (isTranscribingFile && includeTimings && result.isFinal && result.text.trim()) {
+                    speechEditor?.finalizeSegment(fileSegmentStart, fileAudioSeconds);
+                    fileSegmentStart = fileAudioSeconds;
+                }
             }
         } catch (error) {
             console.error('[ASR] IPC error:', error);
@@ -1286,6 +1295,8 @@
 
         isTranscribingFile = true;
         fileTranscriptionProgress = 0;
+        fileAudioSeconds = 0;
+        fileSegmentStart = 0;
 
         try {
             // 1. Start ASR session up front so the worker is ready before the
@@ -1324,6 +1335,7 @@
                         pos += take;
 
                         if (frameBufFill === FRAME_SIZE) {
+                            fileAudioSeconds = (framesSent * FRAME_SIZE) / 16000;
                             await sendAudioToASR(frameBuf);
                             frameBuf = new Float32Array(FRAME_SIZE);
                             frameBufFill = 0;
@@ -1347,9 +1359,13 @@
                 frameBuf.fill(0, frameBufFill);
                 await sendAudioToASR(frameBuf);
             }
+            fileAudioSeconds = (framesSent * FRAME_SIZE + frameBufFill) / 16000;
 
             // 4. Flush ASR and finalize.
             await stopASRSession();
+            if (includeTimings) {
+                speechEditor?.finalizeSegment(fileSegmentStart, fileAudioSeconds);
+            }
             fileTranscriptionProgress = 100;
         } catch (error: any) {
             if (error?.message === 'cancelled') {
@@ -1772,6 +1788,15 @@
                                     </svg>
                                 </button>
                             {/if}
+                            <label class="flex items-center gap-1.5 text-xs opacity-70 cursor-pointer select-none">
+                                <input
+                                        type="checkbox"
+                                        class="checkbox checkbox-xs"
+                                        bind:checked={includeTimings}
+                                        disabled={isTranscribingFile}
+                                />
+                                {$_('dictate.includeTimings', { default: 'Timings' })}
+                            </label>
                         {/snippet}
                         {#snippet toolbarRightContent()}
                             <!-- Collaboration Menu -->

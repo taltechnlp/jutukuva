@@ -568,6 +568,38 @@
         }
     }
 
+    // Public API: Stamp the last paragraph with segment timings (seconds into the
+    // audio) and start a new paragraph for the next text. Used by file transcription
+    // at each ASR endpoint so the transcript isn't one long line.
+    export function finalizeSegment(start: number, end: number) {
+        if (!editorView) return;
+
+        let lastPara: Node | null = null;
+        let lastParaPos = 0;
+        editorView.state.doc.descendants((n, pos) => {
+            if (n.type.name === 'paragraph') {
+                lastPara = n;
+                lastParaPos = pos;
+            }
+        });
+
+        const para = lastPara as Node | null;
+
+        // Nothing to stamp, or already stamped (e.g. no tail text after the last endpoint)
+        if (!para || para.content.size === 0 || para.attrs.segmentStartTime !== null) {
+            return;
+        }
+
+        const tr = editorView.state.tr.setNodeMarkup(lastParaPos, undefined, {
+            ...para.attrs,
+            segmentStartTime: start,
+            segmentEndTime: end
+        });
+        tr.setMeta('vadSpeechEnd', true);
+        tr.setMeta('addToHistory', false);
+        editorView.dispatch(tr);
+    }
+
     // Public API: Signal VAD speech end (to create new paragraph on next text)
     export function signalVadSpeechEnd() {
         if (!editorView) return;

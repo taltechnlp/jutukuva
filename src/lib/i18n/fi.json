@@ -509,6 +509,7 @@
     "transcribingFile": "Äänitiedoston litterointi...",
     "cancelFileTranscription": "Peruuta äänitiedoston litterointi",
     "fileTranscriptionFailed": "Äänitiedoston litterointi epäonnistui: {error}",
+    "includeTimings": "Aikakoodit",
     "languages": {
       "et": "viro",
       "en": "englanti",

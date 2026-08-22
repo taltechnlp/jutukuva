@@ -18,6 +18,14 @@ export interface ParagraphNodeViewContext {
 	readOnly: boolean;
 }
 
+function formatTime(seconds: number): string {
+	const s = Math.max(0, Math.round(seconds));
+	const h = Math.floor(s / 3600);
+	const m = Math.floor((s % 3600) / 60);
+	const sec = String(s % 60).padStart(2, '0');
+	return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
+}
+
 export function createParagraphNodeView(
 	node: Node,
 	view: EditorView,
@@ -42,6 +50,21 @@ export function createParagraphNodeView(
 		dom.setAttribute('data-speaker-id', node.attrs.speakerId);
 	}
 
+	// Non-editable segment timing label (shown when the paragraph has timing attrs)
+	const timeLabel = document.createElement('span');
+	timeLabel.className = 'segment-time';
+	timeLabel.contentEditable = 'false';
+
+	function updateTimeLabel() {
+		const start = node.attrs.segmentStartTime;
+		const end = node.attrs.segmentEndTime;
+		timeLabel.textContent = start !== null
+			? `${formatTime(start)}–${formatTime(end ?? start)}`
+			: '';
+	}
+
+	updateTimeLabel();
+
 	// Create non-editable prefix container
 	const prefixContainer = document.createElement('span');
 	prefixContainer.className = 'speaker-prefix-mount';
@@ -51,6 +74,7 @@ export function createParagraphNodeView(
 	const contentDOM = document.createElement('span');
 	contentDOM.className = 'paragraph-content';
 
+	dom.appendChild(timeLabel);
 	dom.appendChild(prefixContainer);
 	dom.appendChild(contentDOM);
 
@@ -151,6 +175,7 @@ export function createParagraphNodeView(
 
 			// Update stores
 			updateStores();
+			updateTimeLabel();
 
 			return true;
 		},
@@ -161,7 +186,8 @@ export function createParagraphNodeView(
 
 		// Prevent selection/events in prefix area
 		stopEvent(event: Event): boolean {
-			return prefixContainer.contains(event.target as HTMLElement);
+			const target = event.target as HTMLElement;
+			return prefixContainer.contains(target) || timeLabel.contains(target);
 		},
 
 		// Prevent ProseMirror from seeing mutations in prefix
